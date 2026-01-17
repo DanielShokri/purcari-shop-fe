@@ -1,0 +1,237 @@
+# Hebrew Admin Dashboard - Cursor Rules
+
+## Project Overview
+
+This is a Hebrew RTL (right-to-left) admin dashboard built with React 19 and TypeScript. The application is a content management system (CMS) with authentication, posts management, and analytics features.
+
+## Technology Stack
+
+- **Framework**: React 19 with TypeScript
+- **Build Tool**: Vite 6
+- **State Management**: Redux Toolkit with RTK Query
+- **Routing**: React Router DOM v7 (HashRouter)
+- **Forms**: React Hook Form
+- **Backend**: Appwrite SDK
+- **Charts**: Recharts
+- **Styling**: Tailwind CSS (via CDN with Heebo font)
+
+## Code Style & Conventions
+
+### TypeScript
+
+- Use TypeScript for all files (`.ts`, `.tsx`)
+- Target ES2022 with ESNext modules
+- Use `@/*` path alias for imports (maps to project root)
+- Prefer interfaces over types for object shapes
+- Use enums for finite sets of values (e.g., `PostStatus`)
+- Use `Partial<T>` for mutation/update inputs
+- Appwrite documents use `$id` as the identifier field
+
+```typescript
+// Good: Interface with Appwrite convention
+export interface Post {
+  $id: string;
+  title: string;
+  status: PostStatus;
+}
+
+// Good: Enum for status values
+export enum PostStatus {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived'
+}
+```
+
+### Component Patterns
+
+- Use functional components with `export default function ComponentName()`
+- Define props inline for simple components: `{ prop }: { prop: Type }`
+- Co-locate small sub-components in the same file (e.g., `StatCard`, modals)
+- Use React.ReactNode for children props
+- Import React explicitly: `import React from 'react'`
+
+```typescript
+// Good: Default export with inline props
+export default function Layout({ children }: { children?: React.ReactNode }) {
+  return <div>{children}</div>;
+}
+
+// Good: Local sub-component in same file
+const StatCard = ({ title, value, color }: { title: string; value: string; color: string }) => (
+  <div className="bg-white p-6 rounded-xl">...</div>
+);
+```
+
+### State Management (Redux Toolkit)
+
+- Use RTK Query for all API calls with `createApi` and `fakeBaseQuery()`
+- Define slices with `createSlice` and typed `PayloadAction`
+- Export typed hooks: `RootState`, `AppDispatch`
+- Use tag-based cache invalidation (`tagTypes`, `providesTags`, `invalidatesTags`)
+- Wrap localStorage access in safe try-catch helpers
+
+```typescript
+// Good: RTK Query endpoint pattern
+getPosts: builder.query({
+  queryFn: async () => {
+    try {
+      // API call logic
+      return { data: posts };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+  providesTags: ['Posts'],
+}),
+
+// Good: Mutation with invalidation
+createPost: builder.mutation({
+  queryFn: async (newPost: Partial<Post>) => {
+    // Create logic
+    return { data: post };
+  },
+  invalidatesTags: ['Posts'],
+}),
+```
+
+### Forms (React Hook Form)
+
+- Use `useForm` hook with TypeScript generics
+- Destructure `register`, `handleSubmit`, `formState: { errors }`
+- Use `{...register('fieldName', { required: true })}` pattern
+- Display validation errors conditionally
+
+```typescript
+const { register, handleSubmit, formState: { errors } } = useForm<Partial<Post>>();
+
+<input {...register('title', { required: 'שדה חובה' })} />
+{errors.title && <span className="text-red-500 text-xs">{errors.title.message}</span>}
+```
+
+### Routing
+
+- Use `HashRouter` for deployment compatibility
+- Implement `ProtectedRoute` wrapper for authenticated routes
+- Use `useNavigate`, `useLocation` hooks
+- Redirect unauthenticated users to `/login`
+
+## Styling Guidelines
+
+### Tailwind CSS Classes
+
+- **Colors**: Use slate for neutrals, blue for primary actions, emerald for success, red for danger, amber for warnings, violet for accents
+- **Rounded corners**: `rounded-lg` (8px), `rounded-xl` (12px), `rounded-2xl` (16px)
+- **Shadows**: `shadow-sm` for subtle, `shadow-xl` for modals
+- **Spacing**: Use consistent padding (`p-4`, `p-6`, `p-8`) and gaps (`gap-3`, `gap-4`, `gap-6`)
+- **Borders**: `border border-slate-200` for cards and inputs
+
+### Common UI Patterns
+
+```typescript
+// Card component
+<div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+
+// Primary button
+<button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm transition-colors text-sm font-medium">
+
+// Input field
+<input className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" />
+
+// Status badges
+<span className="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-bold">פורסם</span>
+<span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-bold">טיוטה</span>
+```
+
+### RTL (Right-to-Left) Considerations
+
+- HTML has `lang="he" dir="rtl"` set
+- Use Heebo font family for Hebrew text
+- Tables use `text-right` alignment
+- For LTR content (dates, code), use `dir="ltr"` attribute
+- Sidebar is positioned on the right side
+- Use `translate-x-full` (not `-translate-x-full`) for RTL slide animations
+
+```typescript
+// LTR override for specific content
+<input dir="ltr" type="email" />
+<td dir="ltr">{new Date(date).toLocaleDateString('he-IL')}</td>
+
+// Chart container needs LTR
+<div style={{ direction: 'ltr' }}>
+  <ResponsiveContainer>...</ResponsiveContainer>
+</div>
+```
+
+### Hebrew Text Guidelines
+
+- Use Hebrew for all UI labels and messages
+- Error messages in Hebrew: `'פרטי התחברות שגויים'`
+- Loading states: `'טוען נתונים...'`, `'טוען פוסטים...'`
+- Confirmation dialogs: `'האם אתה בטוח שברצונך למחוק פוסט זה?'`
+- Button text: `'התחבר'`, `'שמור'`, `'ביטול'`, `'מחק'`, `'ערוך'`
+
+## File Organization
+
+```
+/
+├── App.tsx              # Main app with routes
+├── index.tsx            # Entry point with providers
+├── index.html           # HTML template with Tailwind CDN
+├── store.ts             # Redux store configuration
+├── types.ts             # Shared TypeScript interfaces/enums
+├── components/
+│   └── Layout.tsx       # Main layout with sidebar
+├── pages/
+│   ├── Dashboard.tsx    # Analytics dashboard
+│   ├── Login.tsx        # Authentication page
+│   └── Posts.tsx        # Posts management
+└── services/
+    ├── api.ts           # RTK Query API definitions
+    └── appwrite.ts      # Appwrite client configuration
+```
+
+### Naming Conventions
+
+- **Files**: PascalCase for components (`Dashboard.tsx`), camelCase for utilities (`api.ts`)
+- **Components**: PascalCase (`StatCard`, `CreatePostModal`)
+- **Functions**: camelCase (`handleSubmit`, `getStatusBadge`)
+- **Constants**: SCREAMING_SNAKE_CASE for config (`APPWRITE_CONFIG`)
+- **Hooks**: camelCase with `use` prefix (RTK Query auto-generates: `useGetPostsQuery`)
+
+## Icons
+
+- Use inline SVG icons to avoid external dependencies
+- Define icons as an object for reusability:
+
+```typescript
+const Icons = {
+  Dashboard: <svg>...</svg>,
+  Posts: <svg>...</svg>,
+  // etc.
+};
+```
+
+## Error Handling
+
+- Wrap API calls in try-catch blocks
+- Return `{ error: error.message }` from RTK Query endpoints
+- Display user-friendly Hebrew error messages
+- Use `console.warn` for non-critical errors (e.g., localStorage access)
+
+## Authentication Flow
+
+1. Check `user` in Redux state via `useSelector`
+2. Redirect to `/login` if not authenticated
+3. On successful login, dispatch `setCredentials` with user and token
+4. Store credentials in localStorage (with safe wrapper)
+5. On logout, dispatch `logoutUser` and clear localStorage
+
+## Anti-Patterns to Avoid
+
+- Don't use class components
+- Don't use `any` type without explicit need (use `error: any` only in catch blocks)
+- Don't hardcode colors - use Tailwind's color palette
+- Don't mix styling approaches - stick to Tailwind utilities
+- Don't create separate files for tiny sub-components
+- Don't forget RTL considerations when adding new UI elements

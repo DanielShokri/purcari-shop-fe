@@ -1,0 +1,72 @@
+---
+description: "Core project conventions for Hebrew RTL admin dashboard with React 19, Chakra UI, and TypeScript"
+alwaysApply: true
+---
+
+# Hebrew Admin Dashboard - Project Rules
+
+## AI Assistant Guidelines
+
+**IMPORTANT**: When unsure about implementation details, API usage, or component behavior:
+1. **DO NOT** attempt to fix issues through trial and error
+2. **FIRST** use the Context7 MCP tools to fetch official documentation:
+   - Use `mcp_context7_resolve-library-id` to find the library ID
+   - Use `mcp_context7_query-docs` to get relevant documentation
+3. **ALSO** use Chakra UI MCP tools for component-specific questions:
+   - Use `mcp_chakra-ui_get_component_props` for component properties
+   - Use `mcp_chakra-ui_get_component_example` for usage examples
+4. **THEN** implement the solution based on official documentation
+
+This prevents wasted iterations and ensures correct implementations from the start.
+
+## Technology Stack
+
+- **Framework**: React 19 with TypeScript
+- **Build Tool**: Vite 6
+- **UI Library**: Chakra UI v3 with Emotion
+- **State Management**: Redux Toolkit with RTK Query
+- **Routing**: React Router DOM v7 (HashRouter)
+- **Forms**: React Hook Form
+- **Backend**: Appwrite SDK
+- **Charts**: Recharts
+
+## TypeScript Conventions
+
+- Use TypeScript for all files (`.ts`, `.tsx`)
+- Prefer interfaces over types for object shapes
+- Use enums for finite sets of values (e.g., `PostStatus`)
+- Appwrite documents use `$id` as the identifier field
+
+@types.ts
+
+## Component Patterns
+
+- Use functional components with `export default function ComponentName()`
+- Define props inline for simple components: `{ prop }: { prop: Type }`
+- Co-locate small sub-components in the same file
+- Import React explicitly: `import React from 'react'`
+
+## RTL (Right-to-Left) Guidelines
+
+- HTML has `lang="he" dir="rtl"` set
+- Use Hebrew for all UI labels and messages
+- For LTR content (dates, emails, code), use `dir="ltr"` attribute
+- Chart containers need `style={{ direction: 'ltr' }}`
+
+## Hebrew Text Standards
+
+- Error messages: `'שגיאה בהתחברות'`, `'שדה חובה'`
+- Loading states: `'טוען נתונים...'`, `'טוען פוסטים...'`
+- Confirmations: `'האם אתה בטוח שברצונך למחוק?'`
+- Buttons: `'התחבר'`, `'שמור'`, `'ביטול'`, `'מחק'`, `'ערוך'`
+
+## File Organization
+
+```
+├── theme.ts                 # Chakra UI custom theme
+├── components/ui/provider.tsx  # Chakra provider
+├── components/Layout.tsx    # Main layout with sidebar
+├── pages/                   # Page components
+├── services/api.ts          # RTK Query API
+└── store.ts                 # Redux store
+```

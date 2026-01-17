@@ -1,0 +1,107 @@
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useGetProductsQuery, useDeleteProductMutation } from '../services/api';
+import { VStack } from '@chakra-ui/react';
+import { LoadingState, PageHeader } from '../components/shared';
+import { ProductsFilterToolbar, ProductsTable } from '../components/products';
+
+// Sample product images for display
+const productImages = [
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuA6yEFtBfCi6R-A-lM2s3rZAbfh-E1ZRqy3GQrA4VjjLpKFeHSdjz3rh2S_8JHe_JgMP3IbomRXYD8Ij8xqjUqhLMvaaYYFeVMuQ1hgwqFKr286N6OJ7Q6Gl6Sb3r5IBHJoZY5dVwrx6DV5E-Tn9WYsFcE14kQuJq_eW2oa_ylzbSprigxwXuGvE7OINLFn4q9QUnoLYn6Ie8Q2thNMMWU_-YtT88cF-ywCslkC8WoY1l460-fnKHhXITurvZBx5WlDi0t6Q-sWsg',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuBLQTiVirMdFO6Y3FL4kFi4w946KPqmC1Z-RfPKa-VI5ODxNqR80seXB9QHzsUwLMMniSWydWr5_d1XAxZO-yImHxBUgXhlS3TNNZ73YV0RIAfKPmwmItiQC1nYzMLs0L1_jkuW7zXOkN4i_a1ZBYpAE9qyGtQWC29mBgkjysy70Ase25CZ_T8u-fWj7EoXhXxPG5M8GSR6FIWBrlxUYQAqK5VheNhViOdKxTWb4E6Z7ZRESZKMls5u0luft54EHvqj8q3SyZkMdA',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAzlo10Nq6-hELrI-Kiv1Fv4RRqwGI_Ov9S-2vtXpJ4IFj4Un2hUwZ3W0aLW6ZIiaSFE5w_3De3Jol3YG6XI9_S3NmrlhpgvgvySlF6dpoashzc1XTWay2pPZMRo-FEvOfcH3bi-Iae3noHitVgfsar8-PCEgXaw41gfpFOQkgGZeZUX7SDlDtFqySVGENw7yKBv48D8pOR4DsLCDqO1Wkg3MCWjuTX4b-xwHfuEHU4P95JMOEFPbwKnvv_ChqmdcaRYGsgUdSAgA',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuAXSM94jp3rYNUvmGTNi_jD4pB-FLQ1lg9f0THA4YkzA_DG-MKIBnFP8SyuhhSekru7ErOs5KvDtC3Bl_NPAwW92MiOFPW0WXyUPeQ6vwqApJNQtH5tEPAoo38x9jm_8dyeV7UyuvZbsblBdOh8mdsQVN_2h4D_SpGXMnsIIoy8QqhCLlkEaZxo_d5_cM-tDMWUuKnjpq8kysSH90qfs9YhU_nBSVDTX7riUR-m9xG24HT1DuFhmlKyggnJSGRNdwzWlZl32LBMFQ',
+  'https://lh3.googleusercontent.com/aida-public/AB6AXuClJjWbcXEQCsicgRXJpssjEfrfl6ij503ghWJb6B5e9e5GpEchfrSHslsSzIKDnwEQ52nvlYwdvQ2axU_Hjocbsps5powZLQpjbHXh0aLexU8UDnSdUcY0R0cZrzHAYd3Ly-0XifNvR-7k0tUp71N7HfXMj-tbf1M6BLRuWzS0qSKex4gbnxZS4Q8BjqYsEJo9HCJcVlZfTDi0JOe2i3tpgnX__6IZeSt21BYf4hgiBgTR5u2tcFVfY1TBxd7B4KARfD_t7FiCXw',
+];
+
+// Sample categories
+const categories = ['ביגוד', 'הנעלה', 'אביזרים', 'אלקטרוניקה', 'בית וגן'];
+
+export default function Products() {
+  const navigate = useNavigate();
+  const { data: products, isLoading } = useGetProductsQuery(undefined);
+  const [deleteProduct] = useDeleteProductMutation();
+
+  // Filter States
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const productsPerPage = 10;
+
+  if (isLoading) {
+    return <LoadingState message="טוען מוצרים..." />;
+  }
+
+  const filteredProducts = products?.filter(product => {
+    const matchesSearch = product.title.includes(searchTerm);
+    const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  }) || [];
+
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  );
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm('האם אתה בטוח שברצונך למחוק מוצר זה?')) {
+      await deleteProduct(id);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedProducts(paginatedProducts.map(p => p.$id));
+    } else {
+      setSelectedProducts([]);
+    }
+  };
+
+  const handleSelectProduct = (productId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedProducts(prev => [...prev, productId]);
+    } else {
+      setSelectedProducts(prev => prev.filter(id => id !== productId));
+    }
+  };
+
+  const getRandomCategory = (index: number): string => categories[index % categories.length];
+  const getRandomImage = (index: number): string => productImages[index % productImages.length];
+
+  return (
+    <VStack gap="0" align="stretch" h="full">
+      <PageHeader
+        title="מוצרים"
+        subtitle="ניהול ועריכת המוצרים בחנות, מעקב אחר מלאי וסטטוסים."
+        actionLabel="מוצר חדש"
+        actionIcon="add"
+        onAction={() => navigate('/products/new')}
+      />
+
+      <ProductsFilterToolbar
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+      />
+
+      <ProductsTable
+        products={paginatedProducts}
+        selectedProducts={selectedProducts}
+        onSelectAll={handleSelectAll}
+        onSelectProduct={handleSelectProduct}
+        onEdit={(productId) => navigate(`/products/${productId}/edit`)}
+        onDelete={handleDelete}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={filteredProducts.length}
+        itemsPerPage={productsPerPage}
+        onPageChange={setCurrentPage}
+        getRandomCategory={getRandomCategory}
+        getRandomImage={getRandomImage}
+      />
+    </VStack>
+  );
+}

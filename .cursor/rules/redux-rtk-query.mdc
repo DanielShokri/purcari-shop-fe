@@ -1,0 +1,56 @@
+---
+description: "Redux Toolkit and RTK Query patterns for API calls and state management"
+globs: ["services/**/*.ts", "store.ts"]
+alwaysApply: false
+---
+
+# Redux & RTK Query Rules
+
+## RTK Query Endpoints
+
+Use `fakeBaseQuery()` with `queryFn` pattern:
+
+```typescript
+getPosts: builder.query({
+  queryFn: async () => {
+    try {
+      // API call logic
+      return { data: posts };
+    } catch (error: any) {
+      return { error: error.message };
+    }
+  },
+  providesTags: ['Posts'],
+}),
+```
+
+## Mutations with Cache Invalidation
+
+```typescript
+createPost: builder.mutation({
+  queryFn: async (newPost: Partial<Post>) => {
+    // Create logic
+    return { data: post };
+  },
+  invalidatesTags: ['Posts'],
+}),
+```
+
+## Typed Hooks
+
+Export and use typed hooks:
+
+```typescript
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+```
+
+## Auth State Pattern
+
+- Store user in Redux state
+- Use `setCredentials` action on login
+- Use `logoutUser` action on logout
+- Wrap localStorage access in try-catch
+
+@store.ts
+@services/api.ts

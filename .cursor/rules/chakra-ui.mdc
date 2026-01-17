@@ -1,0 +1,68 @@
+---
+description: "Chakra UI v3 component patterns and styling conventions"
+globs: ["**/*.tsx", "**/*.ts"]
+alwaysApply: false
+---
+
+# Chakra UI Styling Rules
+
+## Component Imports
+
+Always import from `@chakra-ui/react`:
+
+```typescript
+import {
+  Box, Flex, VStack, HStack,
+  Text, Heading,
+  Button, Input, Textarea,
+  Card, Table, Badge, Dialog,
+  Field, Alert, Spinner
+} from '@chakra-ui/react';
+```
+
+## Compound Components
+
+Use Chakra's compound component pattern:
+
+- `Card.Root`, `Card.Body`, `Card.Header`, `Card.Footer`
+- `Table.Root`, `Table.Header`, `Table.Body`, `Table.Row`, `Table.Cell`
+- `Dialog.Root`, `Dialog.Header`, `Dialog.Body`, `Dialog.Footer`
+- `Field.Root`, `Field.Label`, `Field.ErrorText`
+- `Alert.Root`, `Alert.Indicator`, `Alert.Content`
+
+## Semantic Tokens
+
+Use semantic color tokens for automatic dark mode:
+
+- Backgrounds: `bg`, `bg.panel`, `bg.subtle`, `bg.muted`
+- Text: `fg`, `fg.muted`, `fg.subtle`
+- Borders: `border`, `border.muted`
+
+## Color Palettes
+
+Use `colorPalette` prop for consistent theming:
+
+```typescript
+<Button colorPalette="blue">Primary</Button>
+<Badge colorPalette="green">Success</Badge>
+<Alert.Root status="error">Error</Alert.Root>
+```
+
+## Layout Components
+
+- `Flex` / `HStack` / `VStack` for flexbox layouts
+- `SimpleGrid` for responsive grids
+- `Box` for generic containers
+
+## Form Patterns
+
+```typescript
+<Field.Root invalid={!!errors.fieldName}>
+  <Field.Label>Label</Field.Label>
+  <Input {...register('fieldName')} />
+  <Field.ErrorText>{errors.fieldName?.message}</Field.ErrorText>
+</Field.Root>
+```
+
+@theme.ts
+@components/ui/provider.tsx
