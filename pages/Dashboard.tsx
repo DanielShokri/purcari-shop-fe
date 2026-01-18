@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGetStatsQuery, useGetRecentOrdersQuery, useGetMonthlySalesQuery } from '../services/api';
 import {
@@ -58,30 +58,6 @@ const formatDate = (dateStr: string): string => {
   });
 };
 
-// Test component that throws error during render when triggered
-function TestErrorButton() {
-  const [shouldError, setShouldError] = useState(false);
-  
-  if (shouldError) {
-    throw new Error('Test error for ErrorBoundary');
-  }
-  
-  return (
-    <Button
-      colorPalette="red"
-      size="sm"
-      fontWeight="medium"
-      variant="outline"
-      onClick={() => setShouldError(true)}
-    >
-      <Text as="span" className="material-symbols-outlined" fontSize="18px" ml="2">
-        bug_report
-      </Text>
-      בדיקת שגיאה
-    </Button>
-  );
-}
-
 export default function Dashboard() {
   const navigate = useNavigate();
   const { data: stats, isLoading: statsLoading } = useGetStatsQuery();
@@ -123,22 +99,18 @@ export default function Dashboard() {
             ברוך הבא למערכת הניהול, להלן הנתונים להיום.
           </Text>
         </Box>
-        <Flex gap="2">
-          {/* TODO: Remove this test button after verifying ErrorBoundary */}
-          <TestErrorButton />
-          <Button
-            colorPalette="blue"
-            size="sm"
-            fontWeight="medium"
-            shadow="lg"
-            _hover={{ bg: 'blue.600' }}
-          >
-            <Text as="span" className="material-symbols-outlined" fontSize="18px" ml="2">
-              add
-            </Text>
-            דוח חדש
-          </Button>
-        </Flex>
+        <Button
+          colorPalette="blue"
+          size="sm"
+          fontWeight="medium"
+          shadow="lg"
+          _hover={{ bg: 'blue.600' }}
+        >
+          <Text as="span" className="material-symbols-outlined" fontSize="18px" ml="2">
+            add
+          </Text>
+          דוח חדש
+        </Button>
       </Flex>
 
       {/* Stats Grid */}

@@ -15,90 +15,11 @@ function ErrorFallback({ onRefresh, onGoHome }: ErrorFallbackProps) {
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column' as const,
-      overflow: 'hidden',
-      fontFamily: "'Heebo', 'Inter', sans-serif",
-      direction: 'rtl' as const,
-    },
-    header: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      borderBottom: '1px solid #e7ecf4',
-      padding: '12px 24px',
-      backgroundColor: '#ffffff',
-    },
-    logoContainer: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-    },
-    logoIcon: {
-      width: '32px',
-      height: '32px',
-      color: '#3c83f6',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'rgba(60, 131, 246, 0.1)',
-      borderRadius: '8px',
-    },
-    logoText: {
-      fontSize: '18px',
-      fontWeight: 700,
-      margin: 0,
-    },
-    mainWrapper: {
-      display: 'flex',
-      flex: 1,
-      overflow: 'hidden',
-    },
-    sidebar: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      width: '256px',
-      backgroundColor: '#ffffff',
-      borderLeft: '1px solid #e7ecf4',
-      padding: '24px 16px',
-      gap: '8px',
-    },
-    sidebarSection: {
-      padding: '0 12px',
-      marginBottom: '8px',
-      fontSize: '12px',
-      fontWeight: 600,
-      color: '#64748b',
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.05em',
-    },
-    sidebarLink: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      padding: '10px 12px',
-      borderRadius: '8px',
-      color: '#0d131c',
-      textDecoration: 'none',
-      fontSize: '14px',
-      fontWeight: 500,
-      transition: 'background-color 0.2s',
-    },
-    sidebarIcon: {
-      color: '#64748b',
-      fontSize: '20px',
-    },
-    divider: {
-      margin: '8px 0',
-      borderTop: '1px solid #e7ecf4',
-    },
-    main: {
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column' as const,
       alignItems: 'center',
       justifyContent: 'center',
       padding: '24px',
-      backgroundColor: '#f5f7f8',
-      overflow: 'auto',
+      fontFamily: "'Heebo', 'Inter', sans-serif",
+      direction: 'rtl' as const,
     },
     content: {
       width: '100%',
@@ -140,7 +61,6 @@ function ErrorFallback({ onRefresh, onGoHome }: ErrorFallbackProps) {
       fontSize: '30px',
       fontWeight: 700,
       lineHeight: 1.2,
-      marginBottom: '16px',
       margin: '0 0 16px 0',
     },
     bodyText: {
@@ -148,7 +68,6 @@ function ErrorFallback({ onRefresh, onGoHome }: ErrorFallbackProps) {
       fontSize: '18px',
       fontWeight: 400,
       lineHeight: 1.6,
-      marginBottom: '40px',
       maxWidth: '400px',
       margin: '0 0 40px 0',
     },
@@ -211,87 +130,49 @@ function ErrorFallback({ onRefresh, onGoHome }: ErrorFallbackProps) {
 
   return (
     <div style={styles.container}>
-      {/* Header */}
-      <header style={styles.header}>
-        <div style={styles.logoContainer}>
-          <div style={styles.logoIcon}>
-            <span className="material-symbols-outlined">grid_view</span>
+      <div style={styles.content}>
+        {/* Illustration */}
+        <div style={styles.illustrationWrapper}>
+          <div style={styles.blob}></div>
+          <div style={styles.iconWrapper}>
+            <span className="material-symbols-outlined" style={styles.warningIcon}>warning_amber</span>
           </div>
-          <h2 style={styles.logoText}>מערכת ניהול</h2>
         </div>
-      </header>
 
-      <div style={styles.mainWrapper}>
-        {/* Sidebar - hidden on mobile via media query would need JS, keeping simple */}
-        <nav style={styles.sidebar}>
-          <div style={styles.sidebarSection}>ראשי</div>
-          <a style={styles.sidebarLink} href="#/">
-            <span className="material-symbols-outlined" style={styles.sidebarIcon}>dashboard</span>
-            <span>לוח בקרה</span>
-          </a>
-          <a style={styles.sidebarLink} href="#/users">
-            <span className="material-symbols-outlined" style={styles.sidebarIcon}>group</span>
-            <span>משתמשים</span>
-          </a>
-          <a style={styles.sidebarLink} href="#/analytics">
-            <span className="material-symbols-outlined" style={styles.sidebarIcon}>analytics</span>
-            <span>דוחות</span>
-          </a>
-          <div style={styles.divider}></div>
-          <div style={styles.sidebarSection}>מערכת</div>
-          <a style={styles.sidebarLink} href="#/settings">
-            <span className="material-symbols-outlined" style={styles.sidebarIcon}>settings</span>
-            <span>הגדרות</span>
-          </a>
-        </nav>
+        {/* Headline */}
+        <h1 style={styles.headline}>אופס! משהו השתבש</h1>
 
-        {/* Main Content */}
-        <main style={styles.main}>
-          <div style={styles.content}>
-            {/* Illustration */}
-            <div style={styles.illustrationWrapper}>
-              <div style={styles.blob}></div>
-              <div style={styles.iconWrapper}>
-                <span className="material-symbols-outlined" style={styles.warningIcon}>warning_amber</span>
-              </div>
-            </div>
+        {/* Body Text */}
+        <p style={styles.bodyText}>
+          נתקלנו בשגיאה בלתי צפויה. אנחנו כבר עובדים על התיקון. ניתן לנסות לרענן את הדף או לחזור ללוח הבקרה
+        </p>
 
-            {/* Headline */}
-            <h1 style={styles.headline}>אופס! משהו השתבש</h1>
+        {/* Action Buttons */}
+        <div style={styles.buttonContainer}>
+          <button
+            onClick={onRefresh}
+            style={styles.buttonSecondary}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8f9fc'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+          >
+            <span className="material-symbols-outlined" style={styles.buttonIcon}>refresh</span>
+            <span>רענן דף</span>
+          </button>
+          <button
+            onClick={onGoHome}
+            style={styles.buttonPrimary}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(60, 131, 246, 0.9)'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3c83f6'}
+          >
+            <span className="material-symbols-outlined" style={{ ...styles.buttonIcon, transform: 'scaleX(-1)' }}>arrow_back</span>
+            <span>חזרה ללוח הבקרה</span>
+          </button>
+        </div>
 
-            {/* Body Text */}
-            <p style={styles.bodyText}>
-              נתקלנו בשגיאה בלתי צפויה. אנחנו כבר עובדים על התיקון. ניתן לנסות לרענן את הדף או לחזור ללוח הבקרה
-            </p>
-
-            {/* Action Buttons */}
-            <div style={styles.buttonContainer}>
-              <button
-                onClick={onRefresh}
-                style={styles.buttonSecondary}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8f9fc'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
-              >
-                <span className="material-symbols-outlined" style={styles.buttonIcon}>refresh</span>
-                <span>רענן דף</span>
-              </button>
-              <button
-                onClick={onGoHome}
-                style={styles.buttonPrimary}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'rgba(60, 131, 246, 0.9)'}
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#3c83f6'}
-              >
-                <span className="material-symbols-outlined" style={{ ...styles.buttonIcon, transform: 'scaleX(-1)' }}>arrow_back</span>
-                <span>חזרה ללוח הבקרה</span>
-              </button>
-            </div>
-
-            {/* Error Code */}
-            <div style={styles.errorCode}>
-              <p>קוד שגיאה: <span style={styles.errorCodeBadge}>ERR_UNEXPECTED</span></p>
-            </div>
-          </div>
-        </main>
+        {/* Error Code */}
+        <div style={styles.errorCode}>
+          <p>קוד שגיאה: <span style={styles.errorCodeBadge}>ERR_UNEXPECTED</span></p>
+        </div>
       </div>
     </div>
   );
