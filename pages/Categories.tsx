@@ -33,7 +33,7 @@ export default function Categories() {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['1']));
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<CategoryFormData>({
+  const { register, handleSubmit, formState: { errors }, reset, control } = useForm<CategoryFormData>({
     defaultValues: {
       name: '',
       parentId: null,
@@ -257,6 +257,7 @@ export default function Categories() {
             selectedCategoryId={selectedCategoryId}
             register={register}
             errors={errors}
+            control={control}
             onSubmit={handleSubmit(onSubmit)}
             onCancel={handleCancel}
           />

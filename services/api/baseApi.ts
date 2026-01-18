@@ -4,6 +4,6 @@ import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fakeBaseQuery(),
-  tagTypes: ['Products', 'Categories', 'User', 'Users', 'Orders'],
+  tagTypes: ['Products', 'Categories', 'User', 'Users', 'Orders', 'Search'],
   endpoints: () => ({}), // Empty - endpoints injected by slices
 });

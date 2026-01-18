@@ -27,14 +27,14 @@ This prevents wasted iterations and ensures correct implementations from the sta
 - **State Management**: Redux Toolkit with RTK Query
 - **Routing**: React Router DOM v7 (HashRouter)
 - **Forms**: React Hook Form
-- **Backend**: Appwrite SDK
+- **Backend**: Appwrite SDK (Cloud)
 - **Charts**: Recharts
 
 ## TypeScript Conventions
 
 - Use TypeScript for all files (`.ts`, `.tsx`)
 - Prefer interfaces over types for object shapes
-- Use enums for finite sets of values (e.g., `PostStatus`)
+- Use enums for finite sets of values (e.g., `OrderStatus`, `UserRole`)
 - Appwrite documents use `$id` as the identifier field
 
 @types.ts
@@ -64,9 +64,25 @@ This prevents wasted iterations and ensures correct implementations from the sta
 
 ```
 ├── theme.ts                 # Chakra UI custom theme
-├── components/ui/provider.tsx  # Chakra provider
-├── components/Layout.tsx    # Main layout with sidebar
-├── pages/                   # Page components
-├── services/api.ts          # RTK Query API
+├── components/
+│   ├── ui/                  # Chakra provider & utilities
+│   ├── shared/              # Reusable components (Pagination, StatusBadge, etc.)
+│   ├── search/              # Global search components
+│   ├── products/            # Product-specific components
+│   ├── orders/              # Order-specific components
+│   ├── users/               # User-specific components
+│   ├── categories/          # Category-specific components
+│   └── dashboard/           # Dashboard widgets
+├── pages/                   # Page components (Dashboard, Products, Orders, Search, etc.)
+├── services/
+│   ├── appwrite.ts         # Appwrite client configuration
+│   └── api/                 # RTK Query API slices by domain
+│       ├── baseApi.ts      # RTK Query base API
+│       ├── authApi.ts      # Authentication endpoints
+│       ├── productsApi.ts  # Products CRUD
+│       ├── ordersApi.ts    # Orders CRUD
+│       ├── usersApi.ts     # Users management
+│       ├── categoriesApi.ts # Categories CRUD
+│       └── searchApi.ts    # Global search
 └── store.ts                 # Redux store
 ```

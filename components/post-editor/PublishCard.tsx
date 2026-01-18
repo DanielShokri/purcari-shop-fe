@@ -1,5 +1,5 @@
 import React from 'react';
-import { UseFormRegister } from 'react-hook-form';
+import { Control, Controller } from 'react-hook-form';
 import {
   Box,
   Flex,
@@ -10,12 +10,14 @@ import {
   Input,
   Button,
   Card,
-  NativeSelect,
+  Select,
+  Portal,
+  createListCollection,
 } from '@chakra-ui/react';
 import { Product, ProductStatus } from '../../types';
 
 interface PublishCardProps {
-  register: UseFormRegister<Partial<Product>>;
+  control: Control<Partial<Product>>;
   isEditMode: boolean;
   isCreating: boolean;
   isUpdating: boolean;
@@ -23,8 +25,16 @@ interface PublishCardProps {
   onDelete: () => void;
 }
 
+const statusOptions = createListCollection({
+  items: [
+    { label: 'פורסם', value: ProductStatus.PUBLISHED },
+    { label: 'טיוטה', value: ProductStatus.DRAFT },
+    { label: 'ממתין לאישור', value: ProductStatus.ARCHIVED },
+  ],
+});
+
 export default function PublishCard({
-  register,
+  control,
   isEditMode,
   isCreating,
   isUpdating,
@@ -56,23 +66,47 @@ export default function PublishCard({
             <Text fontSize="xs" fontWeight="bold" color="fg.muted" textTransform="uppercase" letterSpacing="wider">
               סטטוס
             </Text>
-            <NativeSelect.Root
-              size="sm"
-              bg="bg.subtle"
-              borderColor="border"
-              _focus={{ ringColor: 'blue.500', borderColor: 'blue.500' }}
-            >
-              <NativeSelect.Field {...register('status')}>
-                <option value={ProductStatus.PUBLISHED}>פורסם</option>
-                <option value={ProductStatus.DRAFT}>טיוטה</option>
-                <option value={ProductStatus.ARCHIVED}>ממתין לאישור</option>
-              </NativeSelect.Field>
-              <NativeSelect.Indicator>
-                <Text as="span" className="material-symbols-outlined" fontSize="xl" color="fg.muted">
-                  expand_more
-                </Text>
-              </NativeSelect.Indicator>
-            </NativeSelect.Root>
+            <Controller
+              control={control}
+              name="status"
+              render={({ field }) => (
+                <Select.Root
+                  collection={statusOptions}
+                  size="sm"
+                  value={field.value ? [field.value] : []}
+                  onValueChange={(e) => field.onChange(e.value[0] as ProductStatus)}
+                  onInteractOutside={() => field.onBlur()}
+                >
+                  <Select.HiddenSelect />
+                  <Select.Control>
+                    <Select.Trigger
+                      bg="bg.subtle"
+                      borderColor="border"
+                      _focus={{ ringColor: 'blue.500', borderColor: 'blue.500' }}
+                    >
+                      <Select.ValueText placeholder="בחר סטטוס" />
+                    </Select.Trigger>
+                    <Select.IndicatorGroup>
+                      <Text as="span" className="material-symbols-outlined" fontSize="xl" color="fg.muted">
+                        expand_more
+                      </Text>
+                    </Select.IndicatorGroup>
+                  </Select.Control>
+                  <Portal>
+                    <Select.Positioner>
+                      <Select.Content>
+                        {statusOptions.items.map((item) => (
+                          <Select.Item item={item} key={item.value}>
+                            {item.label}
+                            <Select.ItemIndicator />
+                          </Select.Item>
+                        ))}
+                      </Select.Content>
+                    </Select.Positioner>
+                  </Portal>
+                </Select.Root>
+              )}
+            />
           </VStack>
 
           {/* Publish Date */}

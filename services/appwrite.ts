@@ -61,11 +61,22 @@ export const usersApi = {
       return result.data;
     } catch (error: any) {
       // Handle execution errors
-      const errorMessage = error.message || 'שגיאה בקריאה לפונקציה';
+      const errorMessage = error.message || 'Function execution error';
+      const errorCode = error.code || error.type || '';
       
       // Provide helpful error message if function doesn't exist
-      if (errorMessage.includes('not found') || errorMessage.includes('404')) {
-        throw new Error('הפונקציה לא נמצאה. אנא ודא שהפונקציה users-management מוגדרת ומופעלת ב-Appwrite Console.');
+      if (
+        errorCode === 'function_not_found' ||
+        errorCode === 404 ||
+        errorMessage.toLowerCase().includes('not found') ||
+        errorMessage.toLowerCase().includes('404') ||
+        errorMessage.toLowerCase().includes('function_not_found')
+      ) {
+        throw new Error(
+          'Cloud Function "users-management" not found. ' +
+          'Please create and deploy the function in Appwrite Console. ' +
+          'See functions/users-management/README.md for instructions.'
+        );
       }
       
       throw new Error(errorMessage);

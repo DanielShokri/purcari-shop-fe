@@ -1,6 +1,5 @@
 import React from 'react';
-import { Flex, Box, Input, InputGroup, Text } from '@chakra-ui/react';
-import { NativeSelect } from '@chakra-ui/react';
+import { Flex, Box, Input, InputGroup, Text, Select, Portal, createListCollection } from '@chakra-ui/react';
 
 interface OrdersFilterToolbarProps {
   searchTerm: string;
@@ -10,6 +9,25 @@ interface OrdersFilterToolbarProps {
   dateFilter: string;
   onDateFilterChange: (value: string) => void;
 }
+
+const statusOptions = createListCollection({
+  items: [
+    { label: 'כל הסטטוסים', value: 'all' },
+    { label: 'הושלם', value: 'completed' },
+    { label: 'בטיפול', value: 'processing' },
+    { label: 'ממתין לתשלום', value: 'pending' },
+    { label: 'בוטל', value: 'cancelled' },
+  ],
+});
+
+const dateOptions = createListCollection({
+  items: [
+    { label: 'כל התאריכים', value: 'all' },
+    { label: 'היום', value: 'today' },
+    { label: 'השבוע', value: 'week' },
+    { label: 'החודש', value: 'month' },
+  ],
+});
 
 export default function OrdersFilterToolbar({
   searchTerm,
@@ -49,49 +67,78 @@ export default function OrdersFilterToolbar({
 
       {/* Status Filter */}
       <Box flex="1" minW="150px">
-        <NativeSelect.Root size="md">
-          <NativeSelect.Field
-            value={statusFilter}
-            onChange={(e) => onStatusFilterChange(e.target.value)}
-            bg="bg.panel"
-            borderColor="border"
-            _hover={{ borderColor: 'border.hover' }}
-          >
-            <option value="all">כל הסטטוסים</option>
-            <option value="completed">הושלם</option>
-            <option value="processing">בטיפול</option>
-            <option value="pending">ממתין לתשלום</option>
-            <option value="cancelled">בוטל</option>
-          </NativeSelect.Field>
-          <NativeSelect.Indicator>
-            <Text as="span" className="material-symbols-outlined" fontSize="18px" color="fg.muted">
-              filter_list
-            </Text>
-          </NativeSelect.Indicator>
-        </NativeSelect.Root>
+        <Select.Root
+          collection={statusOptions}
+          size="md"
+          value={[statusFilter]}
+          onValueChange={(e) => onStatusFilterChange(e.value[0])}
+        >
+          <Select.HiddenSelect />
+          <Select.Control>
+            <Select.Trigger
+              bg="bg.panel"
+              borderColor="border"
+              _hover={{ borderColor: 'border.hover' }}
+            >
+              <Select.ValueText placeholder="כל הסטטוסים" />
+            </Select.Trigger>
+            <Select.IndicatorGroup>
+              <Text as="span" className="material-symbols-outlined" fontSize="18px" color="fg.muted">
+                filter_list
+              </Text>
+            </Select.IndicatorGroup>
+          </Select.Control>
+          <Portal>
+            <Select.Positioner>
+              <Select.Content>
+                {statusOptions.items.map((item) => (
+                  <Select.Item item={item} key={item.value}>
+                    {item.label}
+                    <Select.ItemIndicator />
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Positioner>
+          </Portal>
+        </Select.Root>
       </Box>
 
       {/* Date Filter */}
       <Box flex="1" minW="150px">
-        <NativeSelect.Root size="md">
-          <NativeSelect.Field
-            value={dateFilter}
-            onChange={(e) => onDateFilterChange(e.target.value)}
-            bg="bg.panel"
-            borderColor="border"
-            _hover={{ borderColor: 'border.hover' }}
-          >
-            <option value="all">כל התאריכים</option>
-            <option value="today">היום</option>
-            <option value="week">השבוע</option>
-            <option value="month">החודש</option>
-          </NativeSelect.Field>
-          <NativeSelect.Indicator>
-            <Text as="span" className="material-symbols-outlined" fontSize="18px" color="fg.muted">
-              calendar_today
-            </Text>
-          </NativeSelect.Indicator>
-        </NativeSelect.Root>
+        <Select.Root
+          collection={dateOptions}
+          size="md"
+          value={[dateFilter]}
+          onValueChange={(e) => onDateFilterChange(e.value[0])}
+        >
+          <Select.HiddenSelect />
+          <Select.Control>
+            <Select.Trigger
+              bg="bg.panel"
+              borderColor="border"
+              _hover={{ borderColor: 'border.hover' }}
+            >
+              <Select.ValueText placeholder="כל התאריכים" />
+            </Select.Trigger>
+            <Select.IndicatorGroup>
+              <Text as="span" className="material-symbols-outlined" fontSize="18px" color="fg.muted">
+                calendar_today
+              </Text>
+            </Select.IndicatorGroup>
+          </Select.Control>
+          <Portal>
+            <Select.Positioner>
+              <Select.Content>
+                {dateOptions.items.map((item) => (
+                  <Select.Item item={item} key={item.value}>
+                    {item.label}
+                    <Select.ItemIndicator />
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Positioner>
+          </Portal>
+        </Select.Root>
       </Box>
     </Flex>
   );

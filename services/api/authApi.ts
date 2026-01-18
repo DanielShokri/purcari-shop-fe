@@ -1,9 +1,35 @@
 import { api } from './baseApi';
 import { AuthUser } from '../../types';
 import { account } from '../appwrite';
+import { ID } from 'appwrite';
 
 const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
+    // Register a new user (Client SDK - works from browser)
+    register: builder.mutation<AuthUser, { email: string; password: string; name: string }>({
+      queryFn: async ({ email, password, name }) => {
+        try {
+          // Create new user account (Client SDK - no server needed!)
+          await account.create(ID.unique(), email, password, name);
+          // Auto-login after registration
+          await account.createEmailPasswordSession(email, password);
+          // Fetch user data
+          const user = await account.get();
+          const authUser: AuthUser = { 
+            $id: user.$id, 
+            name: user.name, 
+            email: user.email, 
+            prefs: user.prefs 
+          };
+          return { data: authUser };
+        } catch (error: any) {
+          const message = error.message || 'שגיאה ביצירת חשבון';
+          return { error: message };
+        }
+      },
+      invalidatesTags: ['User'],
+    }),
+
     login: builder.mutation<AuthUser, { email: string; password: string }>({
       queryFn: async ({ email, password }) => {
         try {
@@ -63,6 +89,7 @@ const authApi = api.injectEndpoints({
 });
 
 export const { 
+  useRegisterMutation,
   useLoginMutation, 
   useLogoutMutation, 
   useGetCurrentUserQuery 

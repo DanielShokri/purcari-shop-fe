@@ -13,7 +13,9 @@ import {
   Table,
   Image,
   Flex,
-  NativeSelect,
+  Select,
+  Portal,
+  createListCollection,
   Separator,
 } from '@chakra-ui/react';
 import { LoadingState, Breadcrumbs, StatusBadge, orderStatusConfig } from '../components/shared';
@@ -44,6 +46,15 @@ const formatShortDate = (dateStr: string) => {
 const formatCurrency = (amount: number) => {
   return `₪${amount.toFixed(2)}`;
 };
+
+const orderStatusOptions = createListCollection({
+  items: [
+    { label: 'ממתין', value: OrderStatus.PENDING },
+    { label: 'בטיפול', value: OrderStatus.PROCESSING },
+    { label: 'הושלם', value: OrderStatus.COMPLETED },
+    { label: 'בוטל', value: OrderStatus.CANCELLED },
+  ],
+});
 
 export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();
@@ -156,21 +167,39 @@ export default function OrderDetails() {
             <Text fontSize="sm" fontWeight="medium" color="fg.muted" mb="2">
               סטטוס
             </Text>
-            <NativeSelect.Root size="sm" disabled={isUpdating}>
-              <NativeSelect.Field
-                value={order.status}
-                onChange={(e) => handleStatusChange(e.target.value as OrderStatus)}
-                bg="bg.subtle"
-                borderColor="border"
-                fontWeight="medium"
-              >
-                <option value={OrderStatus.PENDING}>ממתין</option>
-                <option value={OrderStatus.PROCESSING}>בטיפול</option>
-                <option value={OrderStatus.COMPLETED}>הושלם</option>
-                <option value={OrderStatus.CANCELLED}>בוטל</option>
-              </NativeSelect.Field>
-              <NativeSelect.Indicator />
-            </NativeSelect.Root>
+            <Select.Root
+              collection={orderStatusOptions}
+              size="sm"
+              value={[order.status]}
+              onValueChange={(e) => handleStatusChange(e.value[0] as OrderStatus)}
+              disabled={isUpdating}
+            >
+              <Select.HiddenSelect />
+              <Select.Control>
+                <Select.Trigger
+                  bg="bg.subtle"
+                  borderColor="border"
+                  fontWeight="medium"
+                >
+                  <Select.ValueText placeholder="בחר סטטוס" />
+                </Select.Trigger>
+                <Select.IndicatorGroup>
+                  <Select.Indicator />
+                </Select.IndicatorGroup>
+              </Select.Control>
+              <Portal>
+                <Select.Positioner>
+                  <Select.Content>
+                    {orderStatusOptions.items.map((item) => (
+                      <Select.Item item={item} key={item.value}>
+                        {item.label}
+                        <Select.ItemIndicator />
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Positioner>
+              </Portal>
+            </Select.Root>
           </Card.Body>
         </Card.Root>
 

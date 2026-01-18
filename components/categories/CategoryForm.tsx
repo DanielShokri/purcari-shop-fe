@@ -1,5 +1,5 @@
-import React from 'react';
-import { UseFormRegister, FieldErrors } from 'react-hook-form';
+import React, { useMemo } from 'react';
+import { UseFormRegister, FieldErrors, Control, Controller } from 'react-hook-form';
 import {
   Box,
   Flex,
@@ -10,7 +10,9 @@ import {
   Input,
   Button,
   Card,
-  NativeSelect,
+  Select,
+  Portal,
+  createListCollection,
   Textarea,
   Field,
 } from '@chakra-ui/react';
@@ -30,9 +32,18 @@ interface CategoryFormProps {
   selectedCategoryId: string | null;
   register: UseFormRegister<CategoryFormData>;
   errors: FieldErrors<CategoryFormData>;
+  control: Control<CategoryFormData>;
   onSubmit: (e: React.FormEvent) => void;
   onCancel: () => void;
 }
+
+const statusOptions = createListCollection({
+  items: [
+    { label: 'פעיל', value: CategoryStatus.ACTIVE },
+    { label: 'טיוטה', value: CategoryStatus.DRAFT },
+    { label: 'מוסתר', value: CategoryStatus.HIDDEN },
+  ],
+});
 
 export default function CategoryForm({
   selectedCategory,
@@ -40,9 +51,24 @@ export default function CategoryForm({
   selectedCategoryId,
   register,
   errors,
+  control,
   onSubmit,
   onCancel
 }: CategoryFormProps) {
+  // Create dynamic collection for parent categories
+  const parentCategoryOptions = useMemo(() => {
+    const items = [
+      { label: 'ללא (קטגוריה ראשית)', value: '' },
+      ...(categories
+        ?.filter(c => c.$id !== selectedCategoryId)
+        .map(cat => ({
+          label: cat.name,
+          value: cat.$id,
+        })) || []),
+    ];
+    return createListCollection({ items });
+  }, [categories, selectedCategoryId]);
+
   return (
     <Card.Root>
       <Card.Header
@@ -79,19 +105,41 @@ export default function CategoryForm({
             {/* Parent Category */}
             <Field.Root>
               <Field.Label>קטגוריית אב</Field.Label>
-              <NativeSelect.Root size="md">
-                <NativeSelect.Field {...register('parentId')}>
-                  <option value="">ללא (קטגוריה ראשית)</option>
-                  {categories
-                    ?.filter(c => c.$id !== selectedCategoryId)
-                    .map(cat => (
-                      <option key={cat.$id} value={cat.$id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                </NativeSelect.Field>
-                <NativeSelect.Indicator />
-              </NativeSelect.Root>
+              <Controller
+                control={control}
+                name="parentId"
+                render={({ field }) => (
+                  <Select.Root
+                    collection={parentCategoryOptions}
+                    size="md"
+                    value={field.value ? [field.value] : ['']}
+                    onValueChange={(e) => field.onChange(e.value[0] || null)}
+                    onInteractOutside={() => field.onBlur()}
+                  >
+                    <Select.HiddenSelect />
+                    <Select.Control>
+                      <Select.Trigger>
+                        <Select.ValueText placeholder="ללא (קטגוריה ראשית)" />
+                      </Select.Trigger>
+                      <Select.IndicatorGroup>
+                        <Select.Indicator />
+                      </Select.IndicatorGroup>
+                    </Select.Control>
+                    <Portal>
+                      <Select.Positioner>
+                        <Select.Content>
+                          {parentCategoryOptions.items.map((item) => (
+                            <Select.Item item={item} key={item.value}>
+                              {item.label}
+                              <Select.ItemIndicator />
+                            </Select.Item>
+                          ))}
+                        </Select.Content>
+                      </Select.Positioner>
+                    </Portal>
+                  </Select.Root>
+                )}
+              />
             </Field.Root>
 
             {/* Grid for Order and Status */}
@@ -112,14 +160,41 @@ export default function CategoryForm({
               <Box flex="1">
                 <Field.Root>
                   <Field.Label>סטטוס</Field.Label>
-                  <NativeSelect.Root size="md">
-                    <NativeSelect.Field {...register('status')}>
-                      <option value={CategoryStatus.ACTIVE}>פעיל</option>
-                      <option value={CategoryStatus.DRAFT}>טיוטה</option>
-                      <option value={CategoryStatus.HIDDEN}>מוסתר</option>
-                    </NativeSelect.Field>
-                    <NativeSelect.Indicator />
-                  </NativeSelect.Root>
+                  <Controller
+                    control={control}
+                    name="status"
+                    render={({ field }) => (
+                      <Select.Root
+                        collection={statusOptions}
+                        size="md"
+                        value={[field.value]}
+                        onValueChange={(e) => field.onChange(e.value[0] as CategoryStatus)}
+                        onInteractOutside={() => field.onBlur()}
+                      >
+                        <Select.HiddenSelect />
+                        <Select.Control>
+                          <Select.Trigger>
+                            <Select.ValueText placeholder="בחר סטטוס" />
+                          </Select.Trigger>
+                          <Select.IndicatorGroup>
+                            <Select.Indicator />
+                          </Select.IndicatorGroup>
+                        </Select.Control>
+                        <Portal>
+                          <Select.Positioner>
+                            <Select.Content>
+                              {statusOptions.items.map((item) => (
+                                <Select.Item item={item} key={item.value}>
+                                  {item.label}
+                                  <Select.ItemIndicator />
+                                </Select.Item>
+                              ))}
+                            </Select.Content>
+                          </Select.Positioner>
+                        </Portal>
+                      </Select.Root>
+                    )}
+                  />
                 </Field.Root>
               </Box>
             </Flex>

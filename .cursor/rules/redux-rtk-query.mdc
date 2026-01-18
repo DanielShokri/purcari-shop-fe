@@ -45,6 +45,52 @@ export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 ```
 
+## Parallel Queries
+
+For operations that need multiple independent queries, use `Promise.all()`:
+
+```typescript
+globalSearch: builder.query<GlobalSearchResult, string>({
+  queryFn: async (searchTerm: string) => {
+    const [usersResult, ordersResult, productsResult] = await Promise.allSettled([
+      usersApi.list(),
+      databases.listDocuments({...}),
+      databases.listDocuments({...})
+    ]);
+    // Extract results, handling failures gracefully
+    return { data: aggregatedResults };
+  },
+  providesTags: ['Search'],
+}),
+```
+
+## API Slice Organization
+
+Split API endpoints by domain into separate files:
+
+- `baseApi.ts` - Base API with `createApi` and `fakeBaseQuery()`
+- `authApi.ts` - Authentication endpoints
+- `productsApi.ts` - Products CRUD operations
+- `ordersApi.ts` - Orders CRUD operations
+- `usersApi.ts` - Users management
+- `categoriesApi.ts` - Categories CRUD operations
+- `searchApi.ts` - Global search across entities
+- `dashboardApi.ts` - Dashboard analytics
+
+Each slice uses `api.injectEndpoints()` to add endpoints to the base API.
+
+## Tag Types
+
+Define tag types in `baseApi.ts`:
+
+```typescript
+tagTypes: ['Products', 'Categories', 'User', 'Users', 'Orders', 'Search']
+```
+
+Use tags for cache invalidation:
+- `providesTags: ['Products']` - Cache this data with tag
+- `invalidatesTags: ['Products']` - Invalidate cache when mutation succeeds
+
 ## Auth State Pattern
 
 - Store user in Redux state
@@ -53,4 +99,5 @@ export type AppDispatch = typeof store.dispatch;
 - Wrap localStorage access in try-catch
 
 @store.ts
-@services/api.ts
+@services/api/baseApi.ts
+@services/api/*.ts

@@ -54,7 +54,7 @@ export default function ProductEditor() {
 
   const existingProduct = isEditMode ? products?.find(p => p.$id === id) : null;
 
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm<Partial<Product>>({
+  const { register, handleSubmit, formState: { errors }, setValue, control } = useForm<Partial<Product>>({
     defaultValues: existingProduct || {
       productName: '',
       description: '',
@@ -360,7 +360,7 @@ export default function ProductEditor() {
               {/* Sidebar Column */}
               <VStack gap="6" gridColumn={{ lg: 'span 4' }} align="stretch">
                 <PublishCard
-                  register={register}
+                  control={control}
                   isEditMode={isEditMode}
                   isCreating={isCreating}
                   isUpdating={isUpdating}

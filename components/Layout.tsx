@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, logoutUser } from '../store';
 import { useLogoutMutation } from '../services/api';
@@ -83,6 +83,7 @@ const routeLabels: Record<string, string> = {
   '/users': 'משתמשים',
   '/media': 'מדיה',
   '/settings': 'הגדרות',
+  '/search': 'תוצאות חיפוש',
 };
 
 function getPageLabel(pathname: string): string {
@@ -99,17 +100,37 @@ function getPageLabel(pathname: string): string {
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const user = useSelector((state: RootState) => state.auth.user);
   const dispatch = useDispatch();
   const [apiLogout] = useLogoutMutation();
   const navigate = useNavigate();
+  
+  // Search state - initialize from URL if on search page
+  const [searchInput, setSearchInput] = useState(
+    location.pathname === '/search' ? searchParams.get('q') || '' : ''
+  );
 
   const currentPageLabel = getPageLabel(location.pathname);
 
   const handleLogout = async () => {
-    await apiLogout({});
+    await apiLogout();
     dispatch(logoutUser());
     navigate('/login');
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchInput.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+    }
+  };
+
+  const handleSearchClick = () => {
+    if (searchInput.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchInput.trim())}`);
+    } else {
+      navigate('/search');
+    }
   };
 
   return (
@@ -192,6 +213,12 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             <SidebarLink to="/orders" icon="shopping_bag" label="הזמנות" active={location.pathname === '/orders'} />
             <SidebarLink to="/users" icon="group" label="משתמשים" active={location.pathname === '/users'} />
             <SidebarLink to="/media" icon="image" label="מדיה" active={location.pathname === '/media'} />
+          </VStack>
+
+          <Box my="4" borderTopWidth="1px" borderColor="border" />
+
+          <VStack gap="1" align="stretch">
+            <SidebarLink to="/search" icon="search" label="חיפוש" active={location.pathname === '/search'} />
             <SidebarLink to="/settings" icon="settings" label="הגדרות" active={location.pathname === '/settings'} />
           </VStack>
         </Box>
@@ -262,7 +289,15 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             <Box display={{ base: 'none', md: 'block' }} w="full" maxW="sm">
               <InputGroup
                 startElement={
-                  <Text as="span" className="material-symbols-outlined" fontSize="20px" color="fg.muted">
+                  <Text 
+                    as="span" 
+                    className="material-symbols-outlined" 
+                    fontSize="20px" 
+                    color="fg.muted"
+                    cursor="pointer"
+                    _hover={{ color: 'blue.500' }}
+                    onClick={handleSearchClick}
+                  >
                     search
                   </Text>
                 }
@@ -274,6 +309,9 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
                   borderColor="transparent"
                   _hover={{ borderColor: 'border' }}
                   _focus={{ borderColor: 'blue.500', bg: 'bg.panel' }}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
                 />
               </InputGroup>
             </Box>

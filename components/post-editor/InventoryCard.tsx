@@ -9,7 +9,9 @@ import {
   Input,
   Card,
   Switch,
-  NativeSelect,
+  Select,
+  Portal,
+  createListCollection,
 } from '@chakra-ui/react';
 import { StockStatus } from '../../types';
 
@@ -23,6 +25,14 @@ interface InventoryCardProps {
   isFeatured: boolean;
   onFeaturedChange: (isFeatured: boolean) => void;
 }
+
+const stockStatusOptions = createListCollection({
+  items: [
+    { label: 'במלאי', value: StockStatus.IN_STOCK },
+    { label: 'מלאי נמוך', value: StockStatus.LOW_STOCK },
+    { label: 'אזל מהמלאי', value: StockStatus.OUT_OF_STOCK },
+  ],
+});
 
 export default function InventoryCard({
   sku,
@@ -110,26 +120,40 @@ export default function InventoryCard({
             <Text fontSize="xs" fontWeight="bold" color="fg.muted" textTransform="uppercase" letterSpacing="wider">
               סטטוס מלאי
             </Text>
-            <NativeSelect.Root
+            <Select.Root
+              collection={stockStatusOptions}
               size="sm"
-              bg="bg.subtle"
-              borderColor="border"
-              _focus={{ ringColor: 'blue.500', borderColor: 'blue.500' }}
+              value={[stockStatus]}
+              onValueChange={(e) => onStockStatusChange(e.value[0] as StockStatus)}
             >
-              <NativeSelect.Field
-                value={stockStatus}
-                onChange={(e) => onStockStatusChange(e.target.value as StockStatus)}
-              >
-                <option value={StockStatus.IN_STOCK}>במלאי</option>
-                <option value={StockStatus.LOW_STOCK}>מלאי נמוך</option>
-                <option value={StockStatus.OUT_OF_STOCK}>אזל מהמלאי</option>
-              </NativeSelect.Field>
-              <NativeSelect.Indicator>
-                <Text as="span" className="material-symbols-outlined" fontSize="xl" color="fg.muted">
-                  expand_more
-                </Text>
-              </NativeSelect.Indicator>
-            </NativeSelect.Root>
+              <Select.HiddenSelect />
+              <Select.Control>
+                <Select.Trigger
+                  bg="bg.subtle"
+                  borderColor="border"
+                  _focus={{ ringColor: 'blue.500', borderColor: 'blue.500' }}
+                >
+                  <Select.ValueText placeholder="בחר סטטוס" />
+                </Select.Trigger>
+                <Select.IndicatorGroup>
+                  <Text as="span" className="material-symbols-outlined" fontSize="xl" color="fg.muted">
+                    expand_more
+                  </Text>
+                </Select.IndicatorGroup>
+              </Select.Control>
+              <Portal>
+                <Select.Positioner>
+                  <Select.Content>
+                    {stockStatusOptions.items.map((item) => (
+                      <Select.Item item={item} key={item.value}>
+                        {item.label}
+                        <Select.ItemIndicator />
+                      </Select.Item>
+                    ))}
+                  </Select.Content>
+                </Select.Positioner>
+              </Portal>
+            </Select.Root>
             <HStack gap="1.5" mt="1">
               <Box
                 w="2"

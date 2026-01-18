@@ -8,3 +8,4 @@ export * from './usersApi';
 export * from './categoriesApi';
 export * from './ordersApi';
 export * from './dashboardApi';
+export * from './searchApi';

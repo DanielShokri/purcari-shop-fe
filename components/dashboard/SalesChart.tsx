@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Flex, Heading, Card, NativeSelect } from '@chakra-ui/react';
+import React, { useMemo } from 'react';
+import { Box, Flex, Heading, Card, Select, Portal, createListCollection } from '@chakra-ui/react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useColorModeValue } from '../ui/color-mode';
 
@@ -29,6 +29,13 @@ export default function SalesChart({
   const tooltipBg = useColorModeValue('#fff', '#1F2937');
   const tooltipBorder = useColorModeValue('#e5e7eb', '#374151');
 
+  // Create dynamic collection for years
+  const yearOptions = useMemo(() => {
+    return createListCollection({
+      items: years.map(year => ({ label: year, value: year })),
+    });
+  }, [years]);
+
   return (
     <Card.Root
       gridColumn={{ lg: 'span 2' }}
@@ -41,25 +48,44 @@ export default function SalesChart({
           <Heading size="md" fontWeight="bold" color="fg">
             {title}
           </Heading>
-          <NativeSelect.Root size="sm" w="auto">
-            <NativeSelect.Field
-              bg="bg"
-              borderColor="border"
-              color="fg.muted"
-              fontSize="sm"
-              rounded="lg"
-              px="3"
-              py="1"
-              _focus={{ borderColor: 'blue.500' }}
-              value={selectedYear}
-              onChange={(e) => onYearChange?.(e.target.value)}
-            >
-              {years.map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </NativeSelect.Field>
-            <NativeSelect.Indicator />
-          </NativeSelect.Root>
+          <Select.Root
+            collection={yearOptions}
+            size="sm"
+            width="auto"
+            value={selectedYear ? [selectedYear] : []}
+            onValueChange={(e) => onYearChange?.(e.value[0])}
+          >
+            <Select.HiddenSelect />
+            <Select.Control>
+              <Select.Trigger
+                bg="bg"
+                borderColor="border"
+                color="fg.muted"
+                fontSize="sm"
+                rounded="lg"
+                px="3"
+                py="1"
+                _focus={{ borderColor: 'blue.500' }}
+              >
+                <Select.ValueText placeholder="בחר שנה" />
+              </Select.Trigger>
+              <Select.IndicatorGroup>
+                <Select.Indicator />
+              </Select.IndicatorGroup>
+            </Select.Control>
+            <Portal>
+              <Select.Positioner>
+                <Select.Content>
+                  {yearOptions.items.map((item) => (
+                    <Select.Item item={item} key={item.value}>
+                      {item.label}
+                      <Select.ItemIndicator />
+                    </Select.Item>
+                  ))}
+                </Select.Content>
+              </Select.Positioner>
+            </Portal>
+          </Select.Root>
         </Flex>
         <Box h="64" w="full" style={{ direction: 'ltr' }}>
           <ResponsiveContainer width="100%" height="100%">
