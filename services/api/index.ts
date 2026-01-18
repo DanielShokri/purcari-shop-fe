@@ -11,3 +11,4 @@ export * from './dashboardApi';
 export * from './searchApi';
 export * from './analyticsApi';
 export * from './notificationsApi';
+export * from './couponsApi';

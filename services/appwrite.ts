@@ -37,6 +37,7 @@ export const APPWRITE_CONFIG = {
   COLLECTION_ORDER_ITEMS: 'order_items',
   COLLECTION_ANALYTICS_EVENTS: 'analytics_events',
   COLLECTION_NOTIFICATIONS: 'notifications',
+  COLLECTION_COUPONS: 'coupons',
   BUCKET_MEDIA: 'media',
   FUNCTION_USERS: 'users-management' // Cloud Function ID for user management
 };
@@ -59,6 +60,45 @@ export const APPWRITE_CONFIG = {
  * - userId (string index)
  * - productId (string index)
  * - $createdAt (datetime index)
+ */
+
+/**
+ * Coupons Collection Schema:
+ * 
+ * Required fields:
+ * - code: string (unique coupon code)
+ * - discountType: enum (percentage, fixed_amount, free_shipping, free_product, buy_x_get_y)
+ * - discountValue: float (discount amount/percentage)
+ * - startDate: datetime (when coupon becomes active)
+ * - usageCount: integer (current usage count, default: 0)
+ * - status: enum (active, paused, expired, scheduled)
+ * 
+ * Optional fields:
+ * - description: string (internal description)
+ * - buyQuantity: integer (for buy_x_get_y type)
+ * - getQuantity: integer (for buy_x_get_y type)
+ * - endDate: datetime (when coupon expires)
+ * - minimumOrder: float (minimum order amount)
+ * - maximumDiscount: float (maximum discount cap)
+ * - usageLimit: integer (total usage limit)
+ * - usageLimitPerUser: integer (per-user usage limit)
+ * - categoryIds: string[] (restrict to specific categories)
+ * - productIds: string[] (restrict to specific products)
+ * - userIds: string[] (restrict to specific users)
+ * - firstPurchaseOnly: boolean (first purchase only)
+ * - excludeOtherCoupons: boolean (cannot combine with other coupons)
+ * 
+ * Appwrite auto-fields:
+ * - $id: string (document ID)
+ * - $createdAt: string (ISO timestamp)
+ * - $updatedAt: string (ISO timestamp)
+ * 
+ * Indexes:
+ * - code_unique (unique index on code)
+ * - status_idx (key index on status)
+ * - discountType_idx (key index on discountType)
+ * - startDate_idx (key index on startDate)
+ * - endDate_idx (key index on endDate)
  */
 
 /**

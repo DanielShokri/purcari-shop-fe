@@ -88,3 +88,18 @@ export const orderStatusConfig: Record<string, StatusConfig> = {
   pending: { colorPalette: 'yellow', label: 'ממתין' },
   cancelled: { colorPalette: 'red', label: 'בוטל' },
 };
+
+export const couponStatusConfig: Record<string, StatusConfig> = {
+  active: { colorPalette: 'green', label: 'פעיל', showDot: true },
+  paused: { colorPalette: 'yellow', label: 'מושהה' },
+  expired: { colorPalette: 'red', label: 'פג תוקף' },
+  scheduled: { colorPalette: 'blue', label: 'מתוזמן' },
+};
+
+export const couponDiscountTypeConfig: Record<string, StatusConfig> = {
+  percentage: { colorPalette: 'blue', label: 'אחוז הנחה' },
+  fixed_amount: { colorPalette: 'green', label: 'סכום קבוע' },
+  free_shipping: { colorPalette: 'purple', label: 'משלוח חינם' },
+  free_product: { colorPalette: 'orange', label: 'מוצר חינם' },
+  buy_x_get_y: { colorPalette: 'teal', label: 'קנה X קבל Y' },
+};

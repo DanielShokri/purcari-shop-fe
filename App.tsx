@@ -15,6 +15,8 @@ import NotFound from './pages/NotFound';
 import Search from './pages/Search';
 import Analytics from './pages/Analytics';
 import Notifications from './pages/Notifications';
+import Coupons from './pages/Coupons';
+import CouponEditor from './pages/CouponEditor';
 import { Box, Flex, Text, Spinner, VStack } from '@chakra-ui/react';
 
 // Protected Route Wrapper
@@ -123,6 +125,24 @@ export default function App() {
       <Route path="/notifications" element={
         <ProtectedRoute>
           <Notifications />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/coupons" element={
+        <ProtectedRoute>
+          <Coupons />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/coupons/new" element={
+        <ProtectedRoute>
+          <CouponEditor />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/coupons/:id/edit" element={
+        <ProtectedRoute>
+          <CouponEditor />
         </ProtectedRoute>
       } />
       
