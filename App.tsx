@@ -14,6 +14,7 @@ import OrderDetails from './pages/OrderDetails';
 import NotFound from './pages/NotFound';
 import Search from './pages/Search';
 import Analytics from './pages/Analytics';
+import Notifications from './pages/Notifications';
 import { Box, Flex, Text, Spinner, VStack } from '@chakra-ui/react';
 
 // Protected Route Wrapper
@@ -117,6 +118,11 @@ export default function App() {
       <Route path="/analytics" element={
         <ProtectedRoute>
           <Analytics />
+        </ProtectedRoute>
+      } />
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <Notifications />
         </ProtectedRoute>
       } />
       

@@ -36,6 +36,7 @@ export const APPWRITE_CONFIG = {
   COLLECTION_ORDERS: 'orders',
   COLLECTION_ORDER_ITEMS: 'order_items',
   COLLECTION_ANALYTICS_EVENTS: 'analytics_events',
+  COLLECTION_NOTIFICATIONS: 'notifications',
   BUCKET_MEDIA: 'media',
   FUNCTION_USERS: 'users-management' // Cloud Function ID for user management
 };

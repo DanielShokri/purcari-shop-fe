@@ -14,6 +14,7 @@ import {
   Button,
 } from '@chakra-ui/react';
 import { ColorModeButton } from './ui/color-mode';
+import { NotificationDropdown } from './notifications';
 
 interface SidebarLinkProps {
   to: string;
@@ -85,6 +86,7 @@ const routeLabels: Record<string, string> = {
   '/settings': 'הגדרות',
   '/search': 'תוצאות חיפוש',
   '/analytics': 'אנליטיקות',
+  '/notifications': 'התראות',
 };
 
 function getPageLabel(pathname: string): string {
@@ -214,6 +216,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             <SidebarLink to="/orders" icon="shopping_bag" label="הזמנות" active={location.pathname === '/orders'} />
             <SidebarLink to="/users" icon="group" label="משתמשים" active={location.pathname === '/users'} />
             <SidebarLink to="/analytics" icon="insights" label="אנליטיקות" active={location.pathname === '/analytics'} />
+            <SidebarLink to="/notifications" icon="notifications" label="התראות" active={location.pathname === '/notifications'} />
             <SidebarLink to="/media" icon="image" label="מדיה" active={location.pathname === '/media'} />
           </VStack>
 
@@ -321,37 +324,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
             {/* Icon buttons */}
             <HStack gap="2">
               <ColorModeButton />
-              <Box position="relative">
-                <Flex
-                  as="button"
-                  w="10"
-                  h="10"
-                  alignItems="center"
-                  justifyContent="center"
-                  rounded="full"
-                  bg="bg.panel"
-                  borderWidth="1px"
-                  borderColor="border"
-                  color="fg.muted"
-                  transition="all 0.15s"
-                  _hover={{ bg: 'bg.subtle' }}
-                >
-                  <Text as="span" className="material-symbols-outlined" fontSize="22px">
-                    notifications
-                  </Text>
-                </Flex>
-                <Box
-                  position="absolute"
-                  top="2"
-                  left="2"
-                  w="2"
-                  h="2"
-                  bg="red.500"
-                  rounded="full"
-                  borderWidth="1px"
-                  borderColor="bg.panel"
-                />
-              </Box>
+              <NotificationDropdown />
               <Flex
                 as="button"
                 w="10"
