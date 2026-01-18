@@ -1,5 +1,12 @@
 import React from 'react';
-import { Box, Flex, HStack, Heading, Text, Card } from '@chakra-ui/react';
+import { Box, Flex, HStack, VStack, Heading, Text, Card } from '@chakra-ui/react';
+
+export interface InfoItem {
+  label: string;
+  value: number;
+  color?: string;
+  icon?: string;
+}
 
 export interface StatCardProps {
   title: string;
@@ -12,9 +19,10 @@ export interface StatCardProps {
     isPositive: boolean;
     label: string;
   };
+  infoItems?: InfoItem[];
 }
 
-export default function StatCard({ title, value, icon, iconBg, iconColor, trend }: StatCardProps) {
+export default function StatCard({ title, value, icon, iconBg, iconColor, trend, infoItems }: StatCardProps) {
   return (
     <Card.Root
       bg="bg.panel"
@@ -46,6 +54,25 @@ export default function StatCard({ title, value, icon, iconBg, iconColor, trend 
             </Text>
           </Flex>
         </Flex>
+        
+        {/* Info items (e.g., cancelled orders breakdown) */}
+        {infoItems && infoItems.length > 0 && (
+          <HStack gap="3" mb="3" flexWrap="wrap">
+            {infoItems.map((item, idx) => (
+              <HStack key={idx} gap="1" fontSize="xs">
+                {item.icon && (
+                  <Text as="span" className="material-symbols-outlined" fontSize="14px" color={item.color || 'fg.muted'}>
+                    {item.icon}
+                  </Text>
+                )}
+                <Text color={item.color || 'fg.muted'}>
+                  {item.value} {item.label}
+                </Text>
+              </HStack>
+            ))}
+          </HStack>
+        )}
+        
         <HStack fontSize="xs">
           <HStack
             gap="1"

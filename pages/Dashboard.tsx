@@ -150,6 +150,10 @@ export default function Dashboard() {
             isPositive: (stats?.ordersChange || 0) >= 0, 
             label: 'מהיום אתמול' 
           }}
+          infoItems={[
+            ...(stats?.cancelledOrders ? [{ label: 'בוטלו', value: stats.cancelledOrders, color: 'red.400', icon: 'cancel' }] : []),
+            ...(stats?.pendingOrders ? [{ label: 'ממתינות', value: stats.pendingOrders, color: 'yellow.500', icon: 'schedule' }] : []),
+          ]}
         />
         <StatCard
           title="אחוז המרה"

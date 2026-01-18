@@ -11,6 +11,7 @@ import Users from './pages/Users';
 import Categories from './pages/Categories';
 import Orders from './pages/Orders';
 import OrderDetails from './pages/OrderDetails';
+import NotFound from './pages/NotFound';
 import { Box, Flex, Text, Spinner, VStack } from '@chakra-ui/react';
 
 // Protected Route Wrapper
@@ -104,6 +105,13 @@ export default function App() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <PlaceholderPage title="עמוד הגדרות" />
+        </ProtectedRoute>
+      } />
+      
+      {/* 404 Not Found - catch all unmatched routes */}
+      <Route path="*" element={
+        <ProtectedRoute>
+          <NotFound />
         </ProtectedRoute>
       } />
     </Routes>

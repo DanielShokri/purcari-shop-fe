@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
-import { api } from './services/api';
+import { api } from './services/api/index';
 import { AuthUser } from './types';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 

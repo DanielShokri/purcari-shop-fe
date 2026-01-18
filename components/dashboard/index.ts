@@ -1,5 +1,5 @@
 export { default as StatCard } from './StatCard';
-export type { StatCardProps } from './StatCard';
+export type { StatCardProps, InfoItem } from './StatCard';
 
 export { default as SalesChart } from './SalesChart';
 
