@@ -32,7 +32,7 @@ export default function Login() {
   const onSubmit = async (data: LoginFormData) => {
     try {
       const result = await login(data).unwrap();
-      dispatch(setCredentials({ user: result, token: 'mock-jwt-token' }));
+      dispatch(setCredentials({ user: result }));
       navigate('/');
     } catch (err) {
       console.error('Login failed', err);
@@ -78,7 +78,7 @@ export default function Login() {
                 <Alert.Indicator />
                 <Alert.Content>
                   <Alert.Description fontSize="sm" textAlign="center">
-                    שגיאה בהתחברות. נסה: admin@demo.com / 123456
+                    שגיאה בהתחברות. נסה: admin@demo.com / Demo123456!
                   </Alert.Description>
                 </Alert.Content>
               </Alert.Root>
@@ -110,7 +110,7 @@ export default function Login() {
                   <Input
                     {...register('password', { required: 'שדה חובה' })}
                     type="password"
-                    defaultValue="123456"
+                    defaultValue="Demo123456!"
                     dir="ltr"
                     size="lg"
                   />

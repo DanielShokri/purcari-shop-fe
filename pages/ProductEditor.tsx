@@ -33,12 +33,13 @@ import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
 import { RichTextEditor, Control } from '../components/ui/rich-text-editor';
 
-// Sample categories
+// Categories matching Appwrite enum values
 const categories = [
-  { id: '1', name: 'ביגוד והנעלה' },
-  { id: '2', name: 'אלקטרוניקה' },
-  { id: '3', name: 'בית וגן' },
-  { id: '4', name: 'אביזרים' },
+  { id: 'electronics', name: 'אלקטרוניקה' },
+  { id: 'clothing', name: 'ביגוד' },
+  { id: 'home', name: 'בית וגן' },
+  { id: 'beauty', name: 'יופי וטיפוח' },
+  { id: 'sports', name: 'ספורט' },
 ];
 
 export default function ProductEditor() {
@@ -55,17 +56,20 @@ export default function ProductEditor() {
 
   const { register, handleSubmit, formState: { errors }, setValue } = useForm<Partial<Product>>({
     defaultValues: existingProduct || {
-      title: '',
-      content: '',
+      productName: '',
+      description: '',
       status: ProductStatus.DRAFT,
     },
   });
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    existingProduct?.categoryId ? [existingProduct.categoryId] : ['1']
+    existingProduct?.category ? [existingProduct.category] : ['electronics']
   );
-  const [tags, setTags] = useState<string[]>(['חדש', 'מבצע']);
+  const [tags, setTags] = useState<string[]>(existingProduct?.tags || []);
   const [tagInput, setTagInput] = useState('');
+
+  // Short description state
+  const [shortDescription, setShortDescription] = useState<string>(existingProduct?.shortDescription || '');
 
   // Pricing state
   const [price, setPrice] = useState<number>(existingProduct?.price || 0);
@@ -74,8 +78,10 @@ export default function ProductEditor() {
 
   // Inventory state
   const [sku, setSku] = useState<string>(existingProduct?.sku || '');
+  const [quantityInStock, setQuantityInStock] = useState<number>(existingProduct?.quantityInStock || 0);
   const [stockStatus, setStockStatus] = useState<StockStatus>(existingProduct?.stockStatus || StockStatus.IN_STOCK);
   const [isFeatured, setIsFeatured] = useState<boolean>(existingProduct?.isFeatured || false);
+  const [featuredImage, setFeaturedImage] = useState<string>(existingProduct?.featuredImage || '');
 
   // Related products state
   const [relatedProductIds, setRelatedProductIds] = useState<string[]>(existingProduct?.relatedProducts || []);
@@ -83,13 +89,13 @@ export default function ProductEditor() {
   // Available products for related products selector (excluding current product)
   const availableProducts = products?.filter(p => p.$id !== id).map(p => ({
     id: p.$id,
-    name: p.title
+    name: p.productName
   })) || [];
 
   // Get related products with names
   const relatedProducts = relatedProductIds.map(rpId => {
     const product = products?.find(p => p.$id === rpId);
-    return { id: rpId, name: product?.title || 'מוצר לא נמצא' };
+    return { id: rpId, name: product?.productName || 'מוצר לא נמצא' };
   });
 
   // Initialize Tiptap editor
@@ -103,18 +109,35 @@ export default function ProductEditor() {
         placeholder: 'התחל לכתוב את תיאור המוצר...',
       }),
     ],
-    content: existingProduct?.content || '',
+    content: existingProduct?.description || '',
     onUpdate: ({ editor }) => {
-      setValue('content', editor.getHTML());
+      setValue('description', editor.getHTML());
     },
   });
 
   // Update editor content when existingProduct changes
   useEffect(() => {
-    if (editor && existingProduct?.content) {
-      editor.commands.setContent(existingProduct.content);
+    if (editor && existingProduct?.description) {
+      editor.commands.setContent(existingProduct.description);
     }
-  }, [editor, existingProduct?.content]);
+  }, [editor, existingProduct?.description]);
+
+  // Update all state when existingProduct changes (for edit mode)
+  useEffect(() => {
+    if (existingProduct) {
+      setSelectedCategories(existingProduct.category ? [existingProduct.category] : ['electronics']);
+      setTags(existingProduct.tags || []);
+      setShortDescription(existingProduct.shortDescription || '');
+      setPrice(existingProduct.price || 0);
+      setOnSale(existingProduct.onSale || false);
+      setSalePrice(existingProduct.salePrice || 0);
+      setSku(existingProduct.sku || '');
+      setQuantityInStock(existingProduct.quantityInStock || 0);
+      setIsFeatured(existingProduct.isFeatured || false);
+      setFeaturedImage(existingProduct.featuredImage || '');
+      setRelatedProductIds(existingProduct.relatedProducts || []);
+    }
+  }, [existingProduct]);
 
   if (isLoadingProducts) {
     return <LoadingState message="טוען..." />;
@@ -122,18 +145,24 @@ export default function ProductEditor() {
 
   const onSubmit = async (data: Partial<Product>) => {
     try {
-      const content = editor?.getHTML() || '';
+      const description = editor?.getHTML() || '';
       const productData = {
-        ...data,
-        content,
-        categoryId: selectedCategories[0],
+        // Required fields
+        productName: data.productName,
         price,
-        onSale,
-        salePrice: onSale ? salePrice : undefined,
+        quantityInStock,
         sku,
-        stockStatus,
-        isFeatured,
+        category: selectedCategories[0],
+        // Optional fields
+        description,
+        shortDescription: shortDescription || null,
+        salePrice: onSale ? salePrice : null,
+        onSale,
+        tags,
         relatedProducts: relatedProductIds,
+        isFeatured,
+        featuredImage: featuredImage || null,
+        dateAdded: existingProduct?.dateAdded || new Date().toISOString(),
       };
       if (isEditMode && id) {
         await updateProduct({ id, ...productData }).unwrap();
@@ -242,7 +271,7 @@ export default function ProductEditor() {
                       שם המוצר
                     </Text>
                     <Input
-                      {...register('title', { required: 'שדה חובה' })}
+                      {...register('productName', { required: 'שדה חובה' })}
                       size="lg"
                       fontSize="lg"
                       fontWeight="medium"
@@ -251,8 +280,8 @@ export default function ProductEditor() {
                       borderColor="border"
                       _focus={{ ring: 4, ringColor: 'blue.500/10', borderColor: 'blue.500' }}
                     />
-                    {errors.title && (
-                      <Text fontSize="xs" color="red.500" mt="1">{errors.title.message}</Text>
+                    {errors.productName && (
+                      <Text fontSize="xs" color="red.500" mt="1">{errors.productName.message}</Text>
                     )}
                   </Card.Body>
                 </Card.Root>
@@ -303,14 +332,19 @@ export default function ProductEditor() {
                       </Badge>
                     </Flex>
                     <Textarea
-                      {...register('slug')}
+                      value={shortDescription}
+                      onChange={(e) => setShortDescription(e.target.value)}
                       placeholder="כתוב תיאור קצר שיופיע ברשימת המוצרים..."
                       minH="80px"
+                      maxLength={500}
                       bg="bg.subtle"
                       borderColor="border"
                       fontSize="sm"
                       _focus={{ ring: 4, ringColor: 'blue.500/10', borderColor: 'blue.500' }}
                     />
+                    <Text fontSize="xs" color="fg.muted" mt="2" textAlign="left" dir="ltr">
+                      {shortDescription.length}/500
+                    </Text>
                   </Card.Body>
                 </Card.Root>
 
@@ -346,6 +380,8 @@ export default function ProductEditor() {
                 <InventoryCard
                   sku={sku}
                   onSkuChange={setSku}
+                  quantityInStock={quantityInStock}
+                  onQuantityChange={setQuantityInStock}
                   stockStatus={stockStatus}
                   onStockStatusChange={setStockStatus}
                   isFeatured={isFeatured}
@@ -366,7 +402,10 @@ export default function ProductEditor() {
                   onRemoveTag={handleRemoveTag}
                 />
 
-                <FeaturedImageCard />
+                <FeaturedImageCard 
+                  imageUrl={featuredImage}
+                  onImageUrlChange={setFeaturedImage}
+                />
               </VStack>
             </SimpleGrid>
           </form>

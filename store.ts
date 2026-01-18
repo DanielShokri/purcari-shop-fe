@@ -1,7 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { api } from './services/api';
-import { User } from './types';
+import { AuthUser } from './types';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Safe LocalStorage Wrapper
@@ -31,38 +31,39 @@ const safeLocalStorage = {
 };
 
 interface AuthState {
-  user: User | null;
-  token: string | null;
+  user: AuthUser | null;
+  isInitialized: boolean; // Track if we've checked for existing session
 }
 
+// Note: Appwrite manages sessions via cookies, so we don't store tokens
+// We only cache user data for quick UI access
 const storedUser = safeLocalStorage.getItem('user');
-const storedToken = safeLocalStorage.getItem('token');
 
 const initialState: AuthState = {
   user: storedUser ? JSON.parse(storedUser) : null,
-  token: storedToken,
+  isInitialized: false,
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setCredentials: (state, action: PayloadAction<{ user: User; token: string }>) => {
+    setCredentials: (state, action: PayloadAction<{ user: AuthUser }>) => {
       state.user = action.payload.user;
-      state.token = action.payload.token;
+      state.isInitialized = true;
       safeLocalStorage.setItem('user', JSON.stringify(action.payload.user));
-      safeLocalStorage.setItem('token', action.payload.token);
+    },
+    setInitialized: (state) => {
+      state.isInitialized = true;
     },
     logoutUser: (state) => {
       state.user = null;
-      state.token = null;
       safeLocalStorage.removeItem('user');
-      safeLocalStorage.removeItem('token');
     },
   },
 });
 
-export const { setCredentials, logoutUser } = authSlice.actions;
+export const { setCredentials, setInitialized, logoutUser } = authSlice.actions;
 
 export const store = configureStore({
   reducer: {

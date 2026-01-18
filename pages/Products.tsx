@@ -14,8 +14,14 @@ const productImages = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuClJjWbcXEQCsicgRXJpssjEfrfl6ij503ghWJb6B5e9e5GpEchfrSHslsSzIKDnwEQ52nvlYwdvQ2axU_Hjocbsps5powZLQpjbHXh0aLexU8UDnSdUcY0R0cZrzHAYd3Ly-0XifNvR-7k0tUp71N7HfXMj-tbf1M6BLRuWzS0qSKex4gbnxZS4Q8BjqYsEJo9HCJcVlZfTDi0JOe2i3tpgnX__6IZeSt21BYf4hgiBgTR5u2tcFVfY1TBxd7B4KARfD_t7FiCXw',
 ];
 
-// Sample categories
-const categories = ['ביגוד', 'הנעלה', 'אביזרים', 'אלקטרוניקה', 'בית וגן'];
+// Category labels in Hebrew
+const categoryLabels: Record<string, string> = {
+  'electronics': 'אלקטרוניקה',
+  'clothing': 'ביגוד',
+  'home': 'בית וגן',
+  'beauty': 'יופי וטיפוח',
+  'sports': 'ספורט',
+};
 
 export default function Products() {
   const navigate = useNavigate();
@@ -34,9 +40,9 @@ export default function Products() {
   }
 
   const filteredProducts = products?.filter(product => {
-    const matchesSearch = product.title.includes(searchTerm);
-    const matchesStatus = statusFilter === 'all' || product.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = statusFilter === 'all' || product.category === statusFilter;
+    return matchesSearch && matchesCategory;
   }) || [];
 
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
@@ -67,7 +73,7 @@ export default function Products() {
     }
   };
 
-  const getRandomCategory = (index: number): string => categories[index % categories.length];
+  const getCategoryLabel = (category: string): string => categoryLabels[category] || category;
   const getRandomImage = (index: number): string => productImages[index % productImages.length];
 
   return (
@@ -99,7 +105,7 @@ export default function Products() {
         totalItems={filteredProducts.length}
         itemsPerPage={productsPerPage}
         onPageChange={setCurrentPage}
-        getRandomCategory={getRandomCategory}
+        getCategoryLabel={getCategoryLabel}
         getRandomImage={getRandomImage}
       />
     </VStack>

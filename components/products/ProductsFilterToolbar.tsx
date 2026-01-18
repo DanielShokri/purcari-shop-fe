@@ -1,7 +1,16 @@
 import React from 'react';
 import { Box, Flex, HStack, Text, Button, Card, Menu, Portal } from '@chakra-ui/react';
-import { ProductStatus } from '../../types';
 import { SearchInput } from '../shared';
+
+// Category options matching Appwrite enum
+const categoryOptions = [
+  { value: 'all', label: 'הכל' },
+  { value: 'electronics', label: 'אלקטרוניקה' },
+  { value: 'clothing', label: 'ביגוד' },
+  { value: 'home', label: 'בית וגן' },
+  { value: 'beauty', label: 'יופי וטיפוח' },
+  { value: 'sports', label: 'ספורט' },
+];
 
 interface ProductsFilterToolbarProps {
   searchTerm: string;
@@ -16,14 +25,9 @@ export default function ProductsFilterToolbar({
   statusFilter,
   onStatusFilterChange
 }: ProductsFilterToolbarProps) {
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'all': return 'הכל';
-      case ProductStatus.PUBLISHED: return 'פורסם';
-      case ProductStatus.DRAFT: return 'טיוטה';
-      case ProductStatus.ARCHIVED: return 'ממתין';
-      default: return 'הכל';
-    }
+  const getCategoryLabel = (category: string) => {
+    const found = categoryOptions.find(opt => opt.value === category);
+    return found?.label || 'הכל';
   };
 
   return (
@@ -46,12 +50,12 @@ export default function ProductsFilterToolbar({
 
             {/* Filter Buttons */}
             <HStack gap="3" flexWrap="wrap" w={{ base: 'full', md: 'auto' }}>
-              {/* Status Filter */}
+              {/* Category Filter */}
               <Menu.Root>
                 <Menu.Trigger asChild>
                   <Button variant="ghost" size="sm" bg="bg.subtle" px="3" py="2.5">
                     <Text as="span">
-                      סטטוס: {getStatusLabel(statusFilter)}
+                      קטגוריה: {getCategoryLabel(statusFilter)}
                     </Text>
                     <Text as="span" className="material-symbols-outlined" fontSize="18px" color="fg.muted">
                       keyboard_arrow_down
@@ -61,22 +65,19 @@ export default function ProductsFilterToolbar({
                 <Portal>
                   <Menu.Positioner>
                     <Menu.Content>
-                      <Menu.Item value="all" onClick={() => onStatusFilterChange('all')}>הכל</Menu.Item>
-                      <Menu.Item value="published" onClick={() => onStatusFilterChange(ProductStatus.PUBLISHED)}>פורסם</Menu.Item>
-                      <Menu.Item value="draft" onClick={() => onStatusFilterChange(ProductStatus.DRAFT)}>טיוטה</Menu.Item>
-                      <Menu.Item value="archived" onClick={() => onStatusFilterChange(ProductStatus.ARCHIVED)}>ממתין</Menu.Item>
+                      {categoryOptions.map((option) => (
+                        <Menu.Item 
+                          key={option.value} 
+                          value={option.value} 
+                          onClick={() => onStatusFilterChange(option.value)}
+                        >
+                          {option.label}
+                        </Menu.Item>
+                      ))}
                     </Menu.Content>
                   </Menu.Positioner>
                 </Portal>
               </Menu.Root>
-
-              {/* Category Filter */}
-              <Button variant="ghost" size="sm" bg="bg.subtle" px="3" py="2.5">
-                <Text as="span">קטגוריה: הכל</Text>
-                <Text as="span" className="material-symbols-outlined" fontSize="18px" color="fg.muted">
-                  keyboard_arrow_down
-                </Text>
-              </Button>
 
               {/* Date Filter */}
               <Button variant="ghost" size="sm" bg="bg.subtle" px="3" py="2.5">

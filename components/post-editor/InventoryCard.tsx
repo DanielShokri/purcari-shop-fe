@@ -16,6 +16,8 @@ import { StockStatus } from '../../types';
 interface InventoryCardProps {
   sku: string;
   onSkuChange: (sku: string) => void;
+  quantityInStock: number;
+  onQuantityChange: (quantity: number) => void;
   stockStatus: StockStatus;
   onStockStatusChange: (status: StockStatus) => void;
   isFeatured: boolean;
@@ -25,6 +27,8 @@ interface InventoryCardProps {
 export default function InventoryCard({
   sku,
   onSkuChange,
+  quantityInStock,
+  onQuantityChange,
   stockStatus,
   onStockStatusChange,
   isFeatured,
@@ -75,6 +79,26 @@ export default function InventoryCard({
               value={sku}
               onChange={(e) => onSkuChange(e.target.value)}
               placeholder="SKU-001"
+              bg="bg.subtle"
+              borderColor="border"
+              _focus={{ ringColor: 'blue.500', borderColor: 'blue.500' }}
+            />
+          </VStack>
+
+          {/* Quantity in Stock */}
+          <VStack align="start" gap="2">
+            <Text fontSize="xs" fontWeight="bold" color="fg.muted" textTransform="uppercase" letterSpacing="wider">
+              כמות במלאי
+            </Text>
+            <Input
+              size="sm"
+              type="number"
+              dir="ltr"
+              textAlign="left"
+              value={quantityInStock}
+              onChange={(e) => onQuantityChange(parseInt(e.target.value) || 0)}
+              placeholder="0"
+              min={0}
               bg="bg.subtle"
               borderColor="border"
               _focus={{ ringColor: 'blue.500', borderColor: 'blue.500' }}

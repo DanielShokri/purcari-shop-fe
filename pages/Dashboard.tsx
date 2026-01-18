@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetStatsQuery } from '../services/api';
+import { useGetStatsQuery, useGetRecentOrdersQuery, useGetMonthlySalesQuery } from '../services/api';
 import {
   Box,
   Flex,
@@ -12,41 +12,76 @@ import {
 } from '@chakra-ui/react';
 import { LoadingState } from '../components/shared';
 import { StatCard, SalesChart, ActivityFeed, OrdersTable } from '../components/dashboard';
-import type { ActivityItem, Order } from '../components/dashboard';
+import type { ActivityItem, Order as DashboardOrder } from '../components/dashboard';
 
-// Chart data
-const chartData = [
-  { name: 'ינו', value: 20 },
-  { name: 'פבר', value: 25 },
-  { name: 'מרץ', value: 35 },
-  { name: 'אפר', value: 30 },
-  { name: 'מאי', value: 60 },
-  { name: 'יוני', value: 70 },
-  { name: 'יולי', value: 65 },
-  { name: 'אוג', value: 55 },
-  { name: 'ספט', value: 65 },
-  { name: 'אוק', value: 75 },
-  { name: 'נוב', value: 80 },
-  { name: 'דצמ', value: 85 },
-];
-
-// Orders data
-const recentOrders: Order[] = [
-  { id: '#ORD-001', customer: 'רחל לוי', initials: 'רל', color: 'blue', date: '12 אוק, 2023', amount: '₪450.00', status: 'completed' },
-  { id: '#ORD-002', customer: 'משה שרון', initials: 'מש', color: 'purple', date: '11 אוק, 2023', amount: '₪1,200.00', status: 'pending' },
-  { id: '#ORD-003', customer: 'דנה נחמני', initials: 'דנ', color: 'orange', date: '10 אוק, 2023', amount: '₪89.90', status: 'cancelled' },
-];
-
-// Activity data
+// Activity data (would need a separate collection to be dynamic)
 const recentActivity: ActivityItem[] = [
   { title: 'הזמנה חדשה #4023', subtitle: 'לפני 2 דקות • יוסי כהן', color: 'blue.500' },
   { title: 'התשלום התקבל בהצלחה', subtitle: 'לפני 15 דקות • חשבונית 5002', color: 'green.500' },
   { title: 'התראה על מלאי נמוך', subtitle: 'לפני שעה • מוצר #X99', color: 'yellow.500' },
 ];
 
+// Helper to format currency
+const formatCurrency = (amount: number): string => {
+  return `₪${amount.toLocaleString('he-IL')}`;
+};
+
+// Helper to format percentage change
+const formatChange = (value: number): string => {
+  const sign = value >= 0 ? '+' : '';
+  return `${sign}${value.toFixed(1)}%`;
+};
+
+// Helper to get initials from name
+const getInitials = (name: string): string => {
+  const words = name.split(' ');
+  if (words.length >= 2) {
+    return words[0].charAt(0) + words[1].charAt(0);
+  }
+  return name.substring(0, 2);
+};
+
+// Helper to get avatar color based on name
+const getAvatarColor = (name: string): string => {
+  const colors = ['blue', 'purple', 'orange', 'teal', 'pink', 'cyan'];
+  const index = name.charCodeAt(0) % colors.length;
+  return colors[index];
+};
+
+// Helper to format date in Hebrew
+const formatDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('he-IL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+};
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { data: stats, isLoading } = useGetStatsQuery(undefined);
+  const { data: stats, isLoading: statsLoading } = useGetStatsQuery();
+  const { data: recentOrders, isLoading: ordersLoading } = useGetRecentOrdersQuery(5);
+  const { data: monthlySales, isLoading: salesLoading } = useGetMonthlySalesQuery();
+
+  // Map API orders to dashboard Order type
+  const dashboardOrders: DashboardOrder[] = useMemo(() => {
+    if (!recentOrders) return [];
+    return recentOrders.map((order) => ({
+      id: `#${order.$id}`,
+      customer: order.customerName,
+      initials: getInitials(order.customerName),
+      color: getAvatarColor(order.customerName),
+      date: formatDate(order.createdAt),
+      amount: formatCurrency(order.total),
+      status: order.status,
+    }));
+  }, [recentOrders]);
+
+  // Use chart data from API or fallback to empty
+  const chartData = monthlySales || [];
+
+  const isLoading = statsLoading || ordersLoading || salesLoading;
 
   if (isLoading) {
     return <LoadingState message="טוען נתונים..." />;
@@ -82,35 +117,51 @@ export default function Dashboard() {
       <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} gap="6">
         <StatCard
           title="סה״כ הכנסות"
-          value="₪124,500"
+          value={formatCurrency(stats?.totalRevenue || 0)}
           icon="payments"
           iconBg="green.500/10"
           iconColor="green.500"
-          trend={{ value: '+12.5%', isPositive: true, label: 'מהחודש שעבר' }}
+          trend={{ 
+            value: formatChange(stats?.revenueChange || 0), 
+            isPositive: (stats?.revenueChange || 0) >= 0, 
+            label: 'מהחודש שעבר' 
+          }}
         />
         <StatCard
-          title="משתמשים פעילים"
-          value="8,236"
+          title="משתמשים רשומים"
+          value={(stats?.totalUsers || 0).toLocaleString('he-IL')}
           icon="group"
           iconBg="blue.500/10"
           iconColor="blue.500"
-          trend={{ value: '+5.2%', isPositive: true, label: 'מהשבוע האחרון' }}
+          trend={{ 
+            value: formatChange(stats?.usersChange || 0), 
+            isPositive: (stats?.usersChange || 0) >= 0, 
+            label: 'מהשבוע האחרון' 
+          }}
         />
         <StatCard
-          title="הזמנות חדשות"
-          value="458"
+          title="הזמנות החודש"
+          value={(stats?.newOrders || 0).toLocaleString('he-IL')}
           icon="shopping_bag"
           iconBg="purple.500/10"
           iconColor="purple.500"
-          trend={{ value: '-2.1%', isPositive: false, label: 'מהיום אתמול' }}
+          trend={{ 
+            value: formatChange(stats?.ordersChange || 0), 
+            isPositive: (stats?.ordersChange || 0) >= 0, 
+            label: 'מהיום אתמול' 
+          }}
         />
         <StatCard
           title="אחוז המרה"
-          value="3.45%"
+          value={`${(stats?.conversionRate || 0).toFixed(2)}%`}
           icon="bar_chart"
           iconBg="orange.500/10"
           iconColor="orange.500"
-          trend={{ value: '+1.2%', isPositive: true, label: 'יחסית לממוצע' }}
+          trend={{ 
+            value: '+1.2%', 
+            isPositive: true, 
+            label: 'יחסית לממוצע' 
+          }}
         />
       </SimpleGrid>
 
@@ -121,11 +172,11 @@ export default function Dashboard() {
       </SimpleGrid>
 
       {/* Orders Table */}
-      <OrdersTable orders={recentOrders} onViewAll={() => navigate('/orders')} />
+      <OrdersTable orders={dashboardOrders} onViewAll={() => navigate('/orders')} />
 
       {/* Footer */}
       <Box textAlign="center" fontSize="xs" color="fg.muted" mt="4">
-        © 2023 כל הזכויות שמורות למערכת הניהול. עוצב עבור ממשק RTL כהה.
+        © 2024 כל הזכויות שמורות למערכת הניהול. עוצב עבור ממשק RTL כהה.
       </Box>
     </VStack>
   );

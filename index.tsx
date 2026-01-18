@@ -1,15 +1,48 @@
 import './index.css';
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Provider as ReduxProvider } from 'react-redux';
+import { Provider as ReduxProvider, useDispatch } from 'react-redux';
 import { HashRouter } from 'react-router-dom';
 import { Provider as ChakraProvider } from './components/ui/provider';
-import { store } from './store';
+import { store, setCredentials, setInitialized } from './store';
 import App from './App';
 import { pingAppwrite } from './services/appwrite';
+import { useGetCurrentUserQuery } from './services/api';
+import { Center, Spinner, VStack, Text } from '@chakra-ui/react';
 
 // Verify Appwrite SDK setup on app start
 pingAppwrite();
+
+// Component to check for existing Appwrite session on app load
+function AuthInitializer({ children }: { children: React.ReactNode }) {
+  const dispatch = useDispatch();
+  const { data: user, isLoading, isSuccess } = useGetCurrentUserQuery(undefined);
+
+  useEffect(() => {
+    if (isSuccess) {
+      if (user) {
+        // User has an active session
+        dispatch(setCredentials({ user }));
+      } else {
+        // No active session
+        dispatch(setInitialized());
+      }
+    }
+  }, [user, isSuccess, dispatch]);
+
+  if (isLoading) {
+    return (
+      <Center minH="100vh" bg="bg.subtle">
+        <VStack gap="4">
+          <Spinner size="xl" color="blue.500" borderWidth="4px" />
+          <Text color="fg.muted">טוען...</Text>
+        </VStack>
+      </Center>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -22,7 +55,9 @@ root.render(
     <ReduxProvider store={store}>
       <ChakraProvider>
         <HashRouter>
-          <App />
+          <AuthInitializer>
+            <App />
+          </AuthInitializer>
         </HashRouter>
       </ChakraProvider>
     </ReduxProvider>

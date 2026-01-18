@@ -1,7 +1,6 @@
 import React from 'react';
-import { Box, HStack, VStack, Text, Table, Checkbox, IconButton } from '@chakra-ui/react';
-import { Product, ProductStatus } from '../../types';
-import { StatusBadge, productStatusConfig } from '../shared';
+import { Box, HStack, VStack, Text, Table, Checkbox, IconButton, Badge } from '@chakra-ui/react';
+import { Product } from '../../types';
 
 interface ProductTableRowProps {
   product: Product;
@@ -10,7 +9,7 @@ interface ProductTableRowProps {
   onSelect: (checked: boolean) => void;
   onEdit: () => void;
   onDelete: () => void;
-  getRandomCategory: (index: number) => string;
+  getCategoryLabel: (category: string) => string;
   getRandomImage: (index: number) => string;
 }
 
@@ -21,9 +20,16 @@ export default function ProductTableRow({
   onSelect,
   onEdit,
   onDelete,
-  getRandomCategory,
+  getCategoryLabel,
   getRandomImage
 }: ProductTableRowProps) {
+  const formatPrice = (price: number) => `₪${price.toFixed(2)}`;
+  const getStockBadge = (quantity: number) => {
+    if (quantity === 0) return { color: 'red', label: 'אזל מהמלאי' };
+    if (quantity < 10) return { color: 'orange', label: `${quantity} יח׳` };
+    return { color: 'green', label: `${quantity} יח׳` };
+  };
+  const stockInfo = getStockBadge(product.quantityInStock);
   return (
     <Table.Row
       _hover={{ bg: 'bg.subtle' }}
@@ -53,37 +59,76 @@ export default function ProductTableRow({
             backgroundPosition="center"
             bgColor="gray.200"
             flexShrink={0}
-            style={{ backgroundImage: `url("${getRandomImage(index)}")` }}
-          />
+            position="relative"
+            style={{ backgroundImage: `url("${product.featuredImage || getRandomImage(index)}")` }}
+          >
+            {product.isFeatured && (
+              <Box
+                position="absolute"
+                top="-1"
+                right="-1"
+                bg="yellow.400"
+                rounded="full"
+                p="0.5"
+              >
+                <Text as="span" className="material-symbols-outlined" fontSize="12px" color="yellow.900">
+                  star
+                </Text>
+              </Box>
+            )}
+          </Box>
           <VStack align="start" gap="0">
-            <Text
-              fontSize="sm"
-              fontWeight="semibold"
-              color="fg"
-              _hover={{ color: 'blue.500' }}
-              cursor="pointer"
-              transition="colors"
-            >
-              {product.title}
-            </Text>
+            <HStack gap="2">
+              <Text
+                fontSize="sm"
+                fontWeight="semibold"
+                color="fg"
+                _hover={{ color: 'blue.500' }}
+                cursor="pointer"
+                transition="colors"
+                onClick={onEdit}
+              >
+                {product.productName}
+              </Text>
+              {product.onSale && (
+                <Badge colorPalette="red" variant="solid" fontSize="2xs">
+                  מבצע
+                </Badge>
+              )}
+            </HStack>
             <Text fontSize="xs" color="fg.muted">
-              מק"ט: {product.$id}
+              מק"ט: {product.sku}
             </Text>
           </VStack>
         </HStack>
       </Table.Cell>
       <Table.Cell px="6" py="4">
         <Text fontSize="sm" color="fg">
-          {getRandomCategory(index)}
+          {getCategoryLabel(product.category)}
         </Text>
+      </Table.Cell>
+      <Table.Cell px="6" py="4" dir="ltr">
+        <VStack align="start" gap="0">
+          {product.onSale && product.salePrice ? (
+            <>
+              <Text fontSize="sm" fontWeight="medium" color="red.500">
+                {formatPrice(product.salePrice)}
+              </Text>
+              <Text fontSize="xs" color="fg.muted" textDecoration="line-through">
+                {formatPrice(product.price)}
+              </Text>
+            </>
+          ) : (
+            <Text fontSize="sm" fontWeight="medium" color="fg">
+              {formatPrice(product.price)}
+            </Text>
+          )}
+        </VStack>
       </Table.Cell>
       <Table.Cell px="6" py="4">
-        <StatusBadge status={product.status} config={productStatusConfig} />
-      </Table.Cell>
-      <Table.Cell px="6" py="4" color="fg.muted" dir="ltr">
-        <Text fontSize="sm">
-          {new Date(product.publishedAt).toLocaleDateString('he-IL')}
-        </Text>
+        <Badge colorPalette={stockInfo.color} variant="subtle" fontSize="xs">
+          {stockInfo.label}
+        </Badge>
       </Table.Cell>
       <Table.Cell px="6" py="4">
         <HStack gap="1" className="action-buttons" transition="opacity" justify="flex-end">

@@ -16,7 +16,7 @@ interface ProductsTableProps {
   totalItems: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
-  getRandomCategory: (index: number) => string;
+  getCategoryLabel: (category: string) => string;
   getRandomImage: (index: number) => string;
 }
 
@@ -32,7 +32,7 @@ export default function ProductsTable({
   totalItems,
   itemsPerPage,
   onPageChange,
-  getRandomCategory,
+  getCategoryLabel,
   getRandomImage
 }: ProductsTableProps) {
   return (
@@ -59,10 +59,10 @@ export default function ProductsTable({
                   קטגוריה
                 </Table.ColumnHeader>
                 <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
-                  סטטוס
+                  מחיר
                 </Table.ColumnHeader>
                 <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
-                  תאריך
+                  מלאי
                 </Table.ColumnHeader>
                 <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted" textAlign="start">
                   פעולות
@@ -86,7 +86,7 @@ export default function ProductsTable({
                     onSelect={(checked) => onSelectProduct(product.$id, checked)}
                     onEdit={() => onEdit(product.$id)}
                     onDelete={() => onDelete(product.$id)}
-                    getRandomCategory={getRandomCategory}
+                    getCategoryLabel={getCategoryLabel}
                     getRandomImage={getRandomImage}
                   />
                 ))
