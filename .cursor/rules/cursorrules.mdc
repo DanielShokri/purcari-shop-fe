@@ -79,9 +79,10 @@ Import types from `@/types` or `../types` - the index file re-exports everything
 ## Hebrew Text Standards
 
 - Error messages: `'שגיאה בהתחברות'`, `'שדה חובה'`
-- Loading states: `'טוען נתונים...'`, `'טוען מוצרים...'`
+- Loading states: `'טוען נתונים...'`, `'טוען מוצרים...'`, `'טוען נתוני אנליטיקות...'`
 - Confirmations: `'האם אתה בטוח שברצונך למחוק?'`
 - Buttons: `'התחבר'`, `'שמור'`, `'ביטול'`, `'מחק'`, `'ערוך'`
+- Analytics labels: `'צפיות היום'`, `'משתמשים פעילים יומי (DAU)'`, `'מוצרים פופולריים'`, `'שימור משתמשים'`
 
 ## Authentication & Security
 

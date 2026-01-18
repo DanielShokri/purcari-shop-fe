@@ -157,14 +157,40 @@ const url = storage.getFileView({
 });
 ```
 
+## Analytics Collection
+
+The `analytics_events` collection tracks user interactions:
+
+- **type** (string, required): Event type ('page_view', 'product_view', 'user_action')
+- **userId** (string, optional): User ID for authenticated users
+- **productId** (string, optional): Product ID for product-specific events
+- **$createdAt**: Auto-generated timestamp
+
+Use `Promise.allSettled()` for analytics queries to handle missing collections gracefully:
+
+```typescript
+const [eventsResponse] = await Promise.allSettled([
+  databases.listDocuments({
+    databaseId: APPWRITE_CONFIG.DATABASE_ID,
+    collectionId: APPWRITE_CONFIG.COLLECTION_ANALYTICS_EVENTS,
+    queries: [Query.limit(10000)]
+  })
+]);
+
+const events = eventsResponse.status === 'fulfilled' 
+  ? eventsResponse.value.documents 
+  : [];
+```
+
 ## Best Practices
 
 1. **Always use APPWRITE_CONFIG constants** - Never hardcode database/collection IDs
 2. **Handle errors gracefully** - Return user-friendly error messages in Hebrew
 3. **Type safety** - Map Appwrite documents to TypeScript interfaces
 4. **Client-side filtering** - For flexible search, fetch and filter client-side
-5. **Parallel queries** - Use `Promise.all()` for independent operations
+5. **Parallel queries** - Use `Promise.allSettled()` for independent operations (handles missing collections)
 6. **Cloud Functions** - Use for sensitive operations (user management, admin tasks)
+7. **Analytics aggregation** - Compute metrics client-side for small datasets; move to Cloud Functions for scale
 
 ## RTK Query Integration
 

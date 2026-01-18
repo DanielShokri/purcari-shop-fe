@@ -6,6 +6,7 @@ import { HashRouter } from 'react-router-dom';
 import { Provider as ChakraProvider } from './components/ui/provider';
 import { store, setCredentials, setInitialized } from './store';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useGetCurrentUserQuery } from './services/api';
 import { Center, Spinner, VStack, Text } from '@chakra-ui/react';
 
@@ -48,14 +49,16 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ReduxProvider store={store}>
-      <ChakraProvider>
-        <HashRouter>
-          <AuthInitializer>
-            <App />
-          </AuthInitializer>
-        </HashRouter>
-      </ChakraProvider>
-    </ReduxProvider>
+    <ErrorBoundary>
+      <ReduxProvider store={store}>
+        <ChakraProvider>
+          <HashRouter>
+            <AuthInitializer>
+              <App />
+            </AuthInitializer>
+          </HashRouter>
+        </ChakraProvider>
+      </ReduxProvider>
+    </ErrorBoundary>
   </React.StrictMode>
 );

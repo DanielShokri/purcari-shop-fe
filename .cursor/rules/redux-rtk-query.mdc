@@ -85,12 +85,31 @@ Each slice uses `api.injectEndpoints()` to add endpoints to the base API.
 Define tag types in `baseApi.ts`:
 
 ```typescript
-tagTypes: ['Products', 'Categories', 'User', 'Users', 'Orders', 'Search']
+tagTypes: ['Products', 'Categories', 'User', 'Users', 'Orders', 'Search', 'Analytics']
 ```
 
 Use tags for cache invalidation:
 - `providesTags: ['Products']` - Cache this data with tag
 - `invalidatesTags: ['Products']` - Invalidate cache when mutation succeeds
+
+## Analytics Endpoints Pattern
+
+Analytics endpoints aggregate data from multiple sources:
+
+```typescript
+getAnalyticsSummary: builder.query<AnalyticsSummary, void>({
+  queryFn: async () => {
+    const [eventsResponse, productsResponse, usersResponse] = await Promise.allSettled([
+      databases.listDocuments({ collectionId: APPWRITE_CONFIG.COLLECTION_ANALYTICS_EVENTS }),
+      databases.listDocuments({ collectionId: APPWRITE_CONFIG.COLLECTION_PRODUCTS }),
+      usersApi.list()
+    ]);
+    // Aggregate and compute metrics
+    return { data: summary };
+  },
+  providesTags: ['Analytics'],
+}),
+```
 
 ## Auth State Pattern
 
