@@ -56,9 +56,10 @@ This prevents wasted iterations and ensures correct implementations from the sta
 ## Hebrew Text Standards
 
 - Error messages: `'שגיאה בהתחברות'`, `'שדה חובה'`
-- Loading states: `'טוען נתונים...'`, `'טוען פוסטים...'`
+- Loading states: `'טוען נתונים...'`, `'טוען פוסטים...'`, `'טוען נתוני אנליטיקות...'`
 - Confirmations: `'האם אתה בטוח שברצונך למחוק?'`
 - Buttons: `'התחבר'`, `'שמור'`, `'ביטול'`, `'מחק'`, `'ערוך'`
+- Analytics labels: `'צפיות היום'`, `'משתמשים פעילים יומי (DAU)'`, `'מוצרים פופולריים'`, `'שימור משתמשים'`
 
 ## File Organization
 
@@ -72,8 +73,9 @@ This prevents wasted iterations and ensures correct implementations from the sta
 │   ├── orders/              # Order-specific components
 │   ├── users/               # User-specific components
 │   ├── categories/          # Category-specific components
+│   ├── analytics/            # Analytics chart components (ViewsLineChart, PopularProductsChart, RetentionCard)
 │   └── dashboard/           # Dashboard widgets
-├── pages/                   # Page components (Dashboard, Products, Orders, Search, etc.)
+├── pages/                   # Page components (Dashboard, Products, Orders, Analytics, Search, etc.)
 ├── services/
 │   ├── appwrite.ts         # Appwrite client configuration
 │   └── api/                 # RTK Query API slices by domain
@@ -83,6 +85,8 @@ This prevents wasted iterations and ensures correct implementations from the sta
 │       ├── ordersApi.ts    # Orders CRUD
 │       ├── usersApi.ts     # Users management
 │       ├── categoriesApi.ts # Categories CRUD
+│       ├── dashboardApi.ts # Dashboard analytics
+│       ├── analyticsApi.ts # Analytics endpoints (views, engagement, retention)
 │       └── searchApi.ts    # Global search
 └── store.ts                 # Redux store
 ```

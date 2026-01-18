@@ -10,7 +10,7 @@ import {
   Spinner,
   Grid,
 } from '@chakra-ui/react';
-import { useGlobalSearchQuery } from '../services/api';
+import { useGlobalSearchQuery } from '../services/api/index';
 import { Breadcrumbs } from '../components/shared';
 import {
   SearchResultsSection,

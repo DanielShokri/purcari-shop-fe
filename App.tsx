@@ -13,6 +13,7 @@ import Orders from './pages/Orders';
 import OrderDetails from './pages/OrderDetails';
 import NotFound from './pages/NotFound';
 import Search from './pages/Search';
+import Analytics from './pages/Analytics';
 import { Box, Flex, Text, Spinner, VStack } from '@chakra-ui/react';
 
 // Protected Route Wrapper
@@ -111,6 +112,11 @@ export default function App() {
       <Route path="/search" element={
         <ProtectedRoute>
           <Search />
+        </ProtectedRoute>
+      } />
+      <Route path="/analytics" element={
+        <ProtectedRoute>
+          <Analytics />
         </ProtectedRoute>
       } />
       

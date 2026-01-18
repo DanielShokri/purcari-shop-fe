@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGetOrdersQuery, useDeleteOrderMutation } from '../services/api';
 import { OrderStatus } from '../types';
 import { VStack, HStack, Button, Text } from '@chakra-ui/react';
-import { LoadingState, PageHeader, Breadcrumbs } from '../components/shared';
+import { LoadingState, PageHeader, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { OrdersFilterToolbar, OrderStatusChips, OrdersTable } from '../components/orders';
 
 export default function Orders() {
@@ -19,6 +19,10 @@ export default function Orders() {
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 10;
+
+  // Delete Dialog State
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 
   // Calculate status counts for chips
   const statusCounts = useMemo(() => {
@@ -81,9 +85,16 @@ export default function Orders() {
     currentPage * ordersPerPage
   );
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('האם אתה בטוח שברצונך למחוק הזמנה זו?')) {
-      await deleteOrder(id);
+  const handleDelete = (id: string) => {
+    setOrderToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (orderToDelete) {
+      await deleteOrder(orderToDelete);
+      setDeleteDialogOpen(false);
+      setOrderToDelete(null);
     }
   };
 
@@ -198,6 +209,17 @@ export default function Orders() {
         totalItems={filteredOrders.length}
         itemsPerPage={ordersPerPage}
         onPageChange={setCurrentPage}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setOrderToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="מחיקת הזמנה"
+        message="האם אתה בטוח שברצונך למחוק הזמנה זו? פעולה זו לא ניתנת לביטול."
       />
     </VStack>
   );

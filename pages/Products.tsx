@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGetProductsQuery, useDeleteProductMutation } from '../services/api';
 import { VStack } from '@chakra-ui/react';
-import { LoadingState, PageHeader } from '../components/shared';
+import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { ProductsFilterToolbar, ProductsTable } from '../components/products';
 
 // Sample product images for display
@@ -35,6 +35,10 @@ export default function Products() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 10;
 
+  // Delete Dialog State
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+
   if (isLoading) {
     return <LoadingState message="טוען מוצרים..." />;
   }
@@ -51,9 +55,16 @@ export default function Products() {
     currentPage * productsPerPage
   );
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('האם אתה בטוח שברצונך למחוק מוצר זה?')) {
-      await deleteProduct(id);
+  const handleDelete = (id: string) => {
+    setProductToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (productToDelete) {
+      await deleteProduct(productToDelete);
+      setDeleteDialogOpen(false);
+      setProductToDelete(null);
     }
   };
 
@@ -107,6 +118,17 @@ export default function Products() {
         onPageChange={setCurrentPage}
         getCategoryLabel={getCategoryLabel}
         getRandomImage={getRandomImage}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setProductToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="מחיקת מוצר"
+        message="האם אתה בטוח שברצונך למחוק מוצר זה? פעולה זו לא ניתנת לביטול."
       />
     </VStack>
   );

@@ -12,7 +12,7 @@ import {
   Button,
   Card,
 } from '@chakra-ui/react';
-import { LoadingState, Breadcrumbs } from '../components/shared';
+import { LoadingState, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { CategoryTreeToolbar, CategoryTreeItem, CategoryForm } from '../components/categories';
 
 interface CategoryFormData {
@@ -32,6 +32,10 @@ export default function Categories() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['1']));
+
+  // Delete Dialog State
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors }, reset, control } = useForm<CategoryFormData>({
     defaultValues: {
@@ -130,13 +134,20 @@ export default function Categories() {
     }
   };
 
-  const handleDelete = async (categoryId: string) => {
-    if (window.confirm('האם אתה בטוח שברצונך למחוק קטגוריה זו?')) {
-      await deleteCategory(categoryId);
-      if (selectedCategoryId === categoryId) {
+  const handleDelete = (categoryId: string) => {
+    setCategoryToDelete(categoryId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (categoryToDelete) {
+      await deleteCategory(categoryToDelete);
+      if (selectedCategoryId === categoryToDelete) {
         setSelectedCategoryId(null);
         reset();
       }
+      setDeleteDialogOpen(false);
+      setCategoryToDelete(null);
     }
   };
 
@@ -263,6 +274,17 @@ export default function Categories() {
           />
         </Box>
       </Flex>
+
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setCategoryToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="מחיקת קטגוריה"
+        message="האם אתה בטוח שברצונך למחוק קטגוריה זו? פעולה זו לא ניתנת לביטול."
+      />
     </VStack>
   );
 }

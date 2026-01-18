@@ -16,7 +16,7 @@ import {
   Badge,
   SimpleGrid,
 } from '@chakra-ui/react';
-import { LoadingState, Breadcrumbs } from '../components/shared';
+import { LoadingState, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import {
   PublishCard,
   CategoriesCard,
@@ -85,6 +85,9 @@ export default function ProductEditor() {
 
   // Related products state
   const [relatedProductIds, setRelatedProductIds] = useState<string[]>(existingProduct?.relatedProducts || []);
+
+  // Delete Dialog State
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Available products for related products selector (excluding current product)
   const availableProducts = products?.filter(p => p.$id !== id).map(p => ({
@@ -183,15 +186,19 @@ export default function ProductEditor() {
     navigate('/products');
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!id) return;
-    if (window.confirm('האם אתה בטוח שברצונך למחוק מוצר זה?')) {
-      try {
-        await deleteProduct(id).unwrap();
-        navigate('/products');
-      } catch (error) {
-        console.error('Error deleting product:', error);
-      }
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteProduct(id).unwrap();
+      navigate('/products');
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -420,6 +427,15 @@ export default function ProductEditor() {
         onSave={handleSave}
         onCancel={handleCancel}
         onDelete={handleDelete}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        title="מחיקת מוצר"
+        message="האם אתה בטוח שברצונך למחוק מוצר זה? פעולה זו לא ניתנת לביטול."
+        isDeleting={isDeleting}
       />
     </Box>
   );

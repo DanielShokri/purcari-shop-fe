@@ -35,9 +35,30 @@ export const APPWRITE_CONFIG = {
   COLLECTION_CATEGORIES: 'categories',
   COLLECTION_ORDERS: 'orders',
   COLLECTION_ORDER_ITEMS: 'order_items',
+  COLLECTION_ANALYTICS_EVENTS: 'analytics_events',
   BUCKET_MEDIA: 'media',
   FUNCTION_USERS: 'users-management' // Cloud Function ID for user management
 };
+
+/**
+ * Analytics Events Collection Schema:
+ * 
+ * Required fields:
+ * - type: string (e.g., 'page_view', 'product_view', 'user_action')
+ * - userId: string (optional, for anonymous tracking)
+ * - productId: string (optional, for product-specific events)
+ * 
+ * Appwrite auto-fields:
+ * - $id: string (document ID)
+ * - $createdAt: string (ISO timestamp)
+ * - $updatedAt: string (ISO timestamp)
+ * 
+ * Recommended indexes:
+ * - type (string index)
+ * - userId (string index)
+ * - productId (string index)
+ * - $createdAt (datetime index)
+ */
 
 /**
  * Users API - Server-side operations via Appwrite Cloud Functions

@@ -75,7 +75,8 @@ Split API endpoints by domain into separate files:
 - `usersApi.ts` - Users management
 - `categoriesApi.ts` - Categories CRUD operations
 - `searchApi.ts` - Global search across entities
-- `dashboardApi.ts` - Dashboard analytics
+- `dashboardApi.ts` - Dashboard summary stats
+- `analyticsApi.ts` - Analytics endpoints (views, engagement, retention, time series)
 
 Each slice uses `api.injectEndpoints()` to add endpoints to the base API.
 

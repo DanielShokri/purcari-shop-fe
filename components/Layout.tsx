@@ -84,6 +84,7 @@ const routeLabels: Record<string, string> = {
   '/media': 'מדיה',
   '/settings': 'הגדרות',
   '/search': 'תוצאות חיפוש',
+  '/analytics': 'אנליטיקות',
 };
 
 function getPageLabel(pathname: string): string {
@@ -212,6 +213,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
           <VStack gap="1" align="stretch">
             <SidebarLink to="/orders" icon="shopping_bag" label="הזמנות" active={location.pathname === '/orders'} />
             <SidebarLink to="/users" icon="group" label="משתמשים" active={location.pathname === '/users'} />
+            <SidebarLink to="/analytics" icon="insights" label="אנליטיקות" active={location.pathname === '/analytics'} />
             <SidebarLink to="/media" icon="image" label="מדיה" active={location.pathname === '/media'} />
           </VStack>
 

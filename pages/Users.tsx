@@ -13,7 +13,7 @@ import {
   Select,
   createListCollection,
 } from '@chakra-ui/react';
-import { LoadingState, PageHeader, Breadcrumbs } from '../components/shared';
+import { LoadingState, PageHeader, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { UsersFilterToolbar, UsersTable } from '../components/users';
 
 const roleOptions = createListCollection({
@@ -44,6 +44,10 @@ export default function Users() {
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState<UserRole>(UserRole.VIEWER);
   const [createError, setCreateError] = useState<string | null>(null);
+
+  // Delete Dialog State
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
   const resetCreateForm = () => {
     setNewUserName('');
@@ -110,9 +114,16 @@ export default function Users() {
     currentPage * usersPerPage
   );
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm('האם אתה בטוח שברצונך למחוק משתמש זה?')) {
-      await deleteUser(id);
+  const handleDelete = (id: string) => {
+    setUserToDelete(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (userToDelete) {
+      await deleteUser(userToDelete);
+      setDeleteDialogOpen(false);
+      setUserToDelete(null);
     }
   };
 
@@ -267,6 +278,17 @@ export default function Users() {
         totalItems={filteredUsers.length}
         itemsPerPage={usersPerPage}
         onPageChange={setCurrentPage}
+      />
+
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setUserToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="מחיקת משתמש"
+        message="האם אתה בטוח שברצונך למחוק משתמש זה? פעולה זו לא ניתנת לביטול."
       />
     </VStack>
   );
