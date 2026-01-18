@@ -143,9 +143,8 @@ export default function Users() {
     }
   };
 
-  const handleEdit = (userId: string) => {
-    // TODO: Implement edit functionality
-    console.log('Edit user:', userId);
+  const handleEdit = (_userId: string) => {
+    // Edit functionality placeholder
   };
 
   return (

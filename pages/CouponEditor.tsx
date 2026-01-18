@@ -146,8 +146,8 @@ export default function CouponEditor() {
         await createCoupon(couponData).unwrap();
       }
       navigate('/coupons');
-    } catch (error) {
-      console.error('Error saving coupon:', error);
+    } catch {
+      // Error handled by RTK Query
     }
   };
 
@@ -169,8 +169,7 @@ export default function CouponEditor() {
     try {
       await deleteCoupon(id).unwrap();
       navigate('/coupons');
-    } catch (error) {
-      console.error('Error deleting coupon:', error);
+    } catch {
       setDeleteDialogOpen(false);
     }
   };
@@ -181,8 +180,8 @@ export default function CouponEditor() {
       if (code) {
         setValue('code', code);
       }
-    } catch (error) {
-      console.error('Error generating code:', error);
+    } catch {
+      // Silent fail - user can manually enter code
     }
   };
 

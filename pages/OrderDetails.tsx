@@ -85,8 +85,8 @@ export default function OrderDetails() {
   const handleStatusChange = async (newStatus: OrderStatus) => {
     try {
       await updateStatus({ id: order.$id, status: newStatus }).unwrap();
-    } catch (err) {
-      console.error('Error updating status:', err);
+    } catch {
+      // Error handled by RTK Query
     }
   };
 
@@ -95,8 +95,7 @@ export default function OrderDetails() {
   };
 
   const handleDownloadReceipt = () => {
-    // TODO: Implement receipt download
-    console.log('Download receipt');
+    // Receipt download functionality placeholder
   };
 
   // Get customer initials for avatar fallback

@@ -30,14 +30,37 @@ This prevents wasted iterations and ensures correct implementations from the sta
 - **Backend**: Appwrite SDK (Cloud)
 - **Charts**: Recharts
 
+## Environment Configuration
+
+- Use Vite environment variables with `VITE_` prefix
+- Access via `import.meta.env.VITE_VARIABLE_NAME`
+- Store in `.env.local` (gitignored), template in `.env.example`
+- Required: `VITE_APPWRITE_ENDPOINT`, `VITE_APPWRITE_PROJECT_ID`
+
 ## TypeScript Conventions
 
 - Use TypeScript for all files (`.ts`, `.tsx`)
 - Prefer interfaces over types for object shapes
 - Use enums for finite sets of values (e.g., `OrderStatus`, `UserRole`)
 - Appwrite documents use `$id` as the identifier field
+- Type files use `.types.ts` suffix
 
-@types.ts
+## Types Organization
+
+Types are organized by domain in the `types/` directory:
+
+| File | Contents |
+|------|----------|
+| `types/auth.types.ts` | `UserRole`, `UserStatus`, `AuthUser`, `User`, `mapAppwriteUserToUser()` |
+| `types/products.types.ts` | `Product`, `Category`, `ProductStatus`, `CategoryStatus` |
+| `types/orders.types.ts` | `Order`, `OrderDetails`, `OrderItem`, `OrderStatus` |
+| `types/analytics.types.ts` | `AnalyticsSummary`, `TimeSeriesDataPoint`, `AnalyticsInterval` |
+| `types/notifications.types.ts` | `Notification`, `NotificationType` |
+| `types/coupons.types.ts` | `Coupon`, `CouponStatus`, `CouponDiscountType` |
+| `types/common.types.ts` | `StatCardProps` |
+| `types/index.ts` | Re-exports all types |
+
+Import types from `@/types` or `../types` - the index file re-exports everything.
 
 ## Component Patterns
 
@@ -56,37 +79,56 @@ This prevents wasted iterations and ensures correct implementations from the sta
 ## Hebrew Text Standards
 
 - Error messages: `'שגיאה בהתחברות'`, `'שדה חובה'`
-- Loading states: `'טוען נתונים...'`, `'טוען פוסטים...'`, `'טוען נתוני אנליטיקות...'`
+- Loading states: `'טוען נתונים...'`, `'טוען מוצרים...'`
 - Confirmations: `'האם אתה בטוח שברצונך למחוק?'`
 - Buttons: `'התחבר'`, `'שמור'`, `'ביטול'`, `'מחק'`, `'ערוך'`
-- Analytics labels: `'צפיות היום'`, `'משתמשים פעילים יומי (DAU)'`, `'מוצרים פופולריים'`, `'שימור משתמשים'`
+
+## Authentication & Security
+
+- **Admin-only access**: Users must have `admin` label in Appwrite
+- Admin check performed on login AND session restore
+- No self-registration (admins created via Appwrite Console)
+- No console.log/error/warn in production code
+- Environment variables for all sensitive config
 
 ## File Organization
 
 ```
+├── types/                   # Domain-specific type definitions
+│   ├── index.ts             # Re-exports all types
+│   ├── auth.types.ts        # Auth/User types
+│   ├── products.types.ts    # Product/Category types
+│   ├── orders.types.ts      # Order types
+│   ├── analytics.types.ts   # Analytics types
+│   ├── notifications.types.ts # Notification types
+│   ├── coupons.types.ts     # Coupon types
+│   └── common.types.ts      # Shared types
 ├── theme.ts                 # Chakra UI custom theme
 ├── components/
 │   ├── ui/                  # Chakra provider & utilities
-│   ├── shared/              # Reusable components (Pagination, StatusBadge, etc.)
-│   ├── search/              # Global search components
-│   ├── products/            # Product-specific components
-│   ├── orders/              # Order-specific components
-│   ├── users/               # User-specific components
-│   ├── categories/          # Category-specific components
-│   ├── analytics/            # Analytics chart components (ViewsLineChart, PopularProductsChart, RetentionCard)
+│   ├── shared/              # Reusable components
+│   ├── layout-parts/        # Header, Sidebar
+│   ├── products/            # Product components
+│   ├── orders/              # Order components
+│   ├── users/               # User components
+│   ├── categories/          # Category components
+│   ├── coupons/             # Coupon components
+│   ├── analytics/           # Analytics charts
+│   ├── notifications/       # Notification components
+│   ├── search/              # Search components
+│   ├── post-editor/         # Editor form components
 │   └── dashboard/           # Dashboard widgets
-├── pages/                   # Page components (Dashboard, Products, Orders, Analytics, Search, etc.)
+├── pages/                   # Page components
 ├── services/
-│   ├── appwrite.ts         # Appwrite client configuration
-│   └── api/                 # RTK Query API slices by domain
-│       ├── baseApi.ts      # RTK Query base API
-│       ├── authApi.ts      # Authentication endpoints
-│       ├── productsApi.ts  # Products CRUD
-│       ├── ordersApi.ts    # Orders CRUD
-│       ├── usersApi.ts     # Users management
-│       ├── categoriesApi.ts # Categories CRUD
-│       ├── dashboardApi.ts # Dashboard analytics
-│       ├── analyticsApi.ts # Analytics endpoints (views, engagement, retention)
-│       └── searchApi.ts    # Global search
+│   ├── appwrite.ts          # Appwrite client (uses env vars)
+│   └── api/                 # RTK Query API slices
+├── functions/               # Appwrite Cloud Functions
 └── store.ts                 # Redux store
 ```
+
+## Error Handling
+
+- Silent fail for non-critical errors (localStorage)
+- Return `{ error: message }` from RTK Query endpoints
+- Display Hebrew error messages to users
+- No console statements in production

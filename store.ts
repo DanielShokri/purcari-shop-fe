@@ -4,28 +4,27 @@ import { api } from './services/api/index';
 import { AuthUser } from './types';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-// Safe LocalStorage Wrapper
+// Safe LocalStorage Wrapper (silently fails if localStorage is unavailable)
 const safeLocalStorage = {
   getItem: (key: string): string | null => {
     try {
       return localStorage.getItem(key);
-    } catch (e) {
-      console.warn('LocalStorage access denied:', e);
+    } catch {
       return null;
     }
   },
   setItem: (key: string, value: string): void => {
     try {
       localStorage.setItem(key, value);
-    } catch (e) {
-      console.warn('LocalStorage access denied:', e);
+    } catch {
+      // Silent fail
     }
   },
   removeItem: (key: string): void => {
     try {
       localStorage.removeItem(key);
-    } catch (e) {
-      console.warn('LocalStorage access denied:', e);
+    } catch {
+      // Silent fail
     }
   }
 };

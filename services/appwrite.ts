@@ -1,10 +1,16 @@
 import { Client, Account, Databases, Storage, Functions } from 'appwrite';
 
-// Appwrite Project: purcari
-const client = new Client();
+// Environment variables validation
+const APPWRITE_ENDPOINT = import.meta.env.VITE_APPWRITE_ENDPOINT;
+const APPWRITE_PROJECT_ID = import.meta.env.VITE_APPWRITE_PROJECT_ID;
 
-const APPWRITE_ENDPOINT = 'https://fra.cloud.appwrite.io/v1';
-const APPWRITE_PROJECT_ID = '696b5bee001fe3af955a';
+if (!APPWRITE_ENDPOINT || !APPWRITE_PROJECT_ID) {
+  throw new Error(
+    'Missing Appwrite configuration. Please create a .env.local file with VITE_APPWRITE_ENDPOINT and VITE_APPWRITE_PROJECT_ID'
+  );
+}
+
+const client = new Client();
 
 client
     .setEndpoint(APPWRITE_ENDPOINT)
@@ -14,19 +20,6 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 export const functions = new Functions(client);
-
-/**
- * Pings the Appwrite backend to verify the SDK setup.
- * This function is automatically called when the app starts.
- */
-export const pingAppwrite = async (): Promise<void> => {
-    try {
-        await client.ping();
-        console.log('✅ Appwrite connection successful!');
-    } catch (error) {
-        console.error('❌ Appwrite connection failed:', error);
-    }
-};
 
 export const APPWRITE_CONFIG = {
   DATABASE_ID: 'cms_db',

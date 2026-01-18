@@ -1,35 +1,9 @@
 import { api } from './baseApi';
 import { AuthUser } from '../../types';
-import { account } from '../appwrite';
-import { ID } from 'appwrite';
+import { account, usersApi } from '../appwrite';
 
 const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    // Register a new user (Client SDK - works from browser)
-    register: builder.mutation<AuthUser, { email: string; password: string; name: string }>({
-      queryFn: async ({ email, password, name }) => {
-        try {
-          // Create new user account (Client SDK - no server needed!)
-          await account.create(ID.unique(), email, password, name);
-          // Auto-login after registration
-          await account.createEmailPasswordSession(email, password);
-          // Fetch user data
-          const user = await account.get();
-          const authUser: AuthUser = { 
-            $id: user.$id, 
-            name: user.name, 
-            email: user.email, 
-            prefs: user.prefs 
-          };
-          return { data: authUser };
-        } catch (error: any) {
-          const message = error.message || 'שגיאה ביצירת חשבון';
-          return { error: message };
-        }
-      },
-      invalidatesTags: ['User'],
-    }),
-
     login: builder.mutation<AuthUser, { email: string; password: string }>({
       queryFn: async ({ email, password }) => {
         try {
@@ -37,6 +11,21 @@ const authApi = api.injectEndpoints({
           await account.createEmailPasswordSession({ email, password });
           // Fetch user data
           const user = await account.get();
+          
+          // Check for admin label via cloud function
+          try {
+            const userDetails = await usersApi.get(user.$id);
+            if (!userDetails.labels?.includes('admin')) {
+              // Not an admin - destroy session and reject
+              await account.deleteSession({ sessionId: 'current' });
+              return { error: 'אין לך הרשאות גישה למערכת הניהול' };
+            }
+          } catch {
+            // If we can't verify admin status, reject for safety
+            await account.deleteSession({ sessionId: 'current' });
+            return { error: 'שגיאה באימות הרשאות' };
+          }
+          
           const authUser: AuthUser = { 
             $id: user.$id, 
             name: user.name, 
@@ -46,7 +35,7 @@ const authApi = api.injectEndpoints({
           return { data: authUser };
         } catch (error: any) {
           // Handle Appwrite-specific errors
-          const message = error.message || 'פרטי התחברות שגויים';
+          const message = error.message || 'שם משתמש או סיסמה שגויים';
           return { error: message };
         }
       },
@@ -70,6 +59,21 @@ const authApi = api.injectEndpoints({
         try {
           // Check if user has an active session
           const user = await account.get();
+          
+          // Verify admin label on session restore
+          try {
+            const userDetails = await usersApi.get(user.$id);
+            if (!userDetails.labels?.includes('admin')) {
+              // Not an admin - destroy session and return null
+              await account.deleteSession({ sessionId: 'current' });
+              return { data: null };
+            }
+          } catch {
+            // If we can't verify admin status, destroy session
+            await account.deleteSession({ sessionId: 'current' });
+            return { data: null };
+          }
+          
           const authUser: AuthUser = { 
             $id: user.$id, 
             name: user.name, 
@@ -89,7 +93,6 @@ const authApi = api.injectEndpoints({
 });
 
 export const { 
-  useRegisterMutation,
   useLoginMutation, 
   useLogoutMutation, 
   useGetCurrentUserQuery 

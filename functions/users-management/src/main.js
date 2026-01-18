@@ -1,17 +1,15 @@
 import { Client, Users } from 'node-appwrite';
 
-export default async ({ req, res, log, error }) => {
+export default async ({ req, res, error }) => {
   // Use static API key (set in Function Variables) or fallback to Dynamic API Key
   const apiKey = process.env.APPWRITE_USERS_API_KEY || process.env.APPWRITE_FUNCTION_API_KEY;
-  
-  // Debug logging
-  log(`Endpoint: ${process.env.APPWRITE_FUNCTION_API_ENDPOINT}`);
-  log(`Project ID: ${process.env.APPWRITE_FUNCTION_PROJECT_ID}`);
-  log(`Using static key: ${process.env.APPWRITE_USERS_API_KEY ? 'YES' : 'NO'}`);
-  log(`API Key present: ${apiKey ? 'YES' : 'NO'}`);
 
   if (!apiKey) {
     return res.json({ error: 'No API key available. Please set APPWRITE_USERS_API_KEY in function variables.' }, 500);
+  }
+
+  if (!process.env.APPWRITE_FUNCTION_API_ENDPOINT || !process.env.APPWRITE_FUNCTION_PROJECT_ID) {
+    return res.json({ error: 'Missing required environment variables.' }, 500);
   }
 
   const client = new Client()
@@ -25,8 +23,6 @@ export default async ({ req, res, log, error }) => {
     // Parse the request body
     const body = req.body ? (typeof req.body === 'string' ? JSON.parse(req.body) : req.body) : {};
     const { action, userId, email, password, name, role, status, labels, prefs } = body;
-
-    log(`Executing action: ${action}`);
 
     let result;
 

@@ -34,8 +34,8 @@ export default function Login() {
       const result = await login(data).unwrap();
       dispatch(setCredentials({ user: result }));
       navigate('/');
-    } catch (err) {
-      console.error('Login failed', err);
+    } catch {
+      // Error is handled by RTK Query
     }
   };
 
@@ -78,7 +78,7 @@ export default function Login() {
                 <Alert.Indicator />
                 <Alert.Content>
                   <Alert.Description fontSize="sm" textAlign="center">
-                    שגיאה בהתחברות. נסה: admin@demo.com / Demo123456!
+                    {typeof error === 'string' ? error : 'שם משתמש או סיסמה שגויים'}
                   </Alert.Description>
                 </Alert.Content>
               </Alert.Root>
@@ -94,7 +94,7 @@ export default function Login() {
                   <Input
                     {...register('email', { required: 'שדה חובה' })}
                     type="email"
-                    defaultValue="admin@demo.com"
+                    placeholder="your@email.com"
                     dir="ltr"
                     size="lg"
                   />
@@ -110,7 +110,7 @@ export default function Login() {
                   <Input
                     {...register('password', { required: 'שדה חובה' })}
                     type="password"
-                    defaultValue="Demo123456!"
+                    placeholder="********"
                     dir="ltr"
                     size="lg"
                   />
@@ -137,7 +137,7 @@ export default function Login() {
 
             {/* Footer */}
             <Text fontSize="xs" color="fg.subtle" textAlign="center">
-              גרסת הדגמה - השתמש בפרטים המופיעים בשדה
+              מערכת ניהול - גישה למנהלים בלבד
             </Text>
           </VStack>
         </Card.Body>

@@ -128,13 +128,11 @@ export default function Orders() {
   };
 
   const handleExport = () => {
-    // TODO: Implement export functionality
-    console.log('Export orders');
+    // Export functionality placeholder
   };
 
   const handleNewOrder = () => {
-    // TODO: Implement new order functionality
-    console.log('Create new order');
+    // New order functionality placeholder
   };
 
   return (

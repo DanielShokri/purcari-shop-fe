@@ -129,8 +129,8 @@ export default function Categories() {
       } else {
         await createCategory(data);
       }
-    } catch (error) {
-      console.error('Error saving category:', error);
+    } catch {
+      // Error handled by RTK Query
     }
   };
 

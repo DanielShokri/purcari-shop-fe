@@ -6,12 +6,8 @@ import { HashRouter } from 'react-router-dom';
 import { Provider as ChakraProvider } from './components/ui/provider';
 import { store, setCredentials, setInitialized } from './store';
 import App from './App';
-import { pingAppwrite } from './services/appwrite';
 import { useGetCurrentUserQuery } from './services/api';
 import { Center, Spinner, VStack, Text } from '@chakra-ui/react';
-
-// Verify Appwrite SDK setup on app start
-pingAppwrite();
 
 // Component to check for existing Appwrite session on app load
 function AuthInitializer({ children }: { children: React.ReactNode }) {

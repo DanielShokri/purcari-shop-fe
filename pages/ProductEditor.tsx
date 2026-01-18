@@ -173,8 +173,8 @@ export default function ProductEditor() {
         await createProduct(productData).unwrap();
       }
       navigate('/products');
-    } catch (error) {
-      console.error('Error saving product:', error);
+    } catch {
+      // Error handled by RTK Query
     }
   };
 
@@ -196,8 +196,7 @@ export default function ProductEditor() {
     try {
       await deleteProduct(id).unwrap();
       navigate('/products');
-    } catch (error) {
-      console.error('Error deleting product:', error);
+    } catch {
       setDeleteDialogOpen(false);
     }
   };
