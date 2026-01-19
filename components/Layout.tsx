@@ -1,0 +1,26 @@
+import React from 'react';
+import Header from './Header';
+import Footer from './Footer';
+import CartModal from './CartModal';
+import { useAppSelector } from '../store/hooks';
+import { selectIsCartModalOpen } from '../store/slices/uiSlice';
+import { AnimatePresence } from 'framer-motion';
+
+const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const isCartOpen = useAppSelector(selectIsCartModalOpen);
+
+  return (
+    <div className="flex flex-col min-h-screen font-sans">
+      <Header />
+      <main className="flex-grow pt-20">
+        {children}
+      </main>
+      <Footer />
+      <AnimatePresence>
+        {isCartOpen && <CartModal />}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default Layout;

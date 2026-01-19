@@ -1,0 +1,171 @@
+---
+description: TypeScript types and data schemas
+globs:
+  - "types.ts"
+  - "**/*.ts"
+  - "**/*.tsx"
+---
+
+# TypeScript Types & Data Schemas
+
+## Core Types (types.ts)
+
+### Product Interface
+```typescript
+export interface Product {
+  $id: string;                    // Appwrite document ID pattern
+  productName: string;            // English name
+  productNameHe: string;          // Hebrew name (display)
+  slug: string;                   // URL-friendly identifier
+  description: string;            // English description
+  descriptionHe: string;          // Hebrew description (display)
+  price: number;                  // Price in ₪
+  compareAtPrice?: number;        // Original price for sales
+  onSale: boolean;
+  isFeatured: boolean;
+  category: string;
+  images: string[];               // Array of image URLs
+  sku: string;
+  stockQuantity: number;
+  wineType?: 'Red' | 'White' | 'Rosé' | 'Sparkling';
+  region?: string;
+  vintage?: number;
+  alcoholContent?: number;        // Percentage
+  volume?: string;                // e.g., "750ml"
+  tastingNotes?: string;
+}
+```
+
+### Cart Item Interface
+```typescript
+export interface CartItem {
+  id: string;          // Product $id
+  title: string;       // Hebrew product name
+  price: number;       // Unit price in ₪
+  quantity: number;
+  imgSrc: string;      // First product image
+}
+```
+
+### Category Interface
+```typescript
+export interface Category {
+  $id: string;
+  name: string;        // English name
+  nameHe: string;      // Hebrew name
+  slug: string;
+}
+```
+
+## State Types
+
+### Cart State
+```typescript
+interface CartState {
+  items: CartItem[];
+  isInitialized: boolean;
+}
+```
+
+### UI State
+```typescript
+interface UIState {
+  isCartModalOpen: boolean;
+  isMobileMenuOpen: boolean;
+}
+```
+
+## Redux Types
+
+### Store Types
+```typescript
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+```
+
+### Action Payload Types
+```typescript
+// For updateQuantity
+PayloadAction<{ id: string; quantity: number }>
+
+// For addToCart
+PayloadAction<CartItem>
+
+// For removeFromCart
+PayloadAction<string>  // item id
+```
+
+## Component Props Types
+
+### Standard Pattern
+```typescript
+interface ComponentNameProps {
+  requiredProp: Type;
+  optionalProp?: Type;
+  children?: React.ReactNode;
+}
+```
+
+### Product Card Props
+```typescript
+interface ProductCardProps {
+  product: Product;
+}
+```
+
+### Layout Props
+```typescript
+interface LayoutProps {
+  children: React.ReactNode;
+}
+```
+
+## Event Types
+```typescript
+// Click events
+(e: React.MouseEvent) => void
+(e: React.MouseEvent<HTMLButtonElement>) => void
+
+// Change events
+(e: React.ChangeEvent<HTMLInputElement>) => void
+
+// Form events
+(e: React.FormEvent<HTMLFormElement>) => void
+```
+
+## RTK Query Types
+
+### Query Return Types
+```typescript
+// Hook return
+const { data, isLoading, error } = useGetProductsQuery();
+
+// data type inferred from endpoint definition
+builder.query<Product[], void>({...})  // returns Product[]
+builder.query<Product, string>({...})  // returns Product, takes string id
+```
+
+### Error Type
+```typescript
+{ status: number; statusText: string; data: null }
+```
+
+## Type Guards & Utilities
+```typescript
+// Optional chaining for wine type display
+product.wineType === 'Red' ? 'יין אדום' : 
+product.wineType === 'White' ? 'יין לבן' : 'רוזה'
+
+// Safe array access
+product.images[0]  // First image
+
+// Price formatting
+`₪${product.price}`
+`₪${total.toFixed(2)}`
+```
+
+## Naming Conventions
+- Interfaces: `PascalCase` (e.g., `Product`, `CartItem`)
+- Type aliases: `PascalCase` (e.g., `RootState`, `AppDispatch`)
+- Props interfaces: `ComponentNameProps`
+- State interfaces: `FeatureState` (e.g., `CartState`, `UIState`)

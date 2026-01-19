@@ -1,0 +1,349 @@
+# Purcari Israel - Hebrew Ecommerce Site Rules
+
+## Project Overview
+
+This is a Hebrew RTL ecommerce website for **Purcari Winery Israel** - a premium wine retailer. The site serves Hebrew-speaking customers in Israel and follows RTL (right-to-left) layout conventions.
+
+### Business Domain
+- Premium wine ecommerce (Moldovan winery heritage since 1827)
+- Target market: Israeli consumers
+- Currency: Israeli Shekel (₪)
+- Primary language: Hebrew (עברית)
+
+---
+
+## Tech Stack
+
+### Core Technologies
+- **React 18.2** with TypeScript
+- **Vite 6** for build tooling
+- **Redux Toolkit 2.2.3** with RTK Query for state management and API calls
+- **React Router DOM 6** (using MemoryRouter)
+- **Framer Motion 12** for animations
+- **Tailwind CSS** (via CDN with custom config)
+- **Lucide React** for icons
+
+### Key Dependencies
+```json
+{
+  "@reduxjs/toolkit": "2.2.3",
+  "framer-motion": "^12.27.1",
+  "lucide-react": "0.378.0",
+  "react": "18.2.0",
+  "react-dom": "18.2.0",
+  "react-redux": "9.1.1",
+  "react-router-dom": "^6.30.3"
+}
+```
+
+---
+
+## Project Structure
+
+```
+purcari-israel/
+├── components/          # Reusable UI components
+│   ├── CartModal.tsx
+│   ├── Footer.tsx
+│   ├── Header.tsx
+│   ├── Layout.tsx
+│   └── ProductCard.tsx
+├── pages/               # Route-level page components
+│   ├── HomePage.tsx
+│   ├── ProductPage.tsx
+│   └── ShopPage.tsx
+├── services/
+│   └── api/             # RTK Query API definitions
+│       ├── baseApi.ts
+│       └── productsApi.ts
+├── store/               # Redux store configuration
+│   ├── hooks.ts         # Typed Redux hooks
+│   ├── index.ts         # Store configuration
+│   └── slices/          # Redux slices
+│       ├── cartSlice.ts
+│       └── uiSlice.ts
+├── types.ts             # TypeScript type definitions
+├── App.tsx              # Main app component with routing
+├── index.tsx            # React entry point
+├── index.html           # HTML template with Tailwind config
+└── vite.config.ts       # Vite configuration
+```
+
+---
+
+## Coding Conventions
+
+### TypeScript
+- Use `React.FC` for functional components with explicit typing
+- Define interfaces in `types.ts` for shared types
+- Use `$id` pattern for Appwrite-compatible document IDs
+- Prefer strict typing over `any`
+
+### Component Patterns
+```typescript
+// Component structure pattern
+const ComponentName: React.FC<ComponentProps> = ({ prop1, prop2 }) => {
+  const dispatch = useAppDispatch();
+  const selector = useAppSelector(selectSomething);
+  
+  // Event handlers
+  const handleAction = () => { /* ... */ };
+  
+  return (
+    <div className="...">
+      {/* JSX */}
+    </div>
+  );
+};
+
+export default ComponentName;
+```
+
+### Redux Patterns
+- Use `createSlice` for state slices
+- Export selectors from slice files: `export const selectX = (state: RootState) => state.slice.x`
+- Use typed hooks: `useAppDispatch` and `useAppSelector`
+- RTK Query for API calls with `injectEndpoints` pattern
+
+### File Naming
+- Components: `PascalCase.tsx` (e.g., `ProductCard.tsx`)
+- Slices: `camelCaseSlice.ts` (e.g., `cartSlice.ts`)
+- API files: `camelCaseApi.ts` (e.g., `productsApi.ts`)
+
+---
+
+## RTL & Hebrew Localization
+
+### HTML Configuration
+```html
+<html lang="he" dir="rtl">
+```
+
+### Tailwind RTL Classes
+Use logical properties for RTL support:
+- `start-*` / `end-*` instead of `left-*` / `right-*`
+- `ms-*` / `me-*` for margin-start/end
+- `ps-*` / `pe-*` for padding-start/end
+- `text-right` for Hebrew text alignment
+
+### RTL-Aware Examples
+```tsx
+// Correct RTL positioning
+<span className="absolute top-0 -end-1">...</span>
+
+// Correct RTL margin
+<div className="ms-4">...</div>
+
+// Mobile menu slides from start (right in RTL)
+className="animate-in slide-in-from-start"
+```
+
+### Hebrew Content Guidelines
+- All user-facing text must be in Hebrew
+- Product data has dual fields: `productName` (English) and `productNameHe` (Hebrew)
+- Use Hebrew for: navigation, buttons, labels, error messages, placeholders
+- Keep brand name "Purcari" in English
+
+### Common Hebrew UI Text
+```
+דף הבית = Home
+חנות = Shop
+אודות = About
+צור קשר = Contact
+סל הקניות = Shopping Cart
+הוסף לסל = Add to Cart
+לקופה = Checkout
+מבצע = Sale
+יין אדום = Red Wine
+יין לבן = White Wine
+רוזה = Rosé
+```
+
+---
+
+## Design System
+
+### Color Palette (Tailwind Config)
+```javascript
+colors: {
+  primary: '#1a1a1a',      // Dark/Black
+  secondary: '#8c2438',    // Wine Red (main brand color)
+  accent: '#d4af37',       // Gold (luxury accent)
+}
+```
+
+### Typography
+- Font Family: `Noto Sans Hebrew` (Google Fonts)
+- Serif for headings: `Noto Sans Hebrew`
+- Sans for body: `font-sans`
+
+### Component Styling Patterns
+```tsx
+// Card hover effects
+className="group hover:shadow-xl transition-all duration-300"
+
+// Buttons - Primary
+className="bg-secondary hover:bg-red-900 text-white"
+
+// Buttons - Outline
+className="border-2 border-gray-900 hover:bg-gray-900 hover:text-white"
+
+// Backdrop blur for modals/header
+className="bg-white/90 backdrop-blur-md"
+```
+
+---
+
+## State Management
+
+### Cart State (localStorage persisted)
+```typescript
+interface CartItem {
+  id: string;
+  title: string;      // Hebrew product name
+  price: number;
+  quantity: number;
+  imgSrc: string;
+}
+```
+
+### UI State
+```typescript
+interface UIState {
+  isCartModalOpen: boolean;
+  isMobileMenuOpen: boolean;
+}
+```
+
+### API State (RTK Query)
+- Products cached with `'Products'` tag
+- Use `fakeBaseQuery` for mock data (replace with real API)
+- Endpoints: `getProducts`, `getProductById`, `getFeaturedProducts`
+
+---
+
+## Product Data Schema
+
+```typescript
+interface Product {
+  $id: string;                    // Appwrite document ID
+  productName: string;            // English name
+  productNameHe: string;          // Hebrew name (displayed)
+  slug: string;
+  description: string;            // English description
+  descriptionHe: string;          // Hebrew description (displayed)
+  price: number;                  // Price in ₪
+  compareAtPrice?: number;        // Original price for sales
+  onSale: boolean;
+  isFeatured: boolean;
+  category: string;
+  images: string[];
+  sku: string;
+  stockQuantity: number;
+  wineType?: 'Red' | 'White' | 'Rosé' | 'Sparkling';
+  region?: string;
+  vintage?: number;
+  alcoholContent?: number;
+  volume?: string;
+  tastingNotes?: string;
+}
+```
+
+---
+
+## Animation Patterns (Framer Motion)
+
+```typescript
+// Fade in up animation
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  whileInView: { opacity: 1, y: 0 },
+  viewport: { once: true },
+  transition: { duration: 0.6 }
+};
+
+// Slide in from side
+initial={{ opacity: 0, x: 50 }}
+animate={{ opacity: 1, x: 0 }}
+transition={{ duration: 0.8, ease: "easeOut" }}
+```
+
+---
+
+## Best Practices
+
+### Do's ✅
+- Use Hebrew for all user-facing text
+- Use logical CSS properties (start/end) for RTL
+- Persist cart to localStorage
+- Use RTK Query hooks for data fetching
+- Add loading skeletons with `animate-pulse`
+- Use `motion` components for page transitions
+- Format prices with ₪ symbol: `₪{price}`
+- Use Lucide icons consistently
+
+### Don'ts ❌
+- Don't hardcode left/right positioning (use start/end)
+- Don't forget Hebrew translations for new UI text
+- Don't use inline styles (use Tailwind classes)
+- Don't create new state without considering Redux
+- Don't forget `key` props in lists
+- Don't use `any` type in TypeScript
+
+---
+
+## Common Tasks
+
+### Adding a New Page
+1. Create component in `pages/` directory
+2. Add route in `App.tsx` Routes
+3. Add navigation link in `Header.tsx` navLinks array
+
+### Adding a New API Endpoint
+1. Add endpoint in `services/api/productsApi.ts` using `injectEndpoints`
+2. Export the generated hook
+3. Use hook in component: `const { data, isLoading } = useNewEndpointQuery()`
+
+### Adding to Cart
+```typescript
+dispatch(addToCart({
+  id: product.$id,
+  title: product.productNameHe,
+  price: product.price,
+  quantity: 1,
+  imgSrc: product.images[0]
+}));
+```
+
+---
+
+## Environment Variables
+
+```
+GEMINI_API_KEY    # For AI features (if any)
+```
+
+Access via: `process.env.GEMINI_API_KEY`
+
+---
+
+## Development Commands
+
+```bash
+npm run dev      # Start dev server (port 3000)
+npm run build    # Production build
+npm run preview  # Preview production build
+```
+
+---
+
+## Notes for AI Assistants
+
+1. **Language**: Always use Hebrew for user-facing text, English for code/comments
+2. **RTL**: Remember this is an RTL site - use logical properties
+3. **Brand**: Keep "Purcari" in English, use wine-themed vocabulary
+4. **Currency**: Always use ₪ (Israeli Shekel)
+5. **Style**: Maintain luxury/premium aesthetic with wine red (#8c2438) as accent
+6. **Animations**: Use Framer Motion for page transitions, CSS for micro-interactions
+7. **State**: Check if state belongs in Redux before creating local state
+8. **Types**: Always type new interfaces in `types.ts`

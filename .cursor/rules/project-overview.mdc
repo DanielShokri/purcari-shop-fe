@@ -1,0 +1,45 @@
+---
+description: Core project rules for Purcari Israel Hebrew wine ecommerce site
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Purcari Israel - Project Overview
+
+## About This Project
+This is a Hebrew RTL ecommerce website for **Purcari Winery Israel** - a premium wine retailer selling Moldovan wines to Israeli customers.
+
+## Key Facts
+- **Language**: Hebrew (עברית) - RTL layout
+- **Currency**: Israeli Shekel (₪)
+- **Brand**: Purcari Winery (established 1827)
+- **Target**: Premium wine consumers in Israel
+
+## Tech Stack
+- React 18.2 + TypeScript
+- Vite 6 (build tool)
+- Redux Toolkit 2.2.3 + RTK Query
+- React Router DOM 6
+- Framer Motion 12 (animations)
+- Tailwind CSS (CDN)
+- Lucide React (icons)
+
+## Project Structure
+```
+├── components/     # Reusable UI components
+├── pages/          # Route-level pages
+├── services/api/   # RTK Query API definitions
+├── store/          # Redux store & slices
+├── types.ts        # TypeScript interfaces
+├── App.tsx         # Main app with routing
+└── index.tsx       # Entry point
+```
+
+## Design Tokens
+```
+Primary:   #1a1a1a (dark/black)
+Secondary: #8c2438 (wine red - main brand)
+Accent:    #d4af37 (gold - luxury)
+Font:      Noto Sans Hebrew
+```
