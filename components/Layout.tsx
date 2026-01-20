@@ -3,6 +3,7 @@ import Header from './Header';
 import Footer from './Footer';
 import CartModal from './CartModal';
 import SearchModal from './SearchModal';
+import AgeVerificationModal from './AgeVerificationModal';
 import { useAppSelector } from '../store/hooks';
 import { selectIsCartModalOpen } from '../store/slices/uiSlice';
 import { AnimatePresence } from 'framer-motion';
@@ -22,6 +23,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         {isCartOpen && <CartModal />}
       </AnimatePresence>
       <SearchModal />
+      <AgeVerificationModal />
     </div>
   );
 };
