@@ -30,8 +30,8 @@ const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
         
         {/* Added Cart Items List */}
         <div className="space-y-4 mb-6 border-b pb-6 max-h-[300px] overflow-y-auto custom-scrollbar">
-          {cartItems.map((item) => (
-            <div key={item.productId} className="flex gap-3">
+          {cartItems.map((item, index) => (
+            <div key={item.id || item.productId || `item-${index}`} className="flex gap-3">
               <div className="w-12 h-16 bg-gray-50 rounded overflow-hidden flex-shrink-0 border border-gray-100">
                 <img src={item.imgSrc} alt={item.title} className="w-full h-full object-cover" />
               </div>

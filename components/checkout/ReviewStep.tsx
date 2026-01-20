@@ -4,7 +4,7 @@ import { CartItem } from '../../types';
 interface ReviewStepProps {
   formData: any;
   cartItems: CartItem[];
-  handleSubmit: (e: React.FormEvent) => void;
+  handleSubmit: () => void;
   prevStep: () => void;
   isCreatingOrder: boolean;
 }
@@ -23,8 +23,8 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ formData, cartItems, handleSubm
         <div>
           <h3 className="font-bold mb-4 text-gray-900">הפריטים שלך:</h3>
           <div className="space-y-3">
-            {cartItems.map(item => (
-              <div key={item.productId} className="flex justify-between items-center">
+            {cartItems.map((item, index) => (
+              <div key={item.id || item.productId || `review-item-${index}`} className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <img src={item.imgSrc} alt={item.title} className="w-12 h-16 object-cover rounded" />
                   <div>

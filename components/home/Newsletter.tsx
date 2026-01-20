@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, CheckCircle2 } from 'lucide-react';
+import theme from '../../theme/styles';
 
 const Newsletter: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -15,12 +16,12 @@ const Newsletter: React.FC = () => {
   };
 
   return (
-    <section className="py-20 bg-gray-50 border-t border-gray-100">
-      <div className="container mx-auto px-4">
+    <section className={`${theme.SECTION_PY} bg-gray-50 border-t border-gray-100`}>
+      <div className={theme.CONTAINER}>
         <div className="max-w-4xl mx-auto bg-white rounded-[3rem] p-8 md:p-16 shadow-xl relative overflow-hidden">
           {/* Background Elements */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-secondary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
+          <div className="absolute top-0 end-0 w-64 h-64 bg-secondary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+          <div className="absolute bottom-0 start-0 w-64 h-64 bg-accent/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl"></div>
 
           <div className="relative z-10 text-center">
             <motion.div
@@ -37,7 +38,7 @@ const Newsletter: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.1 }}
-              className="text-3xl md:text-4xl font-bold mb-4"
+              className={`${theme.H2} mb-4`}
             >
               הצטרפו למועדון הלקוחות שלנו
             </motion.h2>
@@ -47,7 +48,7 @@ const Newsletter: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.2 }}
-              className="text-gray-600 mb-8 max-w-lg mx-auto"
+              className={`${theme.BODY} mb-8 max-w-lg mx-auto`}
             >
               הירשמו לניוזלטר שלנו וקבלו עדכונים על יינות חדשים, מבצעים בלעדיים ואירועי טעימות.
             </motion.p>

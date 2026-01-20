@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowUpLeft } from 'lucide-react';
+import theme from '../../theme/styles';
 
 const Hero: React.FC = () => {
   const [loadVideo, setLoadVideo] = useState(false);
@@ -13,8 +14,8 @@ const Hero: React.FC = () => {
   }, []);
 
   return (
-    <section className="mx-4 sm:mx-8 lg:mx-12 mt-6 sm:mt-8">
-      <div className="relative h-[65vh] sm:h-[70vh] w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-gray-900">
+    <section className="mt-6 sm:mt-8">
+      <div className={`relative h-[65vh] sm:h-[70vh] w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-gray-900 shadow-2xl`}>
         {/* Static Background / Poster Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
@@ -43,15 +44,19 @@ const Hero: React.FC = () => {
           </AnimatePresence>
         </div>
         
-        <div className="absolute inset-0 bg-gradient-to-l from-black/50 via-black/20 to-transparent"></div>
+        {/* Dark Screen Overlay for Text Readability */}
+        <div className="absolute inset-0 bg-black/40 z-10"></div>
+        
+        {/* Directional Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-l from-black/60 via-black/20 to-transparent z-10"></div>
 
-        <div className="absolute inset-0 flex items-center">
-          <div className="max-w-xl text-right text-white ps-8 sm:ps-12 lg:ps-20">
+        <div className="absolute inset-0 flex items-center z-20">
+          <div className={`max-w-xl text-right text-white ${theme.CONTAINER_PX}`}>
             <motion.h1
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, ease: "easeOut" }}
-              className="text-5xl sm:text-6xl md:text-7xl font-bold mb-4 tracking-tight drop-shadow-lg"
+              className={`${theme.H1} mb-4 drop-shadow-lg text-white`}
             >
               ערכים אמיתיים אינם משתנים
             </motion.h1>
@@ -59,7 +64,7 @@ const Hero: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-              className="text-lg sm:text-xl text-white/90 mb-8 leading-relaxed drop-shadow-md"
+              className={`${theme.BODY_LG} mb-8 drop-shadow-md text-white/90`}
             >
               מורשת של מצוינות מאז 1827. היינות של Purcari שכבשו את בתי המלוכה של אירופה, עכשיו אצלכם בשולחן.
             </motion.p>

@@ -26,6 +26,15 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Address } from '../types';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import AddressAutocomplete from '../components/common/AddressAutocomplete';
+import { 
+  profileSchema, 
+  addressFormSchema, 
+  ProfileInput, 
+  AddressFormInput 
+} from '../schemas/validationSchemas';
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,46 +53,62 @@ const DashboardPage: React.FC = () => {
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
   const [updatePrefs, { isLoading: isUpdatingPrefs }] = useUpdateUserPrefsMutation();
 
-  // Profile Form State
-  const [profileForm, setProfileForm] = useState({
-    name: '',
-    phone: ''
-  });
   const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
-  // Address Form State
+  // Profile Form
+  const { 
+    register: registerProfile, 
+    handleSubmit: handleProfileSubmitHook, 
+    formState: { errors: profileErrors },
+    reset: resetProfile
+  } = useForm<ProfileInput>({
+    resolver: zodResolver(profileSchema),
+  });
+
+  // Address Form
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
-  const [addressForm, setAddressForm] = useState<Omit<Address, 'id'>>({
-    name: '',
-    street: '',
-    city: '',
-    postalCode: '',
-    country: 'Israel',
-    isDefault: false
+  
+  const addressFormMethods = useForm<AddressFormInput>({
+    resolver: zodResolver(addressFormSchema),
+    defaultValues: {
+      name: '',
+      street: '',
+      city: '',
+      postalCode: '',
+      country: 'Israel',
+      isDefault: false
+    }
   });
+
+  const { 
+    register: registerAddress, 
+    handleSubmit: handleAddressSubmitHook, 
+    formState: { errors: addressErrors },
+    reset: resetAddress,
+    setValue: setAddressValue
+  } = addressFormMethods;
 
   useEffect(() => {
     if (user) {
-      setProfileForm({
+      resetProfile({
         name: user.name || '',
         phone: user.phone || ''
       });
     }
-  }, [user]);
+  }, [user, resetProfile]);
 
   const handleLogout = async () => {
     await logout().unwrap();
     navigate('/login');
   };
 
-  const handleProfileSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onProfileSubmit = async (data: ProfileInput) => {
     setProfileStatus(null);
     try {
       await updateProfile({ 
-        name: profileForm.name,
-        phone: profileForm.phone
+        name: data.name,
+        phone: data.phone
       }).unwrap();
       setProfileStatus({ type: 'success', message: 'הפרופיל עודכן בהצלחה' });
     } catch (err: any) {
@@ -91,36 +116,36 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleAddressSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onAddressSubmit = async (data: AddressFormInput) => {
     try {
       const currentAddresses = prefs?.addresses || [];
       let updatedAddresses: Address[];
 
       if (editingAddressId) {
         updatedAddresses = currentAddresses.map(addr => 
-          addr.id === editingAddressId ? { ...addressForm, id: editingAddressId } : addr
+          addr.id === editingAddressId ? { ...data, id: editingAddressId } as Address : addr
         );
       } else {
         const newAddress: Address = {
-          ...addressForm,
+          ...data,
           id: Math.random().toString(36).substring(7)
-        };
+        } as Address;
         updatedAddresses = [...currentAddresses, newAddress];
       }
 
       // If set as default, unset others
-      if (addressForm.isDefault) {
+      if (data.isDefault) {
+        const targetId = editingAddressId || updatedAddresses[updatedAddresses.length-1].id;
         updatedAddresses = updatedAddresses.map(addr => ({
           ...addr,
-          isDefault: addr.id === (editingAddressId || updatedAddresses[updatedAddresses.length-1].id)
+          isDefault: addr.id === targetId
         }));
       }
 
       await updatePrefs({ ...prefs, addresses: updatedAddresses }).unwrap();
       setIsAddressModalOpen(false);
       setEditingAddressId(null);
-      setAddressForm({
+      resetAddress({
         name: '',
         street: '',
         city: '',
@@ -145,7 +170,7 @@ const DashboardPage: React.FC = () => {
 
   const openEditAddress = (address: Address) => {
     setEditingAddressId(address.id);
-    setAddressForm({
+    resetAddress({
       name: address.name,
       street: address.street,
       city: address.city,
@@ -312,35 +337,34 @@ const DashboardPage: React.FC = () => {
                   </div>
                 )}
 
-                <form onSubmit={handleProfileSubmit} className="space-y-6">
+                <form onSubmit={handleProfileSubmitHook(onProfileSubmit)} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">שם מלא</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">שם מלא <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <UserIcon className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                           type="text"
-                          value={profileForm.name}
-                          onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                          className="w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all"
+                          {...registerProfile('name')}
+                          className={`w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all ${profileErrors.name ? 'border-red-500' : ''}`}
                           placeholder="ישראל ישראלי"
-                          required
                         />
                       </div>
+                      {profileErrors.name && <p className="text-red-500 text-xs mt-1">{profileErrors.name.message}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">טלפון נייד</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">טלפון נייד <span className="text-red-500">*</span></label>
                       <div className="relative">
                         <Phone className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
                           type="tel"
-                          value={profileForm.phone}
-                          onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
-                          className="w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all text-left"
+                          {...registerProfile('phone')}
+                          className={`w-full ps-10 pe-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all text-left ${profileErrors.phone ? 'border-red-500' : ''}`}
                           placeholder="050-0000000"
                           dir="ltr"
                         />
                       </div>
+                      {profileErrors.phone && <p className="text-red-500 text-xs mt-1">{profileErrors.phone.message}</p>}
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-2">כתובת אימייל</label>
@@ -381,7 +405,7 @@ const DashboardPage: React.FC = () => {
                   <button
                     onClick={() => {
                       setEditingAddressId(null);
-                      setAddressForm({
+                      resetAddress({
                         name: '',
                         street: '',
                         city: '',
@@ -461,7 +485,7 @@ const DashboardPage: React.FC = () => {
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white w-full max-w-lg rounded-3xl shadow-xl overflow-hidden"
+              className="bg-white w-full max-w-lg rounded-3xl shadow-xl"
             >
               <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="text-xl font-bold">{editingAddressId ? 'עריכת כתובת' : 'הוספת כתובת חדשה'}</h3>
@@ -469,58 +493,54 @@ const DashboardPage: React.FC = () => {
                   <Plus size={24} className="rotate-45" />
                 </button>
               </div>
-              <form onSubmit={handleAddressSubmit} className="p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">כינוי לכתובת (בית, עבודה וכו')</label>
-                  <input
-                    type="text"
-                    value={addressForm.name}
-                    onChange={(e) => setAddressForm({ ...addressForm, name: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all"
-                    placeholder="לדוגמה: הבית שלי"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">רחוב ומספר בית</label>
-                  <input
-                    type="text"
-                    value={addressForm.street}
-                    onChange={(e) => setAddressForm({ ...addressForm, street: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all"
-                    placeholder="רחוב הירקון 1"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+              <FormProvider {...addressFormMethods}>
+                <form onSubmit={handleAddressSubmitHook(onAddressSubmit) as any} className="p-6 space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">עיר</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">כינוי לכתובת (בית, עבודה וכו') <span className="text-red-500">*</span></label>
                     <input
                       type="text"
-                      value={addressForm.city}
-                      onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all"
-                      placeholder="תל אביב"
+                      {...registerAddress('name')}
+                      className={`w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all ${addressErrors.name ? 'border-red-500' : ''}`}
+                      placeholder="לדוגמה: הבית שלי"
+                    />
+                    {addressErrors.name && <p className="text-red-500 text-xs mt-1">{addressErrors.name.message}</p>}
+                  </div>
+                  <div>
+                    <AddressAutocomplete 
+                      name="street" 
+                      label="רחוב ומספר בית" 
+                      placeholder="רחוב הירקון 1"
+                      error={addressErrors.street?.message}
                       required
                     />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">עיר <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      {...registerAddress('city')}
+                      className={`w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all ${addressErrors.city ? 'border-red-500' : ''}`}
+                      placeholder="תל אביב"
+                    />
+                    {addressErrors.city && <p className="text-red-500 text-xs mt-1">{addressErrors.city.message}</p>}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">מיקוד</label>
                     <input
                       type="text"
-                      value={addressForm.postalCode}
-                      onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all"
+                      {...registerAddress('postalCode')}
+                      className={`w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all ${addressErrors.postalCode ? 'border-red-500' : ''}`}
                       placeholder="1234567"
                     />
+                    {addressErrors.postalCode && <p className="text-red-500 text-xs mt-1">{addressErrors.postalCode.message}</p>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 py-2">
                   <input
                     type="checkbox"
                     id="isDefault"
-                    checked={addressForm.isDefault}
-                    onChange={(e) => setAddressForm({ ...addressForm, isDefault: e.target.checked })}
+                    {...registerAddress('isDefault')}
                     className="w-5 h-5 rounded border-gray-300 text-secondary focus:ring-secondary"
                   />
                   <label htmlFor="isDefault" className="text-sm font-medium text-gray-700 cursor-pointer">
@@ -544,7 +564,8 @@ const DashboardPage: React.FC = () => {
                   </button>
                 </div>
               </form>
-            </motion.div>
+            </FormProvider>
+          </motion.div>
           </div>
         )}
       </div>

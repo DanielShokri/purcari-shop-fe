@@ -22,10 +22,10 @@ export const analyticsApi = api.injectEndpoints({
               userId: eventData.userId || null,
             }
           );
-          return { data: undefined };
+          return { data: null };
         } catch (error: any) {
           console.error('Failed to track event:', error);
-          return { data: undefined }; // Don't block UI on analytics failure
+          return { data: null }; // Don't block UI on analytics failure
         }
       },
       invalidatesTags: ['Analytics'],

@@ -106,7 +106,7 @@ export const authApi = api.injectEndpoints({
       queryFn: async () => {
         try {
           await account.deleteSession('current');
-          return { data: undefined };
+          return { data: null };
         } catch (error: any) {
           return { error: error.message || 'שגיאה בהתנתקות' };
         }

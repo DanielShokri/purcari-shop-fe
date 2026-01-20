@@ -5,9 +5,12 @@ import { selectCartItems, selectCartTotal, clearCart } from '../store/slices/car
 import { useCreateOrderMutation } from '../services/api/ordersApi';
 import { useValidateCouponQuery } from '../services/api/couponsApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
-import { useGetCurrentUserQuery } from '../services/api/authApi';
+import { useGetCurrentUserQuery, useGetUserPrefsQuery } from '../services/api/authApi';
 import { ShoppingBag } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
+import { useForm, FormProvider } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { checkoutSchema, CheckoutInput } from '../schemas/validationSchemas';
 
 import CheckoutProgressBar from '../components/checkout/CheckoutProgressBar';
 import ShippingStep from '../components/checkout/ShippingStep';
@@ -21,62 +24,84 @@ const CheckoutPage: React.FC = () => {
   const cartItems = useAppSelector(selectCartItems);
   const cartTotal = useAppSelector(selectCartTotal);
   const { data: user } = useGetCurrentUserQuery();
+  const { data: prefs } = useGetUserPrefsQuery(undefined, { skip: !user });
   
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    street: '',
-    city: '',
-    postalCode: '',
-    country: 'Israel',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    couponCode: '',
+
+  const methods = useForm<CheckoutInput>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      street: '',
+      city: '',
+      postalCode: '',
+      country: 'Israel',
+      cardNumber: '',
+      expiryDate: '',
+      cvv: '',
+      couponCode: '',
+    }
   });
+
+  const { watch, setValue, trigger, handleSubmit } = methods;
+  const couponCode = watch('couponCode');
 
   // Pre-fill form if user is logged in
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
-        ...prev,
-        name: prev.name || user.name,
-        email: prev.email || user.email,
-      }));
+      setValue('name', user.name || '');
+      setValue('email', user.email || '');
+      if (user.phone) setValue('phone', user.phone);
     }
-  }, [user]);
+    
+    if (prefs?.addresses && prefs.addresses.length > 0) {
+      const defaultAddr = prefs.addresses.find(a => a.isDefault) || prefs.addresses[0];
+      setValue('street', defaultAddr.street);
+      setValue('city', defaultAddr.city);
+      setValue('postalCode', defaultAddr.postalCode);
+      setValue('country', defaultAddr.country);
+    }
+  }, [user, prefs, setValue]);
 
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [trackEvent] = useTrackEventMutation();
   const { data: couponData, error: couponError } = useValidateCouponQuery(
-    { code: formData.couponCode, cartTotal },
-    { skip: !formData.couponCode }
+    { code: couponCode || '', cartTotal },
+    { skip: !couponCode }
   );
 
   const discount = couponData ? (couponData.discountType === 'percentage' ? (cartTotal * couponData.discountValue / 100) : couponData.discountValue) : 0;
   const total = cartTotal - discount;
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const nextStep = async () => {
+    let fieldsToValidate: (keyof CheckoutInput)[] = [];
+    if (step === 1) {
+      fieldsToValidate = ['name', 'email', 'phone', 'street', 'city', 'postalCode'];
+    } else if (step === 2) {
+      fieldsToValidate = ['cardNumber', 'expiryDate', 'cvv'];
+    }
+
+    const isValid = await trigger(fieldsToValidate);
+    if (isValid) {
+      setStep(s => s + 1);
+    }
   };
 
-  const nextStep = () => setStep(s => s + 1);
   const prevStep = () => setStep(s => s - 1);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const onSubmit = async (data: CheckoutInput) => {
     try {
       const orderResult = await createOrder({
-        customerName: formData.name,
-        customerEmail: formData.email,
-        customerPhone: formData.phone,
+        customerName: data.name,
+        customerEmail: data.email,
+        customerPhone: data.phone,
         shippingAddress: {
-          street: formData.street,
-          city: formData.city,
-          postalCode: formData.postalCode,
-          country: formData.country,
+          street: data.street,
+          city: data.city,
+          postalCode: data.postalCode || '',
+          country: data.country,
         },
         payment: {
           method: 'Credit Card',
@@ -121,38 +146,38 @@ const CheckoutPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Area */}
           <div className="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm">
-            <AnimatePresence mode="wait">
-              {step === 1 && (
-                <ShippingStep 
-                  key="step1" 
-                  formData={formData} 
-                  handleInputChange={handleInputChange} 
-                  nextStep={nextStep} 
-                  user={user} 
-                />
-              )}
+            <FormProvider {...methods}>
+              <form onSubmit={handleSubmit(onSubmit)}>
+                <AnimatePresence mode="wait">
+                  {step === 1 && (
+                    <ShippingStep 
+                      key="step1" 
+                      nextStep={nextStep} 
+                      user={user} 
+                    />
+                  )}
 
-              {step === 2 && (
-                <PaymentStep 
-                  key="step2" 
-                  formData={formData} 
-                  handleInputChange={handleInputChange} 
-                  nextStep={nextStep} 
-                  prevStep={prevStep} 
-                />
-              )}
+                  {step === 2 && (
+                    <PaymentStep 
+                      key="step2" 
+                      nextStep={nextStep} 
+                      prevStep={prevStep} 
+                    />
+                  )}
 
-              {step === 3 && (
-                <ReviewStep 
-                  key="step3" 
-                  formData={formData} 
-                  cartItems={cartItems} 
-                  handleSubmit={handleSubmit} 
-                  prevStep={prevStep} 
-                  isCreatingOrder={isCreatingOrder} 
-                />
-              )}
-            </AnimatePresence>
+                  {step === 3 && (
+                    <ReviewStep 
+                      key="step3" 
+                      formData={watch()} 
+                      cartItems={cartItems} 
+                      handleSubmit={() => handleSubmit(onSubmit)()} 
+                      prevStep={prevStep} 
+                      isCreatingOrder={isCreatingOrder} 
+                    />
+                  )}
+                </AnimatePresence>
+              </form>
+            </FormProvider>
           </div>
 
           <OrderSummarySidebar 
@@ -160,8 +185,8 @@ const CheckoutPage: React.FC = () => {
             cartTotal={cartTotal}
             discount={discount}
             total={total}
-            couponCode={formData.couponCode}
-            handleInputChange={handleInputChange}
+            couponCode={couponCode || ''}
+            handleInputChange={(e) => setValue('couponCode', e.target.value)}
             couponError={couponError}
             couponData={couponData}
           />

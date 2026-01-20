@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import theme from '../../theme/styles';
 
 const AwardsSection: React.FC = () => {
   const awards = [
@@ -10,15 +11,15 @@ const AwardsSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-20 bg-primary text-white overflow-hidden">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col lg:flex-row items-center gap-12">
+    <section className={`${theme.SECTION_PY} bg-primary text-white overflow-hidden`}>
+      <div className={theme.CONTAINER}>
+        <div className={`flex flex-col lg:flex-row items-center ${theme.GAP_SECTION}`}>
           <div className="w-full lg:w-1/2">
             <motion.h2 
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="text-4xl md:text-5xl font-bold mb-6"
+              className={`${theme.H2} mb-6 text-white`}
             >
               מסורת של <span className="text-accent">ניצחונות</span>
             </motion.h2>
@@ -62,8 +63,8 @@ const AwardsSection: React.FC = () => {
                 className="rounded-3xl shadow-2xl grayscale hover:grayscale-0 transition-all duration-700"
               />
             </motion.div>
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl animate-pulse"></div>
-            <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl animate-pulse delay-700"></div>
+            <div className="absolute -top-10 -end-10 w-40 h-40 bg-secondary/20 rounded-full blur-3xl animate-pulse"></div>
+            <div className="absolute -bottom-10 -start-10 w-40 h-40 bg-accent/20 rounded-full blur-3xl animate-pulse delay-700"></div>
           </div>
         </div>
       </div>

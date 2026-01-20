@@ -56,8 +56,8 @@ const CartModal: React.FC = () => {
               </button>
             </div>
           ) : (
-            items.map((item) => (
-              <div key={item.productId} className="flex gap-4">
+            items.map((item, index) => (
+              <div key={item.id || item.productId || `cart-item-${index}`} className="flex gap-4">
                 <div className="w-20 h-24 bg-gray-100 rounded-md overflow-hidden flex-shrink-0 border border-gray-200">
                   <img src={item.imgSrc} alt={item.title} className="w-full h-full object-cover" />
                 </div>

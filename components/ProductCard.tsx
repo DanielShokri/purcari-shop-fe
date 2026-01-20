@@ -5,6 +5,7 @@ import { useAppDispatch } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingBag, Eye, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
+import theme from '../theme/styles';
 
 interface ProductCardProps {
   product: Product;
@@ -71,7 +72,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const saleBannerText = `מבצע חם ${discountPercent}% הנחה`;
 
   return (
-    <div className="group relative bg-white border border-transparent hover:border-gray-100 hover:shadow-xl transition-all duration-300 rounded-2xl overflow-hidden flex flex-col h-full">
+    <div className={`group relative ${theme.CARD} ${theme.CARD_HOVER} flex flex-col h-full border-transparent hover:border-gray-100`}>
       <div className="relative aspect-[2/3] overflow-hidden bg-amber-50">
         <Link to={`/product/${product.$id}`} className="block w-full h-full">
           <img

@@ -8,6 +8,7 @@ import CategoriesGrid from '../components/home/CategoriesGrid';
 import StoryTeaser from '../components/home/StoryTeaser';
 import AwardsSection from '../components/home/AwardsSection';
 import Newsletter from '../components/home/Newsletter';
+import theme from '../theme/styles';
 
 const HomePage: React.FC = () => {
   const [trackEvent] = useTrackEventMutation();
@@ -46,7 +47,7 @@ const HomePage: React.FC = () => {
       <Hero />
 
       {/* Features Bar */}
-      <div className="relative z-10 -mt-12 md:-mt-16 px-4">
+      <div className={`relative z-10 -mt-12 md:-mt-16 ${theme.CONTAINER_PX}`}>
         <FeaturesBar />
       </div>
 

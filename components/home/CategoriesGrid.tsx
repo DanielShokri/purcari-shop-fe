@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import theme from '../../theme/styles';
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -11,17 +12,17 @@ const fadeInUp = {
 
 const CategoriesGrid: React.FC = () => {
   return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-4">
+    <section className={`${theme.SECTION_PY} bg-white`}>
+      <div className={theme.CONTAINER}>
         <motion.div
           {...fadeInUp}
           className="text-center mb-12"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">קנו לפי קטגוריות</h2>
+          <h2 className={`${theme.H2} mb-4`}>קנו לפי קטגוריות</h2>
           <div className="w-20 h-1 bg-secondary mx-auto"></div>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-auto md:h-[600px]">
+        <div className={`grid grid-cols-1 md:grid-cols-3 ${theme.GAP_COMPONENT} h-auto md:h-[600px]`}>
           {/* Red Wines - Tall Card */}
           <motion.div 
             {...fadeInUp}
@@ -44,7 +45,7 @@ const CategoriesGrid: React.FC = () => {
           </motion.div>
 
           {/* Middle Column - Two Small Cards */}
-          <div className="flex flex-col gap-6 md:h-full">
+          <div className={`flex flex-col ${theme.GAP_COMPONENT} md:h-full`}>
             {/* Sparkling */}
             <motion.div 
               {...fadeInUp}

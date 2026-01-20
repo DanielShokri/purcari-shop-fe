@@ -1,24 +1,26 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Send, CheckCircle2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { contactSchema, ContactInput } from '../../schemas/validationSchemas';
 
 const ContactForm: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    subject: '',
-    message: '',
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<ContactInput>({
+    resolver: zodResolver(contactSchema)
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
+  const onSubmit = (data: ContactInput) => {
+    console.log('Form submitted:', data);
     setIsSubmitted(true);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    reset();
   };
 
   return (
@@ -43,60 +45,52 @@ const ContactForm: React.FC = () => {
           </button>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">שם מלא</label>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">שם מלא <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-                className="w-full border-gray-200 rounded-xl p-3 border focus:ring-2 focus:ring-secondary focus:border-secondary transition-all"
+                {...register('name')}
+                className={`w-full border-gray-200 rounded-xl p-3 border focus:ring-2 focus:ring-secondary focus:border-secondary transition-all ${errors.name ? 'border-red-500' : ''}`}
                 placeholder="הכנס שם מלא"
               />
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
             </div>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">אימייל</label>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">אימייל <span className="text-red-500">*</span></label>
               <input
                 type="email"
                 id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="w-full border-gray-200 rounded-xl p-3 border focus:ring-2 focus:ring-secondary focus:border-secondary transition-all"
+                {...register('email')}
+                className={`w-full border-gray-200 rounded-xl p-3 border focus:ring-2 focus:ring-secondary focus:border-secondary transition-all ${errors.email ? 'border-red-500' : ''}`}
                 placeholder="email@example.com"
               />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
           </div>
           <div>
-            <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">נושא הפנייה</label>
+            <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">נושא הפנייה <span className="text-red-500">*</span></label>
             <input
               type="text"
               id="subject"
-              name="subject"
-              value={formData.subject}
-              onChange={handleChange}
-              required
-              className="w-full border-gray-200 rounded-xl p-3 border focus:ring-2 focus:ring-secondary focus:border-secondary transition-all"
+              {...register('subject')}
+              className={`w-full border-gray-200 rounded-xl p-3 border focus:ring-2 focus:ring-secondary focus:border-secondary transition-all ${errors.subject ? 'border-red-500' : ''}`}
               placeholder="איך נוכל לעזור?"
             />
+            {errors.subject && <p className="text-red-500 text-xs mt-1">{errors.subject.message}</p>}
           </div>
           <div>
-            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">הודעה</label>
+            <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">הודעה <span className="text-red-500">*</span></label>
             <textarea
               id="message"
-              name="message"
+              {...register('message')}
               rows={5}
-              value={formData.message}
-              onChange={handleChange}
-              required
-              className="w-full border-gray-200 rounded-xl p-3 border focus:ring-2 focus:ring-secondary focus:border-secondary transition-all resize-none"
+              className={`w-full border-gray-200 rounded-xl p-3 border focus:ring-2 focus:ring-secondary focus:border-secondary transition-all resize-none ${errors.message ? 'border-red-500' : ''}`}
               placeholder="כתוב כאן את הודעתך..."
             ></textarea>
+            {errors.message && <p className="text-red-500 text-xs mt-1">{errors.message.message}</p>}
           </div>
           <button
             type="submit"
