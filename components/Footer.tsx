@@ -32,9 +32,8 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-bold mb-6 text-accent">צור קשר</h4>
             <ul className="space-y-3 text-sm text-gray-400">
-              <li>טלפון: 03-123-4567</li>
-              <li>אימייל: info@purcari.co.il</li>
-              <li>כתובת: רחוב היין 10, תל אביב</li>
+              <li>טלפון: 050-9480040</li>
+              <li>אימייל: ivninov45@gmail.com</li>
             </ul>
           </div>
 
@@ -48,14 +47,13 @@ const Footer: React.FC = () => {
                 placeholder="הכנס אימייל" 
                 className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-secondary"
               />
-              <button className="bg-secondary hover:bg-red-900 text-white px-4 py-2 rounded text-sm font-medium transition-colors">
+              <button className="bg-secondary hover:bg-red-900 text-white px-4 py-2 rounded text-sm font-medium transition-colors cursor-pointer">
                 שלח
               </button>
             </div>
             <div className="flex gap-4 mt-6">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors"><Twitter size={20} /></a>
+              <a href="https://www.facebook.com/purcariwines/" target="_blank" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
+              <a href="https://www.instagram.com/purcari_israel/?hl=en" target="_blank" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
             </div>
           </div>
         </div>

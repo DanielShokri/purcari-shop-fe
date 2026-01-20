@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
+import ScrollToTop from './components/ScrollToTop';
 import HomePage from './pages/HomePage';
 import ShopPage from './pages/ShopPage';
 import ProductPage from './pages/ProductPage';
@@ -22,6 +23,7 @@ const App: React.FC = () => {
 
   return (
     <Router>
+      <ScrollToTop />
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />

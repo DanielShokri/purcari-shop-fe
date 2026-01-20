@@ -73,7 +73,7 @@ const Newsletter: React.FC = () => {
                   />
                   <button
                     type="submit"
-                    className="bg-secondary text-white px-8 py-4 rounded-full font-bold hover:bg-red-900 transition-all shadow-lg shadow-secondary/20"
+                    className="bg-secondary text-white px-8 py-4 rounded-full font-bold hover:bg-red-900 transition-all shadow-lg shadow-secondary/20 cursor-pointer"
                   >
                     הרשמה
                   </button>

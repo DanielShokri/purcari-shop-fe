@@ -54,14 +54,14 @@ const PaymentStep: React.FC<PaymentStepProps> = ({ nextStep, prevStep }) => {
           <button 
             type="button" 
             onClick={prevStep} 
-            className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-bold"
+            className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-bold cursor-pointer"
           >
             חזרה
           </button>
           <button 
             type="button" 
             onClick={nextStep}
-            className="flex-1 bg-secondary text-white py-4 rounded-xl font-bold"
+            className="flex-1 bg-secondary text-white py-4 rounded-xl font-bold cursor-pointer"
           >
             סיכום הזמנה
           </button>

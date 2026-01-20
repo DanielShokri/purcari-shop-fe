@@ -102,7 +102,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </Link>
           <button
             onClick={handleAddToCart}
-            className="bg-white text-gray-900 p-3 rounded-full hover:bg-secondary hover:text-white transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75 pointer-events-auto flex items-center justify-center"
+            className="bg-white text-gray-900 p-3 rounded-full hover:bg-secondary hover:text-white transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75 pointer-events-auto flex items-center justify-center cursor-pointer"
           >
             <ShoppingBag size={20} />
           </button>

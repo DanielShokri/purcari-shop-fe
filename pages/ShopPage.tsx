@@ -85,7 +85,7 @@ const ShopPage: React.FC = () => {
                    <button
                      key={cat.id}
                      onClick={() => setActiveCategory(cat.id)}
-                     className={`w-full text-right px-3 py-2 rounded-md transition-colors ${
+                     className={`w-full text-right px-3 py-2 rounded-md transition-colors cursor-pointer ${
                        activeCategory === cat.id 
                        ? 'bg-secondary text-white font-bold' 
                        : 'text-gray-600 hover:bg-gray-100'

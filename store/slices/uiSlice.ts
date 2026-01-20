@@ -4,11 +4,13 @@ import { RootState } from '../index';
 interface UIState {
   isCartModalOpen: boolean;
   isMobileMenuOpen: boolean;
+  isSearchModalOpen: boolean;
 }
 
 const initialState: UIState = {
   isCartModalOpen: false,
   isMobileMenuOpen: false,
+  isSearchModalOpen: false,
 };
 
 const uiSlice = createSlice({
@@ -26,13 +28,20 @@ const uiSlice = createSlice({
     },
     closeMobileMenu: (state) => {
       state.isMobileMenuOpen = false;
-    }
+    },
+    openSearchModal: (state) => {
+      state.isSearchModalOpen = true;
+    },
+    closeSearchModal: (state) => {
+      state.isSearchModalOpen = false;
+    },
   },
 });
 
-export const { toggleCartModal, toggleMobileMenu, closeCartModal, closeMobileMenu } = uiSlice.actions;
+export const { toggleCartModal, toggleMobileMenu, closeCartModal, closeMobileMenu, openSearchModal, closeSearchModal } = uiSlice.actions;
 
 export const selectIsCartModalOpen = (state: RootState) => state.ui.isCartModalOpen;
 export const selectIsMobileMenuOpen = (state: RootState) => state.ui.isMobileMenuOpen;
+export const selectIsSearchModalOpen = (state: RootState) => state.ui.isSearchModalOpen;
 
 export default uiSlice.reducer;

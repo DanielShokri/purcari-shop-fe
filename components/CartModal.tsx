@@ -37,7 +37,7 @@ const CartModal: React.FC = () => {
           <h2 className="text-xl font-bold text-gray-800">סל הקניות</h2>
           <button 
             onClick={() => dispatch(closeCartModal())}
-            className="text-gray-400 hover:text-red-500 transition-colors"
+            className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
           >
             <X size={24} />
           </button>
@@ -50,7 +50,7 @@ const CartModal: React.FC = () => {
               <p className="text-lg">הסל שלך ריק</p>
               <button 
                 onClick={() => dispatch(closeCartModal())} 
-                className="mt-4 text-secondary underline font-medium"
+                className="mt-4 text-secondary underline font-medium cursor-pointer"
               >
                 המשך בקניות
               </button>
@@ -69,14 +69,14 @@ const CartModal: React.FC = () => {
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center border border-gray-300 rounded overflow-hidden">
                       <button 
-                        className="px-2 py-1 hover:bg-gray-100"
+                        className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
                         onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity - 1 }))}
                       >
                         <Minus size={14} />
                       </button>
                       <span className="px-2 text-sm font-medium w-8 text-center">{item.quantity}</span>
                       <button 
-                        className="px-2 py-1 hover:bg-gray-100"
+                        className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
                         onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity + 1 }))}
                       >
                         <Plus size={14} />
@@ -84,7 +84,7 @@ const CartModal: React.FC = () => {
                     </div>
                     <button 
                       onClick={() => dispatch(removeFromCart(item.productId))}
-                      className="text-gray-400 hover:text-red-500"
+                      className="text-gray-400 hover:text-red-500 cursor-pointer"
                     >
                       <Trash2 size={18} />
                     </button>

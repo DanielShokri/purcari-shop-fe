@@ -39,13 +39,13 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ formData, cartItems, handleSubm
         </div>
       </div>
       <div className="flex gap-4 mt-8">
-        <button onClick={prevStep} className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-bold">
+        <button onClick={prevStep} className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-xl font-bold cursor-pointer">
           חזרה
         </button>
         <button 
           onClick={handleSubmit} 
           disabled={isCreatingOrder}
-          className="flex-1 bg-secondary text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2"
+          className="flex-1 bg-secondary text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer"
         >
           {isCreatingOrder ? 'מעבד...' : 'בצע הזמנה'}
         </button>

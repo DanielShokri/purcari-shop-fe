@@ -183,7 +183,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
             <button 
               type="button" 
               onClick={clearInput}
-              className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-1 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors cursor-pointer"
             >
               <X size={16} />
             </button>
@@ -217,7 +217,7 @@ const AddressAutocomplete: React.FC<AddressAutocompleteProps> = ({
               key={index}
               type="button"
               onClick={() => handleSelect(feature)}
-              className="w-full text-right px-4 py-3 hover:bg-red-50 flex items-start gap-3 transition-colors group border-b last:border-0 border-gray-50"
+              className="w-full text-right px-4 py-3 hover:bg-red-50 flex items-start gap-3 transition-colors group border-b last:border-0 border-gray-50 cursor-pointer"
             >
               <div className="mt-1 bg-gray-50 p-2 rounded-lg text-gray-400 group-hover:text-secondary group-hover:bg-white shadow-sm transition-colors">
                 <MapPin size={16} />

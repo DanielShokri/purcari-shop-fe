@@ -131,7 +131,7 @@ const CheckoutPage: React.FC = () => {
       <div className="container mx-auto px-4 py-20 text-center">
         <ShoppingBag size={64} className="mx-auto text-gray-300 mb-6" />
         <h2 className="text-2xl font-bold mb-4">סל הקניות שלך ריק</h2>
-        <button onClick={() => navigate('/products')} className="bg-secondary text-white px-8 py-3 rounded-full font-bold">
+        <button onClick={() => navigate('/products')} className="bg-secondary text-white px-8 py-3 rounded-full font-bold cursor-pointer">
           חזרה לחנות
         </button>
       </div>

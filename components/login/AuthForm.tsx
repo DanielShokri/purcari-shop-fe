@@ -117,7 +117,7 @@ const AuthForm: React.FC = () => {
         <button 
           type="submit" 
           disabled={isLoggingIn || isRegistering}
-          className="w-full bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg"
+          className="w-full bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg cursor-pointer"
         >
           {isLogin ? <LogIn size={20} /> : <UserPlus size={20} />}
           {isLoggingIn || isRegistering ? 'מעבד...' : (isLogin ? 'התחברות' : 'הרשמה')}
@@ -130,7 +130,7 @@ const AuthForm: React.FC = () => {
         </p>
         <button 
           onClick={() => setIsLogin(!isLogin)} 
-          className="text-secondary font-bold hover:underline"
+          className="text-secondary font-bold hover:underline cursor-pointer"
         >
           {isLogin ? 'צרו חשבון עכשיו' : 'התחברו כאן'}
         </button>

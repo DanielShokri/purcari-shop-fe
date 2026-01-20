@@ -220,7 +220,7 @@ const DashboardPage: React.FC = () => {
           </div>
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-2 text-gray-500 hover:text-red-600 font-medium transition-colors border border-gray-200 px-4 py-2 rounded-xl"
+            className="flex items-center gap-2 text-gray-500 hover:text-red-600 font-medium transition-colors border border-gray-200 px-4 py-2 rounded-xl cursor-pointer"
           >
             <LogOut size={18} />
             התנתקות
@@ -233,7 +233,7 @@ const DashboardPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-6 py-4 font-bold transition-all border-b-2 whitespace-nowrap ${
+              className={`flex items-center gap-2 px-6 py-4 font-bold transition-all border-b-2 whitespace-nowrap cursor-pointer ${
                 activeTab === tab.id 
                 ? 'border-secondary text-secondary' 
                 : 'border-transparent text-gray-400 hover:text-gray-600'
@@ -385,7 +385,7 @@ const DashboardPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isUpdatingProfile || isUpdatingPrefs}
-                    className="bg-secondary text-white px-8 py-3 rounded-xl font-bold hover:bg-red-900 transition-colors disabled:opacity-50"
+                    className="bg-secondary text-white px-8 py-3 rounded-xl font-bold hover:bg-red-900 transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {isUpdatingProfile ? 'מעדכן...' : 'שמירת שינויים'}
                   </button>
@@ -415,7 +415,7 @@ const DashboardPage: React.FC = () => {
                       });
                       setIsAddressModalOpen(true);
                     }}
-                    className="flex items-center gap-2 bg-secondary text-white px-4 py-2 rounded-xl font-bold hover:bg-red-900 transition-colors"
+                    className="flex items-center gap-2 bg-secondary text-white px-4 py-2 rounded-xl font-bold hover:bg-red-900 transition-colors cursor-pointer"
                   >
                     <Plus size={18} />
                     הוספת כתובת
@@ -444,13 +444,13 @@ const DashboardPage: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <button 
                               onClick={() => openEditAddress(address)}
-                              className="p-2 text-gray-400 hover:text-secondary hover:bg-red-50 rounded-lg transition-all"
+                              className="p-2 text-gray-400 hover:text-secondary hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                             >
                               <Edit2 size={16} />
                             </button>
                             <button 
                               onClick={() => deleteAddress(address.id)}
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
                             >
                               <Trash2 size={16} />
                             </button>
@@ -489,7 +489,7 @@ const DashboardPage: React.FC = () => {
             >
               <div className="p-6 border-b border-gray-100 flex justify-between items-center">
                 <h3 className="text-xl font-bold">{editingAddressId ? 'עריכת כתובת' : 'הוספת כתובת חדשה'}</h3>
-                <button onClick={() => setIsAddressModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <button onClick={() => setIsAddressModalOpen(false)} className="text-gray-400 hover:text-gray-600 cursor-pointer">
                   <Plus size={24} className="rotate-45" />
                 </button>
               </div>
@@ -551,14 +551,14 @@ const DashboardPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isUpdatingPrefs}
-                    className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold hover:bg-red-900 transition-colors disabled:opacity-50"
+                    className="flex-1 bg-secondary text-white py-3 rounded-xl font-bold hover:bg-red-900 transition-colors disabled:opacity-50 cursor-pointer"
                   >
                     {isUpdatingPrefs ? 'שומר...' : (editingAddressId ? 'עדכון כתובת' : 'שמירת כתובת')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsAddressModalOpen(false)}
-                    className="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors"
+                    className="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition-colors cursor-pointer"
                   >
                     ביטול
                   </button>

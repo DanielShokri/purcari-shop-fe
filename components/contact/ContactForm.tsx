@@ -39,7 +39,7 @@ const ContactForm: React.FC = () => {
           <p className="text-gray-600 mb-8">תודה שפנית אלינו. נציג מטעמנו יחזור אליך בהקדם האפשרי.</p>
           <button 
             onClick={() => setIsSubmitted(false)}
-            className="text-secondary font-bold hover:underline"
+            className="text-secondary font-bold hover:underline cursor-pointer"
           >
             שלח הודעה נוספת
           </button>
@@ -94,7 +94,7 @@ const ContactForm: React.FC = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            className="w-full bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-all flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 cursor-pointer"
           >
             <Send size={20} />
             שלח הודעה

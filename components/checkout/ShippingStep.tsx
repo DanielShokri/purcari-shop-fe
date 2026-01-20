@@ -80,7 +80,7 @@ const ShippingStep: React.FC<ShippingStepProps> = ({ nextStep, user }) => {
         <button 
           type="button" 
           onClick={nextStep}
-          className="md:col-span-2 w-full mt-8 bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-colors"
+          className="md:col-span-2 w-full mt-8 bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-colors cursor-pointer"
         >
           המשך לתשלום
         </button>

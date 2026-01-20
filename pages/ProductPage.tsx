@@ -134,21 +134,21 @@ const ProductPage: React.FC = () => {
               <div className="flex items-center border border-gray-300 rounded-md">
                 <button 
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="px-4 py-3 hover:bg-gray-100 text-gray-600"
+                  className="px-4 py-3 hover:bg-gray-100 text-gray-600 cursor-pointer"
                 >
                   <Minus size={16} />
                 </button>
                 <span className="px-4 font-bold text-lg w-12 text-center">{quantity}</span>
                 <button 
                   onClick={() => setQuantity(q => q + 1)}
-                  className="px-4 py-3 hover:bg-gray-100 text-gray-600"
+                  className="px-4 py-3 hover:bg-gray-100 text-gray-600 cursor-pointer"
                 >
                   <Plus size={16} />
                 </button>
               </div>
               <button 
                 onClick={handleAddToCart}
-                className="flex-1 bg-secondary hover:bg-red-900 text-white py-3 px-6 rounded-md font-bold text-lg flex items-center justify-center gap-2 transition-colors shadow-md hover:shadow-xl"
+                className="flex-1 bg-secondary hover:bg-red-900 text-white py-3 px-6 rounded-md font-bold text-lg flex items-center justify-center gap-2 transition-colors shadow-md hover:shadow-xl cursor-pointer"
               >
                 <ShoppingBag size={20} />
                 הוסף לסל
