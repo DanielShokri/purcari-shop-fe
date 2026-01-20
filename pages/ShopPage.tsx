@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useGetProductsQuery } from '../services/api/productsApi';
 import { useGetCategoriesQuery } from '../services/api/categoriesApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
+import SEO from '../components/SEO';
 import ProductCard from '../components/ProductCard';
 import { Filter } from 'lucide-react';
 
@@ -31,8 +32,35 @@ const ShopPage: React.FC = () => {
     { id: 'Sparkling', label: 'מבעבעים' },
   ];
 
+  const currentCategoryLabel = displayCategories.find(c => c.id === activeCategory)?.label || 'הכל';
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "דף הבית",
+        "item": "https://purcari.co.il"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "חנות",
+        "item": "https://purcari.co.il/products"
+      }
+    ]
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
+      <SEO 
+        title={`חנות - ${currentCategoryLabel}`}
+        description={`צפו בקטלוג היינות המלא של פורקארי ישראל. ${currentCategoryLabel} - יינות איכותיים ממולדובה במחירים מעולים.`}
+        canonical="/products"
+        schemaData={breadcrumbSchema}
+      />
       {/* Header */}
       <div className="bg-gray-900 text-white py-12 mb-10">
         <div className="container mx-auto px-4 text-center">

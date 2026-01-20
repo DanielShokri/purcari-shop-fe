@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useGetProductByIdQuery } from '../services/api/productsApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
+import SEO from '../components/SEO';
 import { useAppDispatch } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
 import { Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react';
@@ -22,6 +23,52 @@ const ProductPage: React.FC = () => {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
   if (!product) return <div className="min-h-screen flex items-center justify-center">המוצר לא נמצא</div>;
 
+  const productSchema = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product.productNameHe || product.productName,
+    "image": [product.featuredImage || product.images?.[0] || ''],
+    "description": product.descriptionHe || product.description,
+    "sku": product.sku,
+    "brand": {
+      "@type": "Brand",
+      "name": "Purcari"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `https://purcari.co.il/product/${product.$id}`,
+      "priceCurrency": "ILS",
+      "price": product.price,
+      "availability": product.quantityInStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "itemCondition": "https://schema.org/NewCondition"
+    }
+  };
+
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "דף הבית",
+        "item": "https://purcari.co.il"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "חנות",
+        "item": "https://purcari.co.il/products"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": product.productNameHe || product.productName,
+        "item": `https://purcari.co.il/product/${product.$id}`
+      }
+    ]
+  };
+
   const handleAddToCart = () => {
     dispatch(addToCart({
       id: product.$id,
@@ -36,6 +83,14 @@ const ProductPage: React.FC = () => {
 
   return (
     <div className="bg-white min-h-screen pb-20">
+      <SEO 
+        title={product.productNameHe || product.productName}
+        description={product.descriptionHe || product.description}
+        ogImage={product.featuredImage || product.images?.[0] || ''}
+        ogType="product"
+        canonical={`/product/${product.$id}`}
+        schemaData={[productSchema, breadcrumbSchema]}
+      />
       <div className="container mx-auto px-4 py-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
           

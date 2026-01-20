@@ -57,7 +57,7 @@ const AwardsSection: React.FC = () => {
               className="relative z-10"
             >
               <img 
-                src="https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?q=80&w=2070&auto=format&fit=crop" 
+                src="https://winetravelawards.com/wp-content/uploads/2021/12/chateau-2.jpg" 
                 alt="Purcari Awards" 
                 className="rounded-3xl shadow-2xl grayscale hover:grayscale-0 transition-all duration-700"
               />

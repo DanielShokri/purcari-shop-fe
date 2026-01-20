@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import SEO from '../components/SEO';
 import ContactHeader from '../components/contact/ContactHeader';
 import ContactInfo from '../components/contact/ContactInfo';
 import ContactForm from '../components/contact/ContactForm';
@@ -7,6 +8,11 @@ import ContactForm from '../components/contact/ContactForm';
 const ContactPage: React.FC = () => {
   return (
     <div className="bg-gray-50 min-h-screen py-12 md:py-20">
+      <SEO 
+        title="צור קשר"
+        description="צריכים עזרה בבחירת היין המושלם? רוצים לדעת עוד על המשלוחים שלנו? אנחנו כאן לכל שאלה. צרו קשר עם צוות פורקארי ישראל."
+        canonical="/contact"
+      />
       <div className="container mx-auto px-4 max-w-6xl">
         
         <ContactHeader />
