@@ -20,7 +20,7 @@ export const authApi = api.injectEndpoints({
           await account.createEmailPasswordSession({ email, password });
           
           const user = await account.get();
-          return { data: { $id: user.$id, name: user.name, email: user.email } };
+          return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
         } catch (error: any) {
           return { error: error.message || 'שגיאה בהרשמה' };
         }
@@ -34,7 +34,7 @@ export const authApi = api.injectEndpoints({
         try {
           await account.createEmailPasswordSession({ email, password });
           const user = await account.get();
-          return { data: { $id: user.$id, name: user.name, email: user.email } };
+          return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
         } catch (error: any) {
           return { error: 'אימייל או סיסמה שגויים' };
         }
@@ -47,12 +47,58 @@ export const authApi = api.injectEndpoints({
       queryFn: async () => {
         try {
           const user = await account.get();
-          return { data: { $id: user.$id, name: user.name, email: user.email } };
+          return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
         } catch {
           return { data: null }; // No active session
         }
       },
       providesTags: ['User'],
+    }),
+
+    // Update profile (name, phone)
+    updateProfile: builder.mutation<AuthUser, { name: string; phone?: string }>({
+      queryFn: async ({ name, phone }) => {
+        try {
+          if (name) await account.updateName(name);
+          if (phone !== undefined) {
+            const currentPrefs = await account.getPrefs();
+            await account.updatePrefs({ ...currentPrefs, phone });
+          }
+          const user = await account.get();
+          return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
+        } catch (error: any) {
+          return { error: error.message || 'שגיאה בעדכון הפרופיל' };
+        }
+      },
+      invalidatesTags: ['User'],
+    }),
+
+    // Get user preferences (addresses)
+    getUserPrefs: builder.query<UserPreferences, void>({
+      queryFn: async () => {
+        try {
+          const prefs = await account.getPrefs();
+          return { data: prefs as UserPreferences };
+        } catch (error: any) {
+          return { error: error.message || 'שגיאה בטעינת העדפות' };
+        }
+      },
+      providesTags: ['User'],
+    }),
+
+    // Update user preferences
+    updateUserPrefs: builder.mutation<UserPreferences, UserPreferences>({
+      queryFn: async (prefs) => {
+        try {
+          const currentPrefs = await account.getPrefs();
+          const updatedPrefs = { ...currentPrefs, ...prefs };
+          const result = await account.updatePrefs(updatedPrefs);
+          return { data: result as UserPreferences };
+        } catch (error: any) {
+          return { error: error.message || 'שגיאה בעדכון העדפות' };
+        }
+      },
+      invalidatesTags: ['User'],
     }),
 
     // Logout
@@ -75,4 +121,7 @@ export const {
   useLoginMutation,
   useGetCurrentUserQuery,
   useLogoutMutation,
+  useUpdateProfileMutation,
+  useGetUserPrefsQuery,
+  useUpdateUserPrefsMutation,
 } = authApi;

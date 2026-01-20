@@ -1,22 +1,47 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowUpLeft } from 'lucide-react';
 
 const Hero: React.FC = () => {
+  const [loadVideo, setLoadVideo] = useState(false);
+
+  useEffect(() => {
+    // Delay video loading to prioritize site assets
+    const timer = setTimeout(() => setLoadVideo(true), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <section className="mx-4 sm:mx-8 lg:mx-12 mt-6 sm:mt-8">
       <div className="relative h-[65vh] sm:h-[70vh] w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-gray-900">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover scale-[1.2]"
-          poster="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1920&q=80"
-        >
-          <source src="https://fra.cloud.appwrite.io/v1/storage/buckets/696e54f10012bb259d9b/files/696e56dc003d4a11c66c/view?project=696e539a0008cbaae14d" type="video/mp4" />
-        </video>
+        {/* Static Background / Poster Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1920&q=80")' }}
+        />
+
+        {/* Video Overlay (Desktop Only) */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden hidden md:block">
+          <AnimatePresence>
+            {loadVideo && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1.5 }}
+                className="w-full h-full"
+              >
+                <iframe
+                  className="absolute top-1/2 left-1/2 w-[150%] h-[150%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                  src="https://www.youtube-nocookie.com/embed/TxEr9TB4nPU?autoplay=1&mute=1&loop=1&playlist=TxEr9TB4nPU&controls=0&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&playsinline=1"
+                  title="Purcari background video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  loading="lazy"
+                ></iframe>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
         
         <div className="absolute inset-0 bg-gradient-to-l from-black/50 via-black/20 to-transparent"></div>
 
@@ -28,7 +53,7 @@ const Hero: React.FC = () => {
               transition={{ duration: 0.8, ease: "easeOut" }}
               className="text-5xl sm:text-6xl md:text-7xl font-bold mb-4 tracking-tight drop-shadow-lg"
             >
-              חום החורף
+              ערכים אמיתיים אינם משתנים
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -36,7 +61,7 @@ const Hero: React.FC = () => {
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
               className="text-lg sm:text-xl text-white/90 mb-8 leading-relaxed drop-shadow-md"
             >
-              הישארו חמים ואופנתיים עם קולקציית החורף שלנו.
+              מורשת של מצוינות מאז 1827. היינות של Purcari שכבשו את בתי המלוכה של אירופה, עכשיו אצלכם בשולחן.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}

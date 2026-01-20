@@ -6,8 +6,8 @@ const StatsSection: React.FC = () => {
   const stats = [
     { label: 'שנות היסטוריה', value: '197+', icon: <History className="text-accent" /> },
     { label: 'זני ענבים', value: '15+', icon: <Grape className="text-accent" /> },
-    { label: 'פרסים בינלאומיים', value: '250+', icon: <Award className="text-accent" /> },
-    { label: 'מדינות ייצוא', value: '25+', icon: <Map className="text-accent" /> },
+    { label: 'פרסים בינלאומיים', value: '430+', icon: <Award className="text-accent" /> },
+    { label: 'מדינות ייצוא', value: '40+', icon: <Map className="text-accent" /> },
   ];
 
   return (

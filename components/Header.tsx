@@ -4,7 +4,8 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleCartModal, toggleMobileMenu, selectIsMobileMenuOpen } from '../store/slices/uiSlice';
 import { selectCartItemCount } from '../store/slices/cartSlice';
 import { useGetCurrentUserQuery } from '../services/api/authApi';
-import { ShoppingCart, Menu, Search, User, X } from 'lucide-react';
+import { ShoppingCart, Menu, Search, User, X, ChevronLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Header: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -80,31 +81,86 @@ const Header: React.FC = () => {
       </div>
 
       {/* Mobile Menu Overlay */}
-      {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => dispatch(toggleMobileMenu())} />
-          <div className="absolute top-0 start-0 w-[80%] max-w-sm h-full bg-white shadow-xl flex flex-col p-6 animate-in slide-in-from-start duration-300">
-            <div className="flex justify-between items-center mb-8">
-               <span className="text-xl font-bold text-secondary">תפריט</span>
-               <button onClick={() => dispatch(toggleMobileMenu())} className="text-gray-500">
-                 <X size={24} />
-               </button>
-            </div>
-            <nav className="flex flex-col gap-6">
-              {navLinks.map((link) => (
-                <Link 
-                  key={link.path}
-                  to={link.path}
-                  className="text-lg font-medium text-gray-800 border-b border-gray-100 pb-2"
-                  onClick={() => dispatch(toggleMobileMenu())}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => dispatch(toggleMobileMenu())}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+            />
+            
+            {/* Menu Content */}
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="absolute top-0 start-0 w-[300px] h-screen bg-white shadow-2xl flex flex-col z-50"
+            >
+              {/* Header */}
+              <div className="p-6 flex justify-between items-center border-b border-gray-100 bg-gray-50/50">
+                <span className="text-xl font-bold text-secondary uppercase tracking-wider">תפריט</span>
+                <button 
+                  onClick={() => dispatch(toggleMobileMenu())} 
+                  className="p-2 -me-2 text-gray-400 hover:text-secondary hover:bg-white rounded-full transition-all"
                 >
-                  {link.name}
-                </Link>
-              ))}
-            </nav>
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Links */}
+              <div className="flex-1 overflow-y-auto py-4">
+                <nav className="px-4 space-y-2">
+                  {navLinks.map((link) => (
+                    <Link 
+                      key={link.path}
+                      to={link.path}
+                      className={`flex items-center justify-between px-4 py-4 rounded-2xl transition-all ${
+                        location.pathname === link.path 
+                        ? 'bg-secondary/5 text-secondary font-bold' 
+                        : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                      onClick={() => dispatch(toggleMobileMenu())}
+                    >
+                      <span className="text-lg">{link.name}</span>
+                      <ChevronLeft size={18} className={location.pathname === link.path ? 'opacity-100' : 'opacity-30'} />
+                    </Link>
+                  ))}
+                </nav>
+
+                <div className="px-8 my-6">
+                  <div className="h-px bg-gray-100 w-full" />
+                </div>
+
+                {/* Account Link */}
+                <div className="px-4">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ps-4 mb-2">החשבון שלי</p>
+                  <Link 
+                    to={user ? "/dashboard" : "/login"}
+                    className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all"
+                    onClick={() => dispatch(toggleMobileMenu())}
+                  >
+                    <div className="bg-secondary/10 p-2 rounded-xl text-secondary">
+                      <User size={20} />
+                    </div>
+                    <span className="text-lg">{user ? 'אזור אישי' : 'התחברות'}</span>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Brand Footer */}
+              <div className="p-8 bg-gray-50 border-t border-gray-100 text-center">
+                <p className="text-secondary font-bold tracking-[0.3em] uppercase text-xs mb-1">Purcari Israel</p>
+                <p className="text-[10px] text-gray-400">© 2026 כל הזכויות שמורות</p>
+              </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
     </header>
   );
 };

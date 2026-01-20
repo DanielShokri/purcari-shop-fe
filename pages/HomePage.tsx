@@ -5,6 +5,8 @@ import FeaturesBar from '../components/home/FeaturesBar';
 import FeaturedProducts from '../components/home/FeaturedProducts';
 import CategoriesGrid from '../components/home/CategoriesGrid';
 import StoryTeaser from '../components/home/StoryTeaser';
+import AwardsSection from '../components/home/AwardsSection';
+import Newsletter from '../components/home/Newsletter';
 
 const HomePage: React.FC = () => {
   const [trackEvent] = useTrackEventMutation();
@@ -26,11 +28,17 @@ const HomePage: React.FC = () => {
       {/* Featured Products */}
       <FeaturedProducts />
 
+      {/* Awards Section */}
+      <AwardsSection />
+
       {/* Categories Grid */}
       <CategoriesGrid />
 
       {/* Story Teaser */}
       <StoryTeaser />
+
+      {/* Newsletter Section */}
+      <Newsletter />
     </div>
   );
 };

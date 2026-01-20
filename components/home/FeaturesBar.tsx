@@ -18,8 +18,8 @@ const FeaturesBar: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center divide-y md:divide-y-0 md:divide-x md:divide-x-reverse divide-gray-100">
         <div className="flex flex-col items-center p-4">
           <div className="bg-gray-50 p-3 rounded-full mb-4 text-secondary"><Award size={32} /></div>
-          <h3 className="font-bold text-lg mb-2">איכות מובטחת</h3>
-          <p className="text-gray-500 text-sm px-6">יינות פרימיום שזכו במדליות בתחרויות בינלאומיות.</p>
+          <h3 className="font-bold text-lg mb-2">היקב המעוטר ביותר</h3>
+          <p className="text-gray-500 text-sm px-6">היקב המעוטר ביותר במזרח אירופה עם מעל 400 מדליות בשנת 2023.</p>
         </div>
         <div className="flex flex-col items-center p-4">
           <div className="bg-gray-50 p-3 rounded-full mb-4 text-secondary"><Truck size={32} /></div>

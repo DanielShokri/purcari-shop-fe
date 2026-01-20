@@ -114,6 +114,22 @@ export interface AuthUser {
   $id: string;
   name: string;
   email: string;
+  phone?: string;
+}
+
+export interface Address {
+  id: string;
+  name: string; // Label for the address (e.g. Home, Work)
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  isDefault?: boolean;
+}
+
+export interface UserPreferences {
+  addresses?: Address[];
+  phone?: string;
 }
 
 export interface AnalyticsEvent {
