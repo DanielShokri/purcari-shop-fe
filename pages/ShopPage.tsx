@@ -1,13 +1,44 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useGetProductsQuery } from '../services/api/productsApi';
 import { useGetCategoriesQuery } from '../services/api/categoriesApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
 import SEO from '../components/SEO';
 import ProductCard from '../components/ProductCard';
-import { Filter } from 'lucide-react';
+import Breadcrumbs from '../components/common/Breadcrumbs';
+import { Filter, ArrowUpDown, ChevronDown } from 'lucide-react';
+import { Product } from '../types';
+
+type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'on-sale' | 'name';
+
+const sortOptions: { value: SortOption; label: string }[] = [
+  { value: 'newest', label: 'חדשים ביותר' },
+  { value: 'price-asc', label: 'מחיר: מהנמוך לגבוה' },
+  { value: 'price-desc', label: 'מחיר: מהגבוה לנמוך' },
+  { value: 'on-sale', label: 'מבצעים' },
+  { value: 'name', label: 'לפי שם' },
+];
 
 const ShopPage: React.FC = () => {
-  const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get('category');
+  
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  
+  // Derive activeCategory directly from URL - single source of truth
+  const activeCategory = categoryFromUrl || 'all';
+
+  // Update URL when category changes
+  const handleCategoryChange = (categoryId: string) => {
+    if (categoryId === 'all') {
+      searchParams.delete('category');
+    } else {
+      searchParams.set('category', categoryId);
+    }
+    setSearchParams(searchParams);
+  };
+  
   const { data: products, isLoading } = useGetProductsQuery(
     activeCategory !== 'all' ? { category: activeCategory } : undefined
   );
@@ -18,6 +49,37 @@ const ShopPage: React.FC = () => {
     trackEvent({ type: 'page_view' });
   }, [trackEvent]);
 
+  // Sort products based on selected option
+  const sortedProducts = useMemo(() => {
+    if (!products) return [];
+    
+    const sorted = [...products];
+    
+    switch (sortBy) {
+      case 'price-asc':
+        return sorted.sort((a, b) => a.price - b.price);
+      case 'price-desc':
+        return sorted.sort((a, b) => b.price - a.price);
+      case 'on-sale':
+        return sorted.sort((a, b) => {
+          if (a.onSale && !b.onSale) return -1;
+          if (!a.onSale && b.onSale) return 1;
+          return 0;
+        });
+      case 'name':
+        return sorted.sort((a, b) => 
+          (a.productNameHe || a.productName).localeCompare(b.productNameHe || b.productName, 'he')
+        );
+      case 'newest':
+      default:
+        return sorted.sort((a, b) => 
+          new Date(b.dateAdded || '').getTime() - new Date(a.dateAdded || '').getTime()
+        );
+    }
+  }, [products, sortBy]);
+
+  const currentSortLabel = sortOptions.find(opt => opt.value === sortBy)?.label || 'מיון';
+
   const categories = [
     { id: 'all', label: 'הכל' },
     ...(categoriesData?.map(cat => ({ id: cat.slug, label: (cat as any).nameHe || cat.name })) || [])
@@ -26,10 +88,10 @@ const ShopPage: React.FC = () => {
   // If we have no categories from DB, use fallback wine categories
   const displayCategories = categories.length > 1 ? categories : [
     { id: 'all', label: 'הכל' },
-    { id: 'Red', label: 'יינות אדומים' },
-    { id: 'White', label: 'יינות לבנים' },
-    { id: 'Rosé', label: 'רוזה' },
-    { id: 'Sparkling', label: 'מבעבעים' },
+    { id: 'red-wine', label: 'יינות אדומים' },
+    { id: 'white-wine', label: 'יינות לבנים' },
+    { id: 'rose-wine', label: 'רוזה' },
+    { id: 'sparkling-wine', label: 'מבעבעים' },
   ];
 
   const currentCategoryLabel = displayCategories.find(c => c.id === activeCategory)?.label || 'הכל';
@@ -70,6 +132,14 @@ const ShopPage: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-4">
+        {/* Breadcrumbs */}
+        <Breadcrumbs 
+          items={[
+            { label: 'חנות' }
+          ]}
+          className="mb-6"
+        />
+
         <div className="flex flex-col md:flex-row gap-8">
           
           {/* Sidebar Filters */}
@@ -84,7 +154,7 @@ const ShopPage: React.FC = () => {
                  {displayCategories.map(cat => (
                    <button
                      key={cat.id}
-                     onClick={() => setActiveCategory(cat.id)}
+                     onClick={() => handleCategoryChange(cat.id)}
                      className={`w-full text-right px-3 py-2 rounded-md transition-colors cursor-pointer ${
                        activeCategory === cat.id 
                        ? 'bg-secondary text-white font-bold' 
@@ -109,17 +179,55 @@ const ShopPage: React.FC = () => {
              ) : (
                <>
                  <div className="flex justify-between items-center mb-6">
-                    <p className="text-gray-500 text-sm">מציג {products?.length} מוצרים</p>
-                    {/* Sort Dropdown placeholder */}
+                    <p className="text-gray-500 text-sm">מציג {sortedProducts.length} מוצרים</p>
+                    
+                    {/* Sort Dropdown */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setIsSortOpen(!isSortOpen)}
+                        className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors cursor-pointer"
+                      >
+                        <ArrowUpDown size={16} className="text-secondary" />
+                        <span>{currentSortLabel}</span>
+                        <ChevronDown size={16} className={`transition-transform ${isSortOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      
+                      {isSortOpen && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-10" 
+                            onClick={() => setIsSortOpen(false)}
+                          />
+                          <div className="absolute end-0 top-full mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-[200px] py-2">
+                            {sortOptions.map(option => (
+                              <button
+                                key={option.value}
+                                onClick={() => {
+                                  setSortBy(option.value);
+                                  setIsSortOpen(false);
+                                }}
+                                className={`w-full text-right px-4 py-2 text-sm transition-colors cursor-pointer ${
+                                  sortBy === option.value
+                                    ? 'bg-secondary/10 text-secondary font-medium'
+                                    : 'text-gray-700 hover:bg-gray-50'
+                                }`}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
                  </div>
                  
                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {products?.map(product => (
+                    {sortedProducts.map(product => (
                       <ProductCard key={product.$id} product={product} />
                     ))}
                  </div>
 
-                 {products?.length === 0 && (
+                 {sortedProducts.length === 0 && (
                    <div className="text-center py-20">
                      <p className="text-gray-500 text-lg">לא נמצאו מוצרים בקטגוריה זו.</p>
                    </div>

@@ -37,6 +37,7 @@ export const registerSchema = z.object({
   name: nameSchema,
   email: emailSchema,
   password: passwordSchema,
+  phone: phoneSchema,
 });
 
 // Contact Schema

@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useGetProductByIdQuery } from '../services/api/productsApi';
+import { useGetProductByIdQuery, useGetProductsQuery } from '../services/api/productsApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
 import SEO from '../components/SEO';
 import { useAppDispatch } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
-import { Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, Package, AlertTriangle, CheckCircle } from 'lucide-react';
+import ProductCard from '../components/ProductCard';
+import Breadcrumbs from '../components/common/Breadcrumbs';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { data: product, isLoading } = useGetProductByIdQuery(id || '');
+  const { data: allProducts } = useGetProductsQuery();
   const [trackEvent] = useTrackEventMutation();
   const dispatch = useAppDispatch();
   const [quantity, setQuantity] = useState(1);
@@ -20,8 +23,37 @@ const ProductPage: React.FC = () => {
     }
   }, [product, trackEvent]);
 
+  // Reset quantity when product changes
+  useEffect(() => {
+    setQuantity(1);
+  }, [id]);
+
+  // Get related products - first try relatedProducts field, then fallback to same category/wineType
+  const relatedProducts = useMemo(() => {
+    if (!product || !allProducts) return [];
+    
+    // If product has explicit related products, use those
+    if (product.relatedProducts && product.relatedProducts.length > 0) {
+      return allProducts
+        .filter(p => product.relatedProducts?.includes(p.$id) && p.$id !== product.$id)
+        .slice(0, 4);
+    }
+    
+    // Fallback: find products with same wineType or category
+    return allProducts
+      .filter(p => 
+        p.$id !== product.$id && 
+        (p.wineType === product.wineType || p.category === product.category)
+      )
+      .slice(0, 4);
+  }, [product, allProducts]);
+
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
   if (!product) return <div className="min-h-screen flex items-center justify-center">המוצר לא נמצא</div>;
+
+  // Stock status helpers
+  const isOutOfStock = product.quantityInStock <= 0;
+  const isLowStock = product.quantityInStock > 0 && product.quantityInStock <= 5;
 
   const productSchema = {
     "@context": "https://schema.org/",
@@ -70,6 +102,7 @@ const ProductPage: React.FC = () => {
   };
 
   const handleAddToCart = () => {
+    if (isOutOfStock) return;
     dispatch(addToCart({
       id: product.$id,
       productId: product.$id,
@@ -92,6 +125,15 @@ const ProductPage: React.FC = () => {
         schemaData={[productSchema, breadcrumbSchema]}
       />
       <div className="container mx-auto px-4 py-10">
+        {/* Breadcrumbs */}
+        <Breadcrumbs 
+          items={[
+            { label: 'חנות', href: '/products' },
+            { label: product.productNameHe || product.productName }
+          ]}
+          className="mb-8"
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-20">
           
           {/* Gallery */}
@@ -105,7 +147,27 @@ const ProductPage: React.FC = () => {
           <div>
             <div className="mb-2 text-secondary font-medium tracking-wide text-sm uppercase">{product.wineType === 'Red' ? 'יין אדום' : product.wineType === 'White' ? 'יין לבן' : 'רוזה'}</div>
             <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">{product.productNameHe || product.productName}</h1>
-            <p className="text-2xl font-bold text-gray-900 mb-6">₪{product.price}</p>
+            <p className="text-2xl font-bold text-gray-900 mb-4">₪{product.price}</p>
+            
+            {/* Stock Status */}
+            <div className="mb-6">
+              {isOutOfStock ? (
+                <div className="inline-flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-full text-sm font-medium">
+                  <Package size={16} />
+                  <span>אזל מהמלאי</span>
+                </div>
+              ) : isLowStock ? (
+                <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-700 px-4 py-2 rounded-full text-sm font-medium">
+                  <AlertTriangle size={16} />
+                  <span>נותרו {product.quantityInStock} בלבד - הזמינו עכשיו!</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
+                  <CheckCircle size={16} />
+                  <span>במלאי</span>
+                </div>
+              )}
+            </div>
             
             <p className="text-gray-600 leading-relaxed mb-8 text-lg">
               {product.descriptionHe || product.description}
@@ -131,34 +193,50 @@ const ProductPage: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-6 mb-8 border-t border-b border-gray-100 py-6">
-              <div className="flex items-center border border-gray-300 rounded-md">
+              <div className={`flex items-center border border-gray-300 rounded-md ${isOutOfStock ? 'opacity-50' : ''}`}>
                 <button 
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="px-4 py-3 hover:bg-gray-100 text-gray-600 cursor-pointer"
+                  disabled={isOutOfStock}
+                  className={`px-4 py-3 text-gray-600 ${isOutOfStock ? 'cursor-not-allowed' : 'hover:bg-gray-100 cursor-pointer'}`}
                 >
                   <Minus size={16} />
                 </button>
                 <span className="px-4 font-bold text-lg w-12 text-center">{quantity}</span>
                 <button 
-                  onClick={() => setQuantity(q => q + 1)}
-                  className="px-4 py-3 hover:bg-gray-100 text-gray-600 cursor-pointer"
+                  onClick={() => setQuantity(q => Math.min(product.quantityInStock, q + 1))}
+                  disabled={isOutOfStock || quantity >= product.quantityInStock}
+                  className={`px-4 py-3 text-gray-600 ${isOutOfStock || quantity >= product.quantityInStock ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-100 cursor-pointer'}`}
                 >
                   <Plus size={16} />
                 </button>
               </div>
               <button 
                 onClick={handleAddToCart}
-                className="flex-1 bg-secondary hover:bg-red-900 text-white py-3 px-6 rounded-md font-bold text-lg flex items-center justify-center gap-2 transition-colors shadow-md hover:shadow-xl cursor-pointer"
+                disabled={isOutOfStock}
+                className={`flex-1 py-3 px-6 rounded-md font-bold text-lg flex items-center justify-center gap-2 transition-colors shadow-md ${
+                  isOutOfStock 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'bg-secondary hover:bg-red-900 text-white hover:shadow-xl cursor-pointer'
+                }`}
               >
-                <ShoppingBag size={20} />
-                הוסף לסל
+                {isOutOfStock ? (
+                  <>
+                    <Package size={20} />
+                    אזל מהמלאי
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag size={20} />
+                    הוסף לסל
+                  </>
+                )}
               </button>
             </div>
 
             <div className="space-y-4 text-sm text-gray-500">
                <div className="flex items-center gap-3">
                  <Truck size={18} />
-                 <span>משלוח חינם בהזמנה מעל ₪400</span>
+                 <span>משלוח חינם בהזמנה מעל ₪300</span>
                </div>
                <div className="flex items-center gap-3">
                  <Shield size={18} />
@@ -171,6 +249,20 @@ const ProductPage: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Related Products Section */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-20 pt-12 border-t border-gray-100">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
+              יינות שאולי יעניינו אותך
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProducts.map(relatedProduct => (
+                <ProductCard key={relatedProduct.$id} product={relatedProduct} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

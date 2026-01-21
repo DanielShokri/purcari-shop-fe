@@ -1,9 +1,10 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { X, ChevronLeft, Search, User } from 'lucide-react';
+import { X, ChevronLeft, Search, User, LogOut } from 'lucide-react';
 import { useAppDispatch } from '../../store/hooks';
 import { toggleMobileMenu, openSearchModal } from '../../store/slices/uiSlice';
+import { useLogoutMutation } from '../../services/api/authApi';
 import { navLinks } from './navLinks';
 
 interface MobileMenuProps {
@@ -13,12 +14,24 @@ interface MobileMenuProps {
 const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
   const dispatch = useAppDispatch();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
 
   const handleClose = () => dispatch(toggleMobileMenu());
 
   const handleSearchClick = () => {
     dispatch(toggleMobileMenu());
     dispatch(openSearchModal());
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout().unwrap();
+      handleClose();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   return (
@@ -88,19 +101,54 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
             </button>
           </div>
 
-          {/* Account Link */}
+          {/* Account Section */}
           <div className="px-4">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] ps-4 mb-2">החשבון שלי</p>
-            <Link 
-              to={user ? "/dashboard" : "/login"}
-              className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all"
-              onClick={handleClose}
-            >
-              <div className="bg-secondary/10 p-2 rounded-xl text-secondary">
-                <User size={20} />
-              </div>
-              <span className="text-lg">{user ? 'אזור אישי' : 'התחברות'}</span>
-            </Link>
+            
+            {user ? (
+              <>
+                {/* User greeting */}
+                <div className="px-4 py-3 mb-2">
+                  <p className="text-sm text-gray-500">שלום,</p>
+                  <p className="font-bold text-gray-900">{user.name || user.email}</p>
+                </div>
+                
+                {/* Dashboard Link */}
+                <Link 
+                  to="/dashboard"
+                  className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all"
+                  onClick={handleClose}
+                >
+                  <div className="bg-secondary/10 p-2 rounded-xl text-secondary">
+                    <User size={20} />
+                  </div>
+                  <span className="text-lg">אזור אישי</span>
+                </Link>
+                
+                {/* Logout Button */}
+                <button 
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                  className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-red-50 hover:text-red-600 rounded-2xl transition-all w-full cursor-pointer"
+                >
+                  <div className="bg-gray-100 p-2 rounded-xl text-gray-600 group-hover:bg-red-100 group-hover:text-red-600">
+                    <LogOut size={20} />
+                  </div>
+                  <span className="text-lg">{isLoggingOut ? 'מתנתק...' : 'התנתקות'}</span>
+                </button>
+              </>
+            ) : (
+              <Link 
+                to="/login"
+                className="flex items-center gap-4 px-4 py-4 text-gray-700 hover:bg-gray-50 rounded-2xl transition-all"
+                onClick={handleClose}
+              >
+                <div className="bg-secondary/10 p-2 rounded-xl text-secondary">
+                  <User size={20} />
+                </div>
+                <span className="text-lg">התחברות</span>
+              </Link>
+            )}
           </div>
         </div>
 

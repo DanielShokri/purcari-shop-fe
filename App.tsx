@@ -11,6 +11,9 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ContactPage from './pages/ContactPage';
 import AboutPage from './pages/AboutPage';
+import ShippingPage from './pages/ShippingPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPage from './pages/PrivacyPage';
 import { useAppDispatch } from './store/hooks';
 import { initializeCart } from './store/slices/cartSlice';
 
@@ -35,6 +38,9 @@ const App: React.FC = () => {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/shipping" element={<ShippingPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="*" element={<div className="p-20 text-center">הדף לא נמצא (404)</div>} />
         </Routes>
       </Layout>

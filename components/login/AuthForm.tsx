@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useLoginMutation, useRegisterMutation } from '../../services/api/authApi';
-import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle } from 'lucide-react';
+import { useLoginMutation, useRegisterMutation, useGetCurrentUserQuery } from '../../services/api/authApi';
+import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,9 +13,25 @@ const AuthForm: React.FC = () => {
   const redirect = searchParams.get('redirect');
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const [login, { isLoading: isLoggingIn }] = useLoginMutation();
   const [registerUser, { isLoading: isRegistering }] = useRegisterMutation();
+  const { data: user, isLoading: isCheckingUser } = useGetCurrentUserQuery();
+
+  // Redirect when user is confirmed logged in
+  useEffect(() => {
+    if (loginSuccess && user && !isCheckingUser) {
+      navigate(redirect ? `/${redirect}` : '/dashboard');
+    }
+  }, [loginSuccess, user, isCheckingUser, navigate, redirect]);
+
+  // Also redirect if user is already logged in when visiting the page
+  useEffect(() => {
+    if (user && !isCheckingUser && !loginSuccess) {
+      navigate(redirect ? `/${redirect}` : '/dashboard');
+    }
+  }, [user, isCheckingUser, loginSuccess, navigate, redirect]);
 
   const { 
     register, 
@@ -37,9 +53,10 @@ const AuthForm: React.FC = () => {
       if (isLogin) {
         await login({ email: data.email, password: data.password }).unwrap();
       } else {
-        await registerUser({ email: data.email, password: data.password, name: data.name }).unwrap();
+        await registerUser({ email: data.email, password: data.password, name: data.name, phone: data.phone }).unwrap();
       }
-      navigate(redirect ? `/${redirect}` : '/dashboard');
+      // Set login success flag - the useEffect will handle navigation after user state is confirmed
+      setLoginSuccess(true);
     } catch (err: any) {
       setError(err || 'משהו השתבש, נסה שוב מאוחר יותר');
     }
@@ -53,7 +70,7 @@ const AuthForm: React.FC = () => {
     >
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2">{isLogin ? 'ברוכים השבים' : 'הצטרפו אלינו'}</h1>
-        <p className="text-gray-500">{isLogin ? 'התחברו לחשבון שלכם כדי לצפות בהזמנות' : 'צרו חשבון כדי לעקוב אחר ההזמנות שלכם'}</p>
+        <p className="text-gray-500">{isLogin ? 'התחברו לחשבון שלכם כדי לצפות בהזמנות' : 'צרו חשבון כדי לעקוב אחר ההזמנות, לנהל כתובות משלוח ועוד'}</p>
       </div>
 
       {(error || Object.keys(errors).length > 0) && (
@@ -70,20 +87,38 @@ const AuthForm: React.FC = () => {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         {!isLogin && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">שם מלא <span className="text-red-500">*</span></label>
-            <div className="relative">
-              <span className="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400">
-                <UserIcon size={18} />
-              </span>
-              <input 
-                type="text" 
-                {...register('name')}
-                className={`w-full border-gray-300 rounded-xl p-3 ps-10 border focus:ring-secondary focus:border-secondary ${errors.name ? 'border-red-500' : ''}`} 
-              />
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">שם מלא <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <span className="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400">
+                  <UserIcon size={18} />
+                </span>
+                <input 
+                  type="text" 
+                  {...register('name')}
+                  className={`w-full border-gray-300 rounded-xl p-3 ps-10 border focus:ring-secondary focus:border-secondary ${errors.name ? 'border-red-500' : ''}`} 
+                />
+              </div>
+              {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
             </div>
-            {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">טלפון נייד <span className="text-red-500">*</span></label>
+              <div className="relative">
+                <span className="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400">
+                  <Phone size={18} />
+                </span>
+                <input 
+                  type="tel" 
+                  {...register('phone')}
+                  placeholder="050-1234567"
+                  dir="ltr"
+                  className={`w-full border-gray-300 rounded-xl p-3 ps-10 border focus:ring-secondary focus:border-secondary text-left ${errors.phone ? 'border-red-500' : ''}`} 
+                />
+              </div>
+              {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+            </div>
+          </>
         )}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">אימייל <span className="text-red-500">*</span></label>
@@ -116,11 +151,11 @@ const AuthForm: React.FC = () => {
 
         <button 
           type="submit" 
-          disabled={isLoggingIn || isRegistering}
-          className="w-full bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg cursor-pointer"
+          disabled={isLoggingIn || isRegistering || loginSuccess}
+          className="w-full bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg cursor-pointer disabled:opacity-70"
         >
           {isLogin ? <LogIn size={20} /> : <UserPlus size={20} />}
-          {isLoggingIn || isRegistering ? 'מעבד...' : (isLogin ? 'התחברות' : 'הרשמה')}
+          {isLoggingIn || isRegistering ? 'מעבד...' : loginSuccess ? 'מעביר לחשבון...' : (isLogin ? 'התחברות' : 'הרשמה')}
         </button>
       </form>
 

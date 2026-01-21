@@ -1,11 +1,12 @@
 import React from 'react';
-import { Facebook, Instagram, Twitter } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Facebook, Instagram } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-900 text-white pt-16 pb-8">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
           
           {/* Brand */}
           <div className="space-y-4">
@@ -21,10 +22,19 @@ const Footer: React.FC = () => {
           <div>
             <h4 className="text-lg font-bold mb-6 text-accent">ניווט מהיר</h4>
             <ul className="space-y-3 text-sm text-gray-400">
-              <li><a href="#" className="hover:text-white transition-colors">הסיפור שלנו</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">הכרמים</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">בלוג</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">מדיניות משלוחים</a></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">הסיפור שלנו</Link></li>
+              <li><Link to="/products" className="hover:text-white transition-colors">החנות</Link></li>
+              <li><Link to="/shipping" className="hover:text-white transition-colors">מדיניות משלוחים</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">צור קשר</Link></li>
+            </ul>
+          </div>
+
+          {/* Legal Links */}
+          <div>
+            <h4 className="text-lg font-bold mb-6 text-accent">מידע משפטי</h4>
+            <ul className="space-y-3 text-sm text-gray-400">
+              <li><Link to="/terms" className="hover:text-white transition-colors">תנאי שימוש</Link></li>
+              <li><Link to="/privacy" className="hover:text-white transition-colors">מדיניות פרטיות</Link></li>
             </ul>
           </div>
 

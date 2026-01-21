@@ -10,14 +10,20 @@ export const authApi = api.injectEndpoints({
       email: string;
       password: string;
       name: string;
+      phone?: string;
     }>({
-      queryFn: async ({ email, password, name }) => {
+      queryFn: async ({ email, password, name, phone }) => {
         try {
           // Create account
           await account.create(ID.unique(), email, password, name);
           
           // Auto-login after registration
           await account.createEmailPasswordSession({ email, password });
+          
+          // Save phone to preferences if provided
+          if (phone) {
+            await account.updatePrefs({ phone });
+          }
           
           const user = await account.get();
           return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };

@@ -36,7 +36,7 @@ const CategoriesGrid: React.FC = () => {
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
             <div className="absolute inset-0 flex items-end justify-center p-8">
               <Link 
-                to="/products?category=Red"
+                to="/products?category=red-wine"
                 className="bg-white/95 backdrop-blur-sm text-gray-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary hover:text-white transition-all transform group-hover:-translate-y-2"
               >
                 יינות אדומים
@@ -59,7 +59,7 @@ const CategoriesGrid: React.FC = () => {
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
               <div className="absolute inset-0 flex items-end justify-center p-8">
                 <Link 
-                  to="/products?category=Sparkling"
+                  to="/products?category=sparkling-wine"
                   className="bg-white/95 backdrop-blur-sm text-gray-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary hover:text-white transition-all transform group-hover:-translate-y-2"
                 >
                   מבעבעים
@@ -80,7 +80,7 @@ const CategoriesGrid: React.FC = () => {
               <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
               <div className="absolute inset-0 flex items-end justify-center p-8">
                 <Link 
-                  to="/products?category=Rosé"
+                  to="/products?category=rose-wine"
                   className="bg-white/95 backdrop-blur-sm text-gray-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary hover:text-white transition-all transform group-hover:-translate-y-2"
                 >
                   רוזה
@@ -102,7 +102,7 @@ const CategoriesGrid: React.FC = () => {
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
             <div className="absolute inset-0 flex items-end justify-center p-8">
               <Link 
-                to="/products?category=White"
+                to="/products?category=white-wine"
                 className="bg-white/95 backdrop-blur-sm text-gray-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary hover:text-white transition-all transform group-hover:-translate-y-2"
               >
                 יינות לבנים

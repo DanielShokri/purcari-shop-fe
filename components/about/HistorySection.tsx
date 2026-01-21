@@ -30,7 +30,7 @@ const HistorySection: React.FC = () => {
             className="relative rounded-3xl overflow-hidden shadow-2xl h-[500px]"
           >
             <img 
-              src="https://images.unsplash.com/photo-1516594915697-87eb3b1c14ea?q=80&w=2070&auto=format&fit=crop" 
+              src="https://cf.bstatic.com/xdata/images/hotel/max1024x768/477597345.jpg?k=75bf1f10ce173a6911e9a80cb5ce62e1e69e62b7cf1f183ab22a2bfdab7c5476&o="
               alt="Winery History" 
               className="w-full h-full object-cover"
             />

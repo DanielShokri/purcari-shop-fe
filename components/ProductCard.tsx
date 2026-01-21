@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Product } from '../types';
 import { useAppDispatch } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
-import { ShoppingBag, Eye, Zap } from 'lucide-react';
+import { ShoppingBag, Eye, Zap, Package, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import theme from '../theme/styles';
 
@@ -12,9 +12,10 @@ interface ProductCardProps {
 }
 
 // Calculate discount percentage
-const getDiscountPercent = (price: number, compareAtPrice?: number) => {
-  if (!compareAtPrice) return 0;
-  return Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
+// When onSale is true: price is the original price, salePrice is the discounted price
+const getDiscountPercent = (originalPrice: number, salePrice?: number) => {
+  if (!salePrice || salePrice >= originalPrice) return 0;
+  return Math.round(((originalPrice - salePrice) / originalPrice) * 100);
 };
 
 // Infinite Marquee component using Framer Motion
@@ -53,11 +54,16 @@ const SaleMarquee: React.FC<{ text: string }> = ({ text }) => {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const dispatch = useAppDispatch();
-  const discountPercent = getDiscountPercent(product.price, product.compareAtPrice);
+  const discountPercent = getDiscountPercent(product.price, product.salePrice);
+  
+  // Stock status helpers
+  const isOutOfStock = product.quantityInStock <= 0;
+  const isLowStock = product.quantityInStock > 0 && product.quantityInStock <= 5;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isOutOfStock) return;
     dispatch(addToCart({
       id: product.$id, // Keeping id for internal React key if needed, but the slice uses productId
       productId: product.$id,
@@ -83,17 +89,42 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         </Link>
         
         {/* Sale Badge - Top Right */}
-        {product.onSale && discountPercent > 0 && (
+        {product.onSale && discountPercent > 0 && !isOutOfStock && (
           <span className="absolute top-3 end-3 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full pointer-events-none">
             -{discountPercent}%
+          </span>
+        )}
+
+        {/* Out of Stock Badge */}
+        {isOutOfStock && (
+          <span className="absolute top-3 end-3 bg-gray-800 text-white text-xs font-bold px-3 py-1.5 rounded-full pointer-events-none flex items-center gap-1">
+            <Package size={12} />
+            אזל מהמלאי
+          </span>
+        )}
+
+        {/* Low Stock Badge */}
+        {isLowStock && !isOutOfStock && (
+          <span className="absolute top-3 start-3 bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full pointer-events-none flex items-center gap-1">
+            <AlertTriangle size={12} />
+            נותרו {product.quantityInStock} בלבד
           </span>
         )}
 
         {/* Running Sale Banner - Bottom of Image using Framer Motion */}
         {product.onSale && <SaleMarquee text={saleBannerText} />}
 
+        {/* Out of Stock Overlay */}
+        {isOutOfStock && (
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+            <span className="bg-white/90 text-gray-800 px-4 py-2 rounded-full font-bold text-sm">
+              אזל מהמלאי
+            </span>
+          </div>
+        )}
+
         {/* Overlay Actions */}
-        <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none">
+        <div className={`absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none ${isOutOfStock ? 'hidden' : ''}`}>
           <Link
             to={`/product/${product.$id}`}
             className="bg-white text-gray-900 p-3 rounded-full hover:bg-secondary hover:text-white transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300 pointer-events-auto flex items-center justify-center"
@@ -102,7 +133,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </Link>
           <button
             onClick={handleAddToCart}
-            className="bg-white text-gray-900 p-3 rounded-full hover:bg-secondary hover:text-white transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75 pointer-events-auto flex items-center justify-center cursor-pointer"
+            disabled={isOutOfStock}
+            className={`bg-white text-gray-900 p-3 rounded-full transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300 delay-75 pointer-events-auto flex items-center justify-center ${
+              isOutOfStock 
+                ? 'opacity-50 cursor-not-allowed' 
+                : 'hover:bg-secondary hover:text-white cursor-pointer'
+            }`}
           >
             <ShoppingBag size={20} />
           </button>
@@ -115,10 +151,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           <h3 className="font-bold text-gray-800 hover:text-secondary transition-colors mb-2 line-clamp-1">{product.productNameHe || product.productName}</h3>
         </Link>
         <div className="flex items-center justify-center gap-2 text-sm">
-          {product.onSale && product.compareAtPrice && (
-            <span className="text-gray-400 line-through">₪{product.compareAtPrice}</span>
+          {product.onSale && product.salePrice && (
+            <span className="text-gray-400 line-through">₪{product.price}</span>
           )}
-          <span className={`font-bold ${product.onSale ? 'text-red-600' : 'text-gray-900'}`}>₪{product.price}</span>
+          <span className={`font-bold ${product.onSale ? 'text-red-600' : 'text-gray-900'}`}>
+            ₪{product.onSale && product.salePrice ? product.salePrice : product.price}
+          </span>
         </div>
       </div>
     </div>
