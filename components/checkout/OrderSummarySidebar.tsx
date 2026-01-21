@@ -38,7 +38,12 @@ const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
               <div className="flex-1 flex flex-col justify-center min-w-0">
                 <h4 className="text-xs font-bold text-gray-800 truncate">{item.title}</h4>
                 <p className="text-[10px] text-gray-500">כמות: {item.quantity}</p>
-                <p className="text-xs font-bold text-secondary mt-1">₪{item.price * item.quantity}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <p className={`text-xs font-bold ${item.originalPrice ? 'text-red-600' : 'text-secondary'}`}>₪{item.price * item.quantity}</p>
+                  {item.originalPrice && (
+                    <p className="text-[10px] text-gray-400 line-through">₪{item.originalPrice * item.quantity}</p>
+                  )}
+                </div>
               </div>
             </div>
           ))}

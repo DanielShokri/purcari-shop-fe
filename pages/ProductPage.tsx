@@ -55,6 +55,15 @@ const ProductPage: React.FC = () => {
   const isOutOfStock = product.quantityInStock <= 0;
   const isLowStock = product.quantityInStock > 0 && product.quantityInStock <= 5;
 
+  // Calculate discount percentage
+  const getDiscountPercent = (originalPrice: number, salePrice?: number) => {
+    if (!salePrice || salePrice >= originalPrice) return 0;
+    return Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+  };
+
+  const discountPercent = getDiscountPercent(product.price, product.salePrice);
+  const currentPrice = product.onSale && product.salePrice ? product.salePrice : product.price;
+
   const productSchema = {
     "@context": "https://schema.org/",
     "@type": "Product",
@@ -70,7 +79,7 @@ const ProductPage: React.FC = () => {
       "@type": "Offer",
       "url": `https://purcari.co.il/product/${product.$id}`,
       "priceCurrency": "ILS",
-      "price": product.price,
+      "price": currentPrice,
       "availability": product.quantityInStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "itemCondition": "https://schema.org/NewCondition"
     }
@@ -107,7 +116,8 @@ const ProductPage: React.FC = () => {
       id: product.$id,
       productId: product.$id,
       title: product.productNameHe || product.productName,
-      price: product.price,
+      price: currentPrice,
+      originalPrice: product.onSale ? product.price : undefined,
       quantity,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
@@ -138,8 +148,15 @@ const ProductPage: React.FC = () => {
           
           {/* Gallery */}
           <div className="space-y-4">
-            <div className="aspect-[3/4] bg-amber-50 rounded-lg overflow-hidden border border-gray-100 p-6 flex items-center justify-center">
+            <div className="relative aspect-[3/4] bg-amber-50 rounded-lg overflow-hidden border border-gray-100 p-6 flex items-center justify-center">
               <img src={product.featuredImage || product.images?.[0] || ''} alt={product.productNameHe || product.productName} className="max-w-full max-h-full object-contain" />
+              
+              {/* Sale Badge */}
+              {product.onSale && discountPercent > 0 && !isOutOfStock && (
+                <div className="absolute top-4 right-4 bg-red-500 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg z-10">
+                  -{discountPercent}% הנחה
+                </div>
+              )}
             </div>
           </div>
 
@@ -147,7 +164,13 @@ const ProductPage: React.FC = () => {
           <div>
             <div className="mb-2 text-secondary font-medium tracking-wide text-sm uppercase">{product.wineType === 'Red' ? 'יין אדום' : product.wineType === 'White' ? 'יין לבן' : 'רוזה'}</div>
             <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">{product.productNameHe || product.productName}</h1>
-            <p className="text-2xl font-bold text-gray-900 mb-4">₪{product.price}</p>
+            
+            <div className="flex items-center gap-4 mb-6">
+              <p className={`text-3xl font-bold ${product.onSale ? 'text-red-600' : 'text-gray-900'}`}>₪{currentPrice}</p>
+              {product.onSale && product.salePrice && (
+                <p className="text-xl text-gray-400 line-through">₪{product.price}</p>
+              )}
+            </div>
             
             {/* Stock Status */}
             <div className="mb-6">

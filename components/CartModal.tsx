@@ -64,7 +64,12 @@ const CartModal: React.FC = () => {
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
                     <h3 className="font-bold text-gray-800 line-clamp-1">{item.title}</h3>
-                    <p className="text-secondary font-semibold">₪{item.price}</p>
+                    <div className="flex items-center gap-2">
+                      <p className={`font-semibold ${item.originalPrice ? 'text-red-600' : 'text-secondary'}`}>₪{item.price}</p>
+                      {item.originalPrice && (
+                        <p className="text-xs text-gray-400 line-through">₪{item.originalPrice}</p>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center justify-between mt-2">
                     <div className="flex items-center border border-gray-300 rounded overflow-hidden">

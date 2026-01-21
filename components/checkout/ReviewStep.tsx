@@ -32,7 +32,16 @@ const ReviewStep: React.FC<ReviewStepProps> = ({ formData, cartItems, handleSubm
                     <p className="text-xs text-gray-500">{item.quantity} יחידות</p>
                   </div>
                 </div>
-                <p className="font-bold text-sm">₪{item.price * item.quantity}</p>
+                <div className="text-right">
+                  <p className={`font-bold text-sm ${item.originalPrice ? 'text-red-600' : 'text-gray-900'}`}>
+                    ₪{item.price * item.quantity}
+                  </p>
+                  {item.originalPrice && (
+                    <p className="text-[10px] text-gray-400 line-through">
+                      ₪{item.originalPrice * item.quantity}
+                    </p>
+                  )}
+                </div>
               </div>
             ))}
           </div>

@@ -33,6 +33,7 @@ export interface CartItem {
   productId: string;
   title: string;
   price: number;
+  originalPrice?: number; // Added to show strike-through for sales
   quantity: number;
   imgSrc: string;
 }

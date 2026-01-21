@@ -64,11 +64,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     e.preventDefault();
     e.stopPropagation();
     if (isOutOfStock) return;
+    
+    const currentPrice = product.onSale && product.salePrice ? product.salePrice : product.price;
+    
     dispatch(addToCart({
       id: product.$id, // Keeping id for internal React key if needed, but the slice uses productId
       productId: product.$id,
       title: product.productNameHe || product.productName,
-      price: product.price,
+      price: currentPrice,
+      originalPrice: product.onSale ? product.price : undefined,
       quantity: 1,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));

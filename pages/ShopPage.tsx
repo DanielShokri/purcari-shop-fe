@@ -55,11 +55,13 @@ const ShopPage: React.FC = () => {
     
     const sorted = [...products];
     
+    const getEffectivePrice = (p: Product) => p.onSale && p.salePrice ? p.salePrice : p.price;
+    
     switch (sortBy) {
       case 'price-asc':
-        return sorted.sort((a, b) => a.price - b.price);
+        return sorted.sort((a, b) => getEffectivePrice(a) - getEffectivePrice(b));
       case 'price-desc':
-        return sorted.sort((a, b) => b.price - a.price);
+        return sorted.sort((a, b) => getEffectivePrice(b) - getEffectivePrice(a));
       case 'on-sale':
         return sorted.sort((a, b) => {
           if (a.onSale && !b.onSale) return -1;
