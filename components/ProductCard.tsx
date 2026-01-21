@@ -80,11 +80,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <div className={`group relative ${theme.CARD} ${theme.CARD_HOVER} flex flex-col h-full border-transparent hover:border-gray-100`}>
       <div className="relative aspect-[2/3] overflow-hidden bg-amber-50">
-        <Link to={`/product/${product.$id}`} className="block w-full h-full">
+        <Link to={`/product/${product.$id}`} className="block w-full h-full p-4 flex items-center justify-center">
           <img
             src={product.featuredImage || product.images?.[0] || ''}
             alt={product.productNameHe || product.productName}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="max-w-full max-h-full object-contain transition-transform duration-700 group-hover:scale-105"
           />
         </Link>
         
@@ -146,7 +146,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       </div>
 
       <div className="p-4 text-center flex-grow flex flex-col justify-end">
-        <div className="text-xs text-gray-500 mb-1">{product.wineType === 'Red' ? 'יין אדום' : product.wineType === 'White' ? 'יין לבן' : 'רוזה'}</div>
+        <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mb-1">
+          <span>{product.wineType === 'Red' ? 'יין אדום' : product.wineType === 'White' ? 'יין לבן' : product.wineType === 'Sparkling' ? 'מבעבע' : 'רוזה'}</span>
+          {product.vintage && (
+            <>
+              <span className="text-gray-300">|</span>
+              <span>{product.vintage}</span>
+            </>
+          )}
+        </div>
         <Link to={`/product/${product.$id}`}>
           <h3 className="font-bold text-gray-800 hover:text-secondary transition-colors mb-2 line-clamp-1">{product.productNameHe || product.productName}</h3>
         </Link>

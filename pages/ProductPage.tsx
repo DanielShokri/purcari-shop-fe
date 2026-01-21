@@ -138,8 +138,8 @@ const ProductPage: React.FC = () => {
           
           {/* Gallery */}
           <div className="space-y-4">
-            <div className="aspect-[3/4] bg-gray-50 rounded-lg overflow-hidden border border-gray-100">
-              <img src={product.featuredImage || product.images?.[0] || ''} alt={product.productNameHe || product.productName} className="w-full h-full object-cover" />
+            <div className="aspect-[3/4] bg-amber-50 rounded-lg overflow-hidden border border-gray-100 p-6 flex items-center justify-center">
+              <img src={product.featuredImage || product.images?.[0] || ''} alt={product.productNameHe || product.productName} className="max-w-full max-h-full object-contain" />
             </div>
           </div>
 
@@ -173,23 +173,38 @@ const ProductPage: React.FC = () => {
               {product.descriptionHe || product.description}
             </p>
 
+            {/* Wine Attributes Grid */}
             <div className="grid grid-cols-2 gap-4 mb-8 text-sm text-gray-600">
-              <div className="p-3 bg-gray-50 rounded border border-gray-100">
-                <span className="block font-bold text-gray-900 mb-1">בציר</span>
-                {product.vintage}
-              </div>
-              <div className="p-3 bg-gray-50 rounded border border-gray-100">
-                <span className="block font-bold text-gray-900 mb-1">אלכוהול</span>
-                {product.alcoholContent}%
-              </div>
-              <div className="p-3 bg-gray-50 rounded border border-gray-100">
-                <span className="block font-bold text-gray-900 mb-1">נפח</span>
-                {product.volume}
-              </div>
-              <div className="p-3 bg-gray-50 rounded border border-gray-100">
-                <span className="block font-bold text-gray-900 mb-1">מק"ט</span>
-                {product.sku}
-              </div>
+              {product.vintage && (
+                <div className="p-3 bg-gray-50 rounded border border-gray-100">
+                  <span className="block font-bold text-gray-900 mb-1">בציר</span>
+                  {product.vintage}
+                </div>
+              )}
+              {product.volume && (
+                <div className="p-3 bg-gray-50 rounded border border-gray-100">
+                  <span className="block font-bold text-gray-900 mb-1">נפח</span>
+                  {product.volume}
+                </div>
+              )}
+              {product.grapeVariety && (
+                <div className="p-3 bg-gray-50 rounded border border-gray-100">
+                  <span className="block font-bold text-gray-900 mb-1">זני ענבים</span>
+                  {product.grapeVariety}
+                </div>
+              )}
+              {product.servingTemperature && (
+                <div className="p-3 bg-gray-50 rounded border border-gray-100">
+                  <span className="block font-bold text-gray-900 mb-1">טמפרטורת הגשה</span>
+                  {product.servingTemperature}
+                </div>
+              )}
+              {product.alcoholContent && (
+                <div className="p-3 bg-gray-50 rounded border border-gray-100">
+                  <span className="block font-bold text-gray-900 mb-1">אלכוהול</span>
+                  {product.alcoholContent}%
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-6 mb-8 border-t border-b border-gray-100 py-6">

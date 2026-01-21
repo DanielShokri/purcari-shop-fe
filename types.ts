@@ -23,6 +23,8 @@ export interface Product {
   vintage?: number;
   alcoholContent?: number;
   volume?: string;
+  grapeVariety?: string;         // Grape types, e.g., "100% שרדונה"
+  servingTemperature?: string;   // Recommended serving temp, e.g., "10-12°"
   tastingNotes?: string;
 }
 

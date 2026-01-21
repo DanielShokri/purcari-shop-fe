@@ -22,8 +22,8 @@ const Hero: React.FC = () => {
           style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1920&q=80")' }}
         />
 
-        {/* Video Overlay (Desktop Only) */}
-        <div className="absolute inset-0 w-full h-full overflow-hidden hidden md:block">
+        {/* Video Background */}
+        <div className="absolute inset-0 w-full h-full overflow-hidden">
           <AnimatePresence>
             {loadVideo && (
               <motion.div
@@ -32,13 +32,20 @@ const Hero: React.FC = () => {
                 transition={{ duration: 1.5 }}
                 className="w-full h-full"
               >
-                <iframe
-                  className="absolute top-1/2 left-1/2 w-[150%] h-[150%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-                  src="https://www.youtube-nocookie.com/embed/TxEr9TB4nPU?autoplay=1&mute=1&loop=1&playlist=TxEr9TB4nPU&controls=0&rel=0&showinfo=0&iv_load_policy=3&modestbranding=1&playsinline=1"
-                  title="Purcari background video"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  loading="lazy"
-                ></iframe>
+                <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                  poster="https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?w=1920&q=80"
+                >
+                  <source 
+                    src="https://purcariwineries.com/wp-content/uploads/2023/11/Purcari-General-44sec_ian_2023.mp4" 
+                    type="video/mp4" 
+                  />
+                  Your browser does not support the video tag.
+                </video>
               </motion.div>
             )}
           </AnimatePresence>
