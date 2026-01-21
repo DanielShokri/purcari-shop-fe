@@ -43,9 +43,9 @@ export interface Product {
   relatedProducts?: string[]; // optional array of product IDs
   isFeatured?: boolean;       // optional (default: false)
   featuredImage?: string;     // optional URL
+  stockStatus?: StockStatus;  // optional (default: in_stock)
   // UI-only fields (not stored in Appwrite)
   status?: ProductStatus;     // for UI compatibility
-  stockStatus?: StockStatus;  // for UI compatibility
 }
 
 export interface Category {

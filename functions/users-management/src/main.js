@@ -69,6 +69,12 @@ export default async ({ req, res, error }) => {
         result = await users.updateEmail(userId, email);
         break;
 
+      case 'updatePhone':
+        // Update user phone
+        if (!userId || phone === undefined) throw new Error('userId and phone are required');
+        result = await users.updatePhone(userId, phone);
+        break;
+
       case 'updateStatus':
         // Update user status (true = active, false = blocked)
         if (!userId || status === undefined) throw new Error('userId and status are required');

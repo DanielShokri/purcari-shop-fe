@@ -183,6 +183,15 @@ export const usersApi = {
     });
   },
 
+  // Update user phone
+  async updatePhone(userId: string, phone: string) {
+    return this.callFunction(APPWRITE_CONFIG.FUNCTION_USERS, {
+      action: 'updatePhone',
+      userId,
+      phone
+    });
+  },
+
   // Update user status (active/blocked)
   async updateStatus(userId: string, status: boolean) {
     return this.callFunction(APPWRITE_CONFIG.FUNCTION_USERS, {

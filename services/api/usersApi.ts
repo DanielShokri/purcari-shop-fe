@@ -41,8 +41,8 @@ const usersApiSlice = api.injectEndpoints({
       invalidatesTags: ['Users'],
     }),
 
-    updateUser: builder.mutation<User, { id: string; name?: string; email?: string; role?: UserRole; status?: UserStatus; avatar?: string }>({
-      queryFn: async ({ id, name, email, role, status, avatar }) => {
+    updateUser: builder.mutation<User, { id: string; name?: string; email?: string; phone?: string; address?: string; role?: UserRole; status?: UserStatus; avatar?: string }>({
+      queryFn: async ({ id, name, email, phone, address, role, status, avatar }) => {
         try {
           // Update each field that was provided
           if (name !== undefined) {
@@ -51,6 +51,10 @@ const usersApiSlice = api.injectEndpoints({
           
           if (email !== undefined) {
             await usersApi.updateEmail(id, email);
+          }
+
+          if (phone !== undefined) {
+            await usersApi.updatePhone(id, phone);
           }
           
           if (role !== undefined) {
@@ -64,10 +68,14 @@ const usersApiSlice = api.injectEndpoints({
             await usersApi.updateStatus(id, statusBool);
           }
           
-          if (avatar !== undefined) {
-            // Get current prefs and update avatar
+          if (avatar !== undefined || address !== undefined) {
+            // Get current prefs and update
             const currentUser = await usersApi.get(id);
-            const updatedPrefs = { ...currentUser.prefs, avatar };
+            const updatedPrefs = { ...currentUser.prefs };
+            
+            if (avatar !== undefined) updatedPrefs.avatar = avatar;
+            if (address !== undefined) updatedPrefs.address = address;
+            
             await usersApi.updatePrefs(id, updatedPrefs);
           }
           

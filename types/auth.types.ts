@@ -43,6 +43,8 @@ export interface User {
   $id: string;
   name: string;
   email: string;
+  phone?: string;
+  address?: string;
   role: UserRole;
   status: UserStatus;
   avatar?: string;
@@ -65,6 +67,8 @@ export function mapAppwriteUserToUser(appwriteUser: AppwriteUser): User {
     $id: appwriteUser.$id,
     name: appwriteUser.name,
     email: appwriteUser.email,
+    phone: appwriteUser.phone || appwriteUser.prefs?.phone || '',
+    address: appwriteUser.prefs?.address || '',
     role,
     status,
     avatar: appwriteUser.prefs?.avatar,

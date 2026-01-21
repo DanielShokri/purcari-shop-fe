@@ -106,7 +106,7 @@ export default function InventoryCard({
               dir="ltr"
               textAlign="left"
               value={quantityInStock}
-              onChange={(e) => onQuantityChange(parseInt(e.target.value) || 0)}
+              onChange={(e) => onQuantityChange(Number(e.target.value) || 0)}
               placeholder="0"
               min={0}
               bg="bg.subtle"

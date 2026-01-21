@@ -166,6 +166,7 @@ export default function ProductEditor() {
         isFeatured,
         featuredImage: featuredImage || null,
         dateAdded: existingProduct?.dateAdded || new Date().toISOString(),
+        stockStatus,
       };
       if (isEditMode && id) {
         await updateProduct({ id, ...productData }).unwrap();

@@ -45,6 +45,7 @@ const productsApi = api.injectEndpoints({
               isFeatured: newProduct.isFeatured || false,
               featuredImage: newProduct.featuredImage || null,
               dateAdded: newProduct.dateAdded || new Date().toISOString(),
+              stockStatus: newProduct.stockStatus || 'in_stock',
             }
           });
           return { data: response as unknown as Product };
@@ -59,7 +60,7 @@ const productsApi = api.injectEndpoints({
       queryFn: async ({ id, ...updates }) => {
         try {
           // Remove $id and status (UI-only) from updates
-          const { $id, status, stockStatus, ...cleanUpdates } = updates as any;
+          const { $id, status, ...cleanUpdates } = updates as any;
           const response = await databases.updateDocument({
             databaseId: APPWRITE_CONFIG.DATABASE_ID,
             collectionId: APPWRITE_CONFIG.COLLECTION_PRODUCTS,
