@@ -1,7 +1,7 @@
 import { api } from './baseApi';
 import { account } from '../appwrite';
 import { ID } from 'appwrite';
-import { AuthUser } from '../../types';
+import { AuthUser, UserPreferences, ShippingAddress } from '../../types';
 
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -108,18 +108,82 @@ export const authApi = api.injectEndpoints({
     }),
 
     // Logout
-    logout: builder.mutation<void, void>({
+    logout: builder.mutation<boolean, void>({
       queryFn: async () => {
         try {
           await account.deleteSession('current');
-          return { data: null };
+          return { data: true };
         } catch (error: any) {
           return { error: error.message || 'שגיאה בהתנתקות' };
+        }
+      },
+      invalidatesTags: ['User', 'Orders'],
+    }),
+
+    // Request password reset
+    requestPasswordReset: builder.mutation<boolean, string>({
+      queryFn: async (email) => {
+        try {
+          await account.createRecovery(
+            email,
+            `${window.location.origin}/reset-password`
+          );
+          return { data: true };
+        } catch (error: any) {
+          // Don't reveal if email exists for security
+          return { data: true };
+        }
+      },
+    }),
+
+    // Complete password reset
+    resetPassword: builder.mutation<boolean, { userId: string; secret: string; password: string }>({
+      queryFn: async ({ userId, secret, password }) => {
+        try {
+          await account.updateRecovery(userId, secret, password);
+          return { data: true };
+        } catch (error: any) {
+          if (error.code === 401) {
+            return { error: 'קישור לאיפוס סיסמה פג תוקף' };
+          }
+          return { error: error.message || 'שגיאה באיפוס סיסמה' };
+        }
+      },
+    }),
+
+    // Update address in preferences
+    updateAddress: builder.mutation<UserPreferences, { address: ShippingAddress; isDefault?: boolean }>({
+      queryFn: async ({ address, isDefault }) => {
+        try {
+          const currentPrefs = await account.getPrefs() as UserPreferences;
+          const addresses = currentPrefs.addresses || [];
+          
+          // Generate ID for new address
+          const addressWithId = {
+            ...address,
+            id: `addr_${Date.now()}`,
+            name: address.city, // Use city as default label
+            isDefault: isDefault || addresses.length === 0,
+          };
+          
+          // If setting as default, unset other defaults
+          const updatedAddresses = isDefault
+            ? addresses.map(a => ({ ...a, isDefault: false }))
+            : addresses;
+          
+          updatedAddresses.push(addressWithId);
+          
+          const updatedPrefs = { ...currentPrefs, addresses: updatedAddresses };
+          const result = await account.updatePrefs(updatedPrefs);
+          return { data: result as UserPreferences };
+        } catch (error: any) {
+          return { error: error.message || 'שגיאה בשמירת כתובת' };
         }
       },
       invalidatesTags: ['User'],
     }),
   }),
+  overrideExisting: true,
 });
 
 export const {
@@ -130,4 +194,7 @@ export const {
   useUpdateProfileMutation,
   useGetUserPrefsQuery,
   useUpdateUserPrefsMutation,
+  useRequestPasswordResetMutation,
+  useResetPasswordMutation,
+  useUpdateAddressMutation,
 } = authApi;

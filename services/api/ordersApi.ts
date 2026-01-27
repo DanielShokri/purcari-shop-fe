@@ -1,81 +1,168 @@
 import { api } from './baseApi';
 import { databases, APPWRITE_CONFIG, account } from '../appwrite';
-import { ID, Query } from 'appwrite';
-import { Order, OrderItem, OrderStatus } from '../../types';
+import { ID, Query, Permission, Role } from 'appwrite';
+import { Order, OrderItem, OrderDetails, CreateOrderPayload, OrderStatus, ShippingAddress, PaymentInfo } from '../../types';
+
+// Israeli VAT rate
+const VAT_RATE = 0.17;
+// Free shipping threshold in ILS
+const FREE_SHIPPING_THRESHOLD = 300;
+// Standard shipping cost in ILS
+const STANDARD_SHIPPING_COST = 29.90;
+
+// Helper to map flat order to OrderDetails
+const mapFlatOrderToDetails = (
+  order: any,
+  items: OrderItem[]
+): OrderDetails => ({
+  $id: order.$id,
+  $createdAt: order.$createdAt,
+  customerName: order.customerName,
+  customerEmail: order.customerEmail,
+  customerPhone: order.customerPhone,
+  customerAvatar: order.customerAvatar,
+  total: order.total,
+  subtotal: order.subtotal,
+  shippingCost: order.shippingCost,
+  tax: order.tax,
+  status: order.status,
+  // Flattened fields
+  shippingStreet: order.shippingStreet,
+  shippingApartment: order.shippingApartment,
+  shippingCity: order.shippingCity,
+  shippingPostalCode: order.shippingPostalCode,
+  shippingCountry: order.shippingCountry,
+  paymentMethod: order.paymentMethod,
+  paymentCardExpiry: order.paymentCardExpiry,
+  paymentTransactionId: order.paymentTransactionId,
+  paymentChargeDate: order.paymentChargeDate,
+  // Nested structures for convenience
+  shippingAddress: {
+    street: order.shippingStreet,
+    apartment: order.shippingApartment,
+    city: order.shippingCity,
+    postalCode: order.shippingPostalCode,
+    country: order.shippingCountry,
+  },
+  payment: {
+    method: order.paymentMethod,
+    cardExpiry: order.paymentCardExpiry,
+    transactionId: order.paymentTransactionId,
+    chargeDate: order.paymentChargeDate,
+  },
+  items,
+});
 
 export const ordersApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Create order (checkout)
-    createOrder: builder.mutation<Order, {
-      customerName: string;
-      customerEmail: string;
-      customerPhone?: string;
-      shippingAddress: {
-        street: string;
-        city: string;
-        postalCode: string;
-        country: string;
-      };
-      payment: {
-        method: string;
-        transactionId: string;
-        chargeDate: string;
-      };
-      items: Omit<OrderItem, '$id' | 'orderId'>[];
-    }>({
-      queryFn: async (orderData) => {
+    createOrder: builder.mutation<Order, CreateOrderPayload>({
+      queryFn: async (payload) => {
         try {
-          // 1. Calculate totals
-          const subtotal = orderData.items.reduce((sum, item) => sum + item.total, 0);
-          const shippingCost = 0; // Fixed for now, could be dynamic
-          const tax = 0;
-          const total = subtotal + shippingCost + tax;
+          // Calculate totals
+          const subtotal = payload.items.reduce(
+            (sum, item) => sum + item.price * item.quantity,
+            0
+          );
           
-          // 2. Create order document (flattened structure)
+          // Free shipping over threshold
+          const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST;
+          
+          // Israeli VAT (17%)
+          const tax = Math.round(subtotal * VAT_RATE * 100) / 100;
+          
+          // Total with proper rounding
+          const total = Math.round((subtotal + shippingCost + tax) * 100) / 100;
+          
+          // Get current user for permissions (optional - guest checkout supported)
+          let userId: string | null = null;
+          try {
+            const user = await account.get();
+            userId = user.$id;
+          } catch {
+            // Guest checkout - no user-specific permissions
+          }
+          
+          // Document permissions - user can read their own order
+          const permissions = userId
+            ? [Permission.read(Role.user(userId))]
+            : [];
+          
+          const orderId = ID.unique();
+          
+          // Create order document (flattened structure matching backend schema)
           const orderResponse = await databases.createDocument(
             APPWRITE_CONFIG.DATABASE_ID,
             APPWRITE_CONFIG.COLLECTION_ORDERS,
-            ID.unique(),
+            orderId,
             {
-              customerName: orderData.customerName,
-              customerEmail: orderData.customerEmail,
-              customerPhone: orderData.customerPhone || null,
+              customerName: payload.customerName,
+              customerEmail: payload.customerEmail,
+              customerPhone: payload.customerPhone || '',
               total,
               subtotal,
               shippingCost,
               tax,
               status: 'pending' as OrderStatus,
-              // Flatten shipping address
-              shippingStreet: orderData.shippingAddress.street,
-              shippingCity: orderData.shippingAddress.city,
-              shippingPostalCode: orderData.shippingAddress.postalCode,
-              shippingCountry: orderData.shippingAddress.country,
-              // Flatten payment info
-              paymentMethod: orderData.payment.method,
-              paymentTransactionId: orderData.payment.transactionId,
-              paymentChargeDate: orderData.payment.chargeDate,
-            }
+              // Flattened shipping address
+              shippingStreet: payload.shippingAddress.street,
+              shippingApartment: payload.shippingAddress.apartment || '',
+              shippingCity: payload.shippingAddress.city,
+              shippingPostalCode: payload.shippingAddress.postalCode,
+              shippingCountry: payload.shippingAddress.country,
+              // Flattened payment info
+              paymentMethod: payload.payment.method,
+              paymentCardExpiry: payload.payment.cardExpiry || '',
+              paymentTransactionId: payload.payment.transactionId,
+              paymentChargeDate: payload.payment.chargeDate,
+            },
+            permissions
           );
           
-          // 3. Create order items
-          for (const item of orderData.items) {
-            await databases.createDocument(
-              APPWRITE_CONFIG.DATABASE_ID,
-              APPWRITE_CONFIG.COLLECTION_ORDER_ITEMS,
-              ID.unique(),
-              {
-                orderId: orderResponse.$id,
-                productName: item.productName,
-                productId: item.productId,
-                productImage: item.productImage || null,
-                quantity: item.quantity,
-                price: item.price,
-                total: item.total,
-              }
-            );
-          }
+          // Create order items in parallel
+          await Promise.all(
+            payload.items.map((item) =>
+              databases.createDocument(
+                APPWRITE_CONFIG.DATABASE_ID,
+                APPWRITE_CONFIG.COLLECTION_ORDER_ITEMS,
+                ID.unique(),
+                {
+                  orderId,
+                  productName: item.productName,
+                  productImage: item.productImage || '',
+                  variant: item.variant || '',
+                  quantity: item.quantity,
+                  price: item.price,
+                  total: Math.round(item.price * item.quantity * 100) / 100,
+                },
+                permissions
+              )
+            )
+          );
           
-          return { data: orderResponse as unknown as Order };
+          return {
+            data: {
+              $id: orderResponse.$id,
+              $createdAt: orderResponse.$createdAt,
+              customerName: orderResponse.customerName,
+              customerEmail: orderResponse.customerEmail,
+              customerPhone: orderResponse.customerPhone,
+              total: orderResponse.total,
+              subtotal: orderResponse.subtotal,
+              shippingCost: orderResponse.shippingCost,
+              tax: orderResponse.tax,
+              status: orderResponse.status as OrderStatus,
+              shippingStreet: orderResponse.shippingStreet,
+              shippingApartment: orderResponse.shippingApartment,
+              shippingCity: orderResponse.shippingCity,
+              shippingPostalCode: orderResponse.shippingPostalCode,
+              shippingCountry: orderResponse.shippingCountry,
+              paymentMethod: orderResponse.paymentMethod,
+              paymentCardExpiry: orderResponse.paymentCardExpiry,
+              paymentTransactionId: orderResponse.paymentTransactionId,
+              paymentChargeDate: orderResponse.paymentChargeDate,
+            } as Order,
+          };
         } catch (error: any) {
           return { error: error.message || 'שגיאה ביצירת הזמנה' };
         }
@@ -88,55 +175,103 @@ export const ordersApi = api.injectEndpoints({
       queryFn: async () => {
         try {
           const user = await account.get();
+          
           const response = await databases.listDocuments(
             APPWRITE_CONFIG.DATABASE_ID,
             APPWRITE_CONFIG.COLLECTION_ORDERS,
             [
               Query.equal('customerEmail', user.email),
-              Query.orderDesc('$createdAt')
+              Query.orderDesc('$createdAt'),
+              Query.limit(50),
             ]
           );
+          
           return { data: response.documents as unknown as Order[] };
         } catch (error: any) {
+          if (error.code === 401) {
+            return { error: 'יש להתחבר כדי לצפות בהזמנות' };
+          }
           return { error: error.message || 'שגיאה בטעינת הזמנות' };
         }
       },
       providesTags: ['Orders'],
     }),
 
-    // Get single order details
-    getOrderById: builder.query<{ order: Order; items: OrderItem[] }, string>({
+    // Get single order with full details
+    getOrderById: builder.query<OrderDetails, string>({
       queryFn: async (orderId) => {
         try {
-          const orderResponse = await databases.getDocument(
+          // Get current user for authorization
+          const user = await account.get();
+          
+          // Get order
+          const order = await databases.getDocument(
             APPWRITE_CONFIG.DATABASE_ID,
             APPWRITE_CONFIG.COLLECTION_ORDERS,
             orderId
           );
           
+          // Verify ownership
+          if ((order as any).customerEmail !== user.email) {
+            return { error: 'אין לך הרשאה לצפות בהזמנה זו' };
+          }
+          
+          // Get order items
           const itemsResponse = await databases.listDocuments(
             APPWRITE_CONFIG.DATABASE_ID,
             APPWRITE_CONFIG.COLLECTION_ORDER_ITEMS,
-            [Query.equal('orderId', orderId)]
+            [
+              Query.equal('orderId', orderId),
+              Query.limit(100),
+            ]
           );
           
-          return { 
-            data: { 
-              order: orderResponse as unknown as Order, 
-              items: itemsResponse.documents as unknown as OrderItem[] 
-            } 
-          };
+          const orderDetails = mapFlatOrderToDetails(
+            order,
+            itemsResponse.documents as unknown as OrderItem[]
+          );
+          
+          return { data: orderDetails };
         } catch (error: any) {
-          return { error: error.message || 'הזמנה לא נמצאה' };
+          if (error.code === 401) {
+            return { error: 'יש להתחבר כדי לצפות בהזמנה' };
+          }
+          if (error.code === 404) {
+            return { error: 'ההזמנה לא נמצאה' };
+          }
+          return { error: error.message || 'שגיאה בטעינת ההזמנה' };
+        }
+      },
+      providesTags: (result, error, id) => [{ type: 'Orders', id }],
+    }),
+
+    // Get order by ID without auth (for order confirmation page with order ID only)
+    getOrderConfirmation: builder.query<Order, string>({
+      queryFn: async (orderId) => {
+        try {
+          const order = await databases.getDocument(
+            APPWRITE_CONFIG.DATABASE_ID,
+            APPWRITE_CONFIG.COLLECTION_ORDERS,
+            orderId
+          );
+          
+          return { data: order as unknown as Order };
+        } catch (error: any) {
+          if (error.code === 404) {
+            return { error: 'ההזמנה לא נמצאה' };
+          }
+          return { error: error.message || 'שגיאה בטעינת ההזמנה' };
         }
       },
       providesTags: (result, error, id) => [{ type: 'Orders', id }],
     }),
   }),
+  overrideExisting: true,
 });
 
 export const {
   useCreateOrderMutation,
   useGetMyOrdersQuery,
   useGetOrderByIdQuery,
+  useGetOrderConfirmationQuery,
 } = ordersApi;

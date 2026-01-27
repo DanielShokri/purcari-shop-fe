@@ -10,6 +10,14 @@ const fadeInUp = {
   transition: { duration: 0.6 }
 };
 
+// Official Purcari wine category images from purcari.de
+const categoryImages = {
+  red: 'https://www.purcari.de/cdn/shop/files/purcari-kategorie-teaser-rotwein-8.jpg?v=1701883178&width=800',
+  white: 'https://www.purcari.de/cdn/shop/files/purcari-kategorie-teaser-weiss-8.jpg?v=1701883040&width=800',
+  sparkling: 'https://www.purcari.de/cdn/shop/files/purcari-kategorie-teaser-schaumwein-8-1.jpg?v=1701883558&width=800',
+  rose: 'https://www.purcari.de/cdn/shop/files/purcari-kategorie-teaser-rose-8.jpg?v=1701883144&width=800',
+};
+
 const CategoriesGrid: React.FC = () => {
   return (
     <section className={`${theme.SECTION_PY} bg-white`}>
@@ -29,11 +37,11 @@ const CategoriesGrid: React.FC = () => {
             className="group relative overflow-hidden rounded-2xl md:h-full h-[400px]"
           >
             <img 
-              src="https://images.unsplash.com/photo-1510850438980-69711f96a300?q=80&w=2070&auto=format&fit=crop" 
-              alt="יינות אדומים" 
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              src={categoryImages.red}
+              alt="יינות אדומים - Purcari Red Wines" 
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
             <div className="absolute inset-0 flex items-end justify-center p-8">
               <Link 
                 to="/products?category=red-wine"
@@ -52,11 +60,11 @@ const CategoriesGrid: React.FC = () => {
               className="group relative overflow-hidden rounded-2xl flex-1 h-[250px] md:h-auto"
             >
               <img 
-                src="https://images.unsplash.com/photo-1594494006614-209199c7efea?q=80&w=2071&auto=format&fit=crop" 
-                alt="מבעבעים" 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                src={categoryImages.sparkling}
+                alt="מבעבעים - Purcari Sparkling Wines" 
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
               <div className="absolute inset-0 flex items-end justify-center p-8">
                 <Link 
                   to="/products?category=sparkling-wine"
@@ -73,11 +81,11 @@ const CategoriesGrid: React.FC = () => {
               className="group relative overflow-hidden rounded-2xl flex-1 h-[250px] md:h-auto"
             >
               <img 
-                src="https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?q=80&w=2070&auto=format&fit=crop" 
-                alt="רוזה" 
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                src={categoryImages.rose}
+                alt="רוזה - Purcari Rosé Wines" 
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
               <div className="absolute inset-0 flex items-end justify-center p-8">
                 <Link 
                   to="/products?category=rose-wine"
@@ -95,11 +103,11 @@ const CategoriesGrid: React.FC = () => {
             className="group relative overflow-hidden rounded-2xl md:h-full h-[400px]"
           >
             <img 
-              src="https://images.unsplash.com/photo-1559158068-930a7fb608ec?q=80&w=2070&auto=format&fit=crop" 
-              alt="יינות לבנים" 
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              src={categoryImages.white}
+              alt="יינות לבנים - Purcari White Wines" 
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             />
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors"></div>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
             <div className="absolute inset-0 flex items-end justify-center p-8">
               <Link 
                 to="/products?category=white-wine"

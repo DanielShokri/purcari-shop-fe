@@ -1,15 +1,16 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+const PURCARI_LOGO_URL = 'https://cdn.8wines.com/media/amasty/shopby/option_images/purcari-winery-logo.png';
+
 const Logo: React.FC = () => {
   return (
     <Link to="/" className="flex-shrink-0">
-      <div className="text-2xl font-bold text-secondary tracking-widest uppercase">
-        Purcari
-      </div>
-      <div className="text-[10px] text-gray-500 tracking-[0.2em] text-center -mt-1 uppercase">
-        Israel
-      </div>
+      <img 
+        src={PURCARI_LOGO_URL}
+        alt="Purcari - Château Purcari"
+        className="h-13 w-auto"
+      />
     </Link>
   );
 };

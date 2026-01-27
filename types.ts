@@ -1,7 +1,24 @@
+// Stock status enum matching backend
+export enum StockStatus {
+  IN_STOCK = 'in_stock',
+  OUT_OF_STOCK = 'out_of_stock',
+  LOW_STOCK = 'low_stock',
+}
+
+// Wine type enum
+export enum WineType {
+  RED = 'red',
+  WHITE = 'white',
+  ROSE = 'rose',
+  SPARKLING = 'sparkling',
+}
+
 export interface Product {
   $id: string;                // Appwrite document ID
+  $createdAt?: string;
+  $updatedAt?: string;
   productName: string;
-  productNameHe: string;      // Displayed name
+  productNameHe?: string;      // Displayed name (Hebrew site)
   description?: string;
   descriptionHe?: string;     // Displayed description
   shortDescription?: string;
@@ -11,6 +28,7 @@ export interface Product {
   onSale?: boolean;
   quantityInStock: number;
   sku: string;
+  stockStatus?: StockStatus;
   category: string;
   dateAdded?: string;
   tags?: string[];
@@ -18,7 +36,7 @@ export interface Product {
   isFeatured?: boolean;
   featuredImage?: string;
   images?: string[];          // For compatibility with existing code
-  wineType?: 'Red' | 'White' | 'Rosé' | 'Sparkling';
+  wineType?: WineType | 'Red' | 'White' | 'Rosé' | 'Sparkling'; // Support both formats
   region?: string;
   vintage?: number;
   alcoholContent?: number;
@@ -33,23 +51,41 @@ export interface CartItem {
   productId: string;
   title: string;
   price: number;
-  originalPrice?: number; // Added to show strike-through for sales
+  salePrice?: number;        // Discounted price if on sale
+  originalPrice?: number;    // Original price for strike-through display
   quantity: number;
+  maxQuantity: number;       // Stock limit for validation
   imgSrc: string;
+  variant?: string;          // Product variant info
+}
+
+// Category status enum
+export enum CategoryStatus {
+  ACTIVE = 'active',
+  DRAFT = 'draft',
+  HIDDEN = 'hidden',
 }
 
 export interface Category {
   $id: string;
+  $createdAt?: string;
+  $updatedAt?: string;
   name: string;
-  nameHe: string;
+  nameHe?: string;           // Hebrew name for display
   slug: string;
   parentId?: string | null;
-  status: 'active' | 'inactive';
+  status: CategoryStatus | 'active' | 'draft' | 'hidden' | 'inactive'; // Support multiple formats
   displayOrder: number;
   description?: string;
+  descriptionHe?: string;
   image?: string;
   icon?: string;
   iconColor?: string;
+}
+
+// Category with children for tree display
+export interface CategoryWithChildren extends Category {
+  children?: CategoryWithChildren[];
 }
 
 export interface OrderItem {
@@ -66,26 +102,70 @@ export interface OrderItem {
 
 export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'shipped';
 
+// Helper interfaces for order creation
+export interface ShippingAddress {
+  street: string;
+  apartment?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface PaymentInfo {
+  method: string;
+  cardExpiry?: string;
+  transactionId: string;
+  chargeDate: string;
+}
+
 export interface Order {
   $id: string;
+  $createdAt: string;
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
+  customerAvatar?: string;
   total: number;
   subtotal: number;
   shippingCost: number;
   tax: number;
   status: OrderStatus;
-  $createdAt: string;
   // Flattened shipping address
   shippingStreet: string;
+  shippingApartment?: string;
   shippingCity: string;
   shippingPostalCode: string;
   shippingCountry: string;
   // Flattened payment info
   paymentMethod: string;
+  paymentCardExpiry?: string;
   paymentTransactionId: string;
   paymentChargeDate: string;
+}
+
+// Full order details with items
+export interface OrderDetails extends Order {
+  shippingAddress: ShippingAddress;
+  payment: PaymentInfo;
+  items: OrderItem[];
+}
+
+// Order creation payload
+export interface CreateOrderPayload {
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  shippingAddress: ShippingAddress;
+  payment: PaymentInfo;
+  items: Array<{
+    productId: string;
+    productName: string;
+    productImage?: string;
+    variant?: string;
+    quantity: number;
+    price: number;
+  }>;
+  couponCode?: string;
 }
 
 export enum CouponDiscountType {
@@ -96,21 +176,61 @@ export enum CouponDiscountType {
   BUY_X_GET_Y = 'buy_x_get_y'
 }
 
+export enum CouponStatus {
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+  EXPIRED = 'expired',
+  SCHEDULED = 'scheduled',
+}
+
 export interface Coupon {
   $id: string;
+  $createdAt?: string;
+  $updatedAt?: string;
   code: string;
+  description?: string;
   discountType: CouponDiscountType;
   discountValue: number;
+  
+  // Buy X Get Y specific
+  buyQuantity?: number;
+  getQuantity?: number;
+  
+  // Validity dates
   startDate: string;
   endDate?: string;
+  
+  // Limits
   minimumOrder?: number;
   maximumDiscount?: number;
   usageLimit?: number;
   usageLimitPerUser?: number;
   usageCount: number;
+  
+  // Restrictions
   categoryIds?: string[];
   productIds?: string[];
-  status: 'active' | 'inactive';
+  userIds?: string[];           // Eligible user IDs (empty = all)
+  firstPurchaseOnly?: boolean;  // First purchase only
+  excludeOtherCoupons?: boolean; // Cannot combine with other coupons
+  
+  status: CouponStatus | 'active' | 'paused' | 'expired' | 'scheduled' | 'inactive';
+}
+
+// Coupon validation result
+export interface CouponValidationResult {
+  valid: boolean;
+  coupon?: Coupon;
+  discountAmount?: number;
+  error?: string;
+}
+
+// Applied coupon in cart
+export interface AppliedCoupon {
+  code: string;
+  discountType: CouponDiscountType;
+  discountValue: number;
+  discountAmount: number;    // Calculated discount in ILS
 }
 
 export interface AuthUser {

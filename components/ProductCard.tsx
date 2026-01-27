@@ -6,6 +6,7 @@ import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingBag, Eye, Zap, Package, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import theme from '../theme/styles';
+import { getWineTypeLabel } from '../utils/wineHelpers';
 
 interface ProductCardProps {
   product: Product;
@@ -53,6 +54,7 @@ const SaleMarquee: React.FC<{ text: string }> = ({ text }) => {
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  console.log('product', product);
   const dispatch = useAppDispatch();
   const discountPercent = getDiscountPercent(product.price, product.salePrice);
   
@@ -72,8 +74,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       productId: product.$id,
       title: product.productNameHe || product.productName,
       price: currentPrice,
+      salePrice: product.onSale && product.salePrice ? product.salePrice : undefined,
       originalPrice: product.onSale ? product.price : undefined,
       quantity: 1,
+      maxQuantity: product.quantityInStock || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
   };
@@ -151,7 +155,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
       <div className="p-4 text-center flex-grow flex flex-col justify-end">
         <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mb-1">
-          <span>{product.wineType === 'Red' ? 'יין אדום' : product.wineType === 'White' ? 'יין לבן' : product.wineType === 'Sparkling' ? 'מבעבע' : 'רוזה'}</span>
+          <span>{getWineTypeLabel(product.category)}</span>
           {product.vintage && (
             <>
               <span className="text-gray-300">|</span>

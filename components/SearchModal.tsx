@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { closeSearchModal, selectIsSearchModalOpen } from '../store/slices/uiSlice';
 import { useGetProductsQuery } from '../services/api/productsApi';
 import { Product } from '../types';
+import { getWineTypeLabel } from '../utils/wineHelpers';
 
 // Debounce hook
 const useDebounce = (value: string, delay: number) => {
@@ -22,16 +23,6 @@ const useDebounce = (value: string, delay: number) => {
   return debouncedValue;
 };
 
-// Wine type translation helper
-const getWineTypeHe = (wineType?: string) => {
-  switch (wineType) {
-    case 'Red': return 'יין אדום';
-    case 'White': return 'יין לבן';
-    case 'Rosé': return 'רוזה';
-    case 'Sparkling': return 'מבעבעים';
-    default: return 'יין';
-  }
-};
 
 const SearchModal: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -53,8 +44,8 @@ const SearchModal: React.FC = () => {
                        product.productName?.toLowerCase().includes(term);
       const descMatch = product.descriptionHe?.toLowerCase().includes(term) ||
                        product.description?.toLowerCase().includes(term);
-      const typeMatch = product.wineType?.toLowerCase().includes(term) ||
-                       getWineTypeHe(product.wineType).includes(term);
+      const typeMatch = product.category?.toLowerCase().includes(term) ||
+                       getWineTypeLabel(product.category).includes(term);
       const regionMatch = product.region?.toLowerCase().includes(term);
       
       return nameMatch || descMatch || typeMatch || regionMatch;
@@ -205,7 +196,7 @@ const SearchModal: React.FC = () => {
                           {/* Product Info */}
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-secondary font-medium mb-1">
-                              {getWineTypeHe(product.wineType)}
+                              {getWineTypeLabel(product.category)}
                               {product.vintage && ` · ${product.vintage}`}
                             </p>
                             <h4 className="font-bold text-gray-800 group-hover:text-secondary transition-colors truncate">

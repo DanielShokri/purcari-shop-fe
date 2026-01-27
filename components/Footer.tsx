@@ -2,6 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram } from 'lucide-react';
 
+// Official Purcari logo from purcari.de (white version with transparent background)
+const PURCARI_LOGO_URL = 'https://www.purcari.de/cdn/shop/files/Purcari-Logo-Weiss-510x313.png?v=1699458103&width=160';
+
 const Footer: React.FC = () => {
   return (
     <footer className="bg-gray-900 text-white pt-16 pb-8">
@@ -10,9 +13,13 @@ const Footer: React.FC = () => {
           
           {/* Brand */}
           <div className="space-y-4">
-             <div className="text-2xl font-bold text-white tracking-widest uppercase">
-              Purcari
-            </div>
+            <Link to="/">
+              <img 
+                src={PURCARI_LOGO_URL}
+                alt="Purcari - Château Purcari"
+                className="h-10 w-auto"
+              />
+            </Link>
             <p className="text-gray-400 text-sm leading-relaxed">
               יינות פרימיום מבית פורקרי, המשלבים מסורת של מאות שנים עם טכנולוגיה מודרנית. טעם של איכות בלתי מתפשרת.
             </p>

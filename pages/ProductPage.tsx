@@ -8,6 +8,7 @@ import { addToCart } from '../store/slices/cartSlice';
 import { Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/common/Breadcrumbs';
+import { getWineTypeLabel } from '../utils/wineHelpers';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -117,8 +118,10 @@ const ProductPage: React.FC = () => {
       productId: product.$id,
       title: product.productNameHe || product.productName,
       price: currentPrice,
+      salePrice: product.onSale && product.salePrice ? product.salePrice : undefined,
       originalPrice: product.onSale ? product.price : undefined,
       quantity,
+      maxQuantity: product.quantityInStock || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
     trackEvent({ type: 'add_to_cart', productId: product.$id });
@@ -162,7 +165,7 @@ const ProductPage: React.FC = () => {
 
           {/* Details */}
           <div>
-            <div className="mb-2 text-secondary font-medium tracking-wide text-sm uppercase">{product.wineType === 'Red' ? 'יין אדום' : product.wineType === 'White' ? 'יין לבן' : 'רוזה'}</div>
+            <div className="mb-2 text-secondary font-medium tracking-wide text-sm uppercase">{getWineTypeLabel(product.category)}</div>
             <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">{product.productNameHe || product.productName}</h1>
             
             <div className="flex items-center gap-4 mb-6">
