@@ -6,3 +6,4 @@ export { default as EditorFooter } from './EditorFooter';
 export { default as PricingCard } from './PricingCard';
 export { default as InventoryCard } from './InventoryCard';
 export { default as RelatedProductsCard } from './RelatedProductsCard';
+export { default as WineDetailsCard } from './WineDetailsCard';

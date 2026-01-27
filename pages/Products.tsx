@@ -4,6 +4,7 @@ import { useGetProductsQuery, useDeleteProductMutation } from '../services/api';
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { ProductsFilterToolbar, ProductsTable } from '../components/products';
+import { ProductCategory } from '../types';
 
 // Sample product images for display
 const productImages = [
@@ -14,13 +15,14 @@ const productImages = [
   'https://lh3.googleusercontent.com/aida-public/AB6AXuClJjWbcXEQCsicgRXJpssjEfrfl6ij503ghWJb6B5e9e5GpEchfrSHslsSzIKDnwEQ52nvlYwdvQ2axU_Hjocbsps5powZLQpjbHXh0aLexU8UDnSdUcY0R0cZrzHAYd3Ly-0XifNvR-7k0tUp71N7HfXMj-tbf1M6BLRuWzS0qSKex4gbnxZS4Q8BjqYsEJo9HCJcVlZfTDi0JOe2i3tpgnX__6IZeSt21BYf4hgiBgTR5u2tcFVfY1TBxd7B4KARfD_t7FiCXw',
 ];
 
-// Category labels in Hebrew
+// Category labels in Hebrew (matching Appwrite enum values with hyphens)
 const categoryLabels: Record<string, string> = {
-  'electronics': 'אלקטרוניקה',
-  'clothing': 'ביגוד',
-  'home': 'בית וגן',
-  'beauty': 'יופי וטיפוח',
-  'sports': 'ספורט',
+  [ProductCategory.RED_WINE]: 'יינות אדומים',
+  [ProductCategory.WHITE_WINE]: 'יינות לבנים',
+  [ProductCategory.ROSE_WINE]: 'יינות רוזה',
+  [ProductCategory.SPARKLING_WINE]: 'יינות מבעבעים',
+  [ProductCategory.DESSERT_WINE]: 'יינות קינוח',
+  [ProductCategory.GIFT_SETS]: 'מארזי מתנה',
 };
 
 export default function Products() {

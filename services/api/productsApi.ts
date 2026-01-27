@@ -1,5 +1,5 @@
 import { api } from './baseApi';
-import { Product } from '../../types';
+import { Product, ProductCategory } from '../../types';
 import { databases, APPWRITE_CONFIG } from '../appwrite';
 import { ID, Query } from 'appwrite';
 
@@ -34,7 +34,7 @@ const productsApi = api.injectEndpoints({
               price: newProduct.price || 0,
               quantityInStock: newProduct.quantityInStock || 0,
               sku: newProduct.sku || '',
-              category: newProduct.category || 'electronics',
+              category: newProduct.category || ProductCategory.RED_WINE,
               // Optional fields
               description: newProduct.description || null,
               shortDescription: newProduct.shortDescription || null,
@@ -46,6 +46,12 @@ const productsApi = api.injectEndpoints({
               featuredImage: newProduct.featuredImage || null,
               dateAdded: newProduct.dateAdded || new Date().toISOString(),
               stockStatus: newProduct.stockStatus || 'in_stock',
+              // Wine fields
+              wineType: newProduct.wineType || null,
+              volume: newProduct.volume || null,
+              grapeVariety: newProduct.grapeVariety || null,
+              vintage: newProduct.vintage || null,
+              servingTemperature: newProduct.servingTemperature || null,
             }
           });
           return { data: response as unknown as Product };

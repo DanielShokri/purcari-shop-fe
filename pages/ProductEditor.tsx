@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useGetProductsQuery, useCreateProductMutation, useUpdateProductMutation, useDeleteProductMutation } from '../services/api';
-import { Product, ProductStatus, StockStatus } from '../types';
+import { Product, ProductStatus, StockStatus, WineType, ProductCategory } from '../types';
 import {
   Box,
   Flex,
@@ -26,6 +26,7 @@ import {
   PricingCard,
   InventoryCard,
   RelatedProductsCard,
+  WineDetailsCard,
 } from '../components/post-editor';
 import { useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -35,11 +36,12 @@ import { RichTextEditor, Control } from '../components/ui/rich-text-editor';
 
 // Categories matching Appwrite enum values
 const categories = [
-  { id: 'electronics', name: 'אלקטרוניקה' },
-  { id: 'clothing', name: 'ביגוד' },
-  { id: 'home', name: 'בית וגן' },
-  { id: 'beauty', name: 'יופי וטיפוח' },
-  { id: 'sports', name: 'ספורט' },
+  { id: ProductCategory.RED_WINE, name: 'יינות אדומים' },
+  { id: ProductCategory.WHITE_WINE, name: 'יינות לבנים' },
+  { id: ProductCategory.ROSE_WINE, name: 'יינות רוזה' },
+  { id: ProductCategory.SPARKLING_WINE, name: 'יינות מבעבעים' },
+  { id: ProductCategory.DESSERT_WINE, name: 'יינות קינוח' },
+  { id: ProductCategory.GIFT_SETS, name: 'מארזי מתנה' },
 ];
 
 export default function ProductEditor() {
@@ -54,8 +56,8 @@ export default function ProductEditor() {
 
   const existingProduct = isEditMode ? products?.find(p => p.$id === id) : null;
 
-  const { register, handleSubmit, formState: { errors }, setValue, control } = useForm<Partial<Product>>({
-    defaultValues: existingProduct || {
+  const { register, handleSubmit, formState: { errors }, setValue, control, reset } = useForm<Partial<Product>>({
+    defaultValues: {
       productName: '',
       description: '',
       status: ProductStatus.DRAFT,
@@ -63,10 +65,17 @@ export default function ProductEditor() {
   });
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    existingProduct?.category ? [existingProduct.category] : ['electronics']
+    existingProduct?.category ? [existingProduct.category] : [ProductCategory.RED_WINE]
   );
   const [tags, setTags] = useState<string[]>(existingProduct?.tags || []);
   const [tagInput, setTagInput] = useState('');
+
+  // Wine-specific state
+  const [wineType, setWineType] = useState<WineType | undefined>(existingProduct?.wineType || WineType.RED);
+  const [volume, setVolume] = useState<string>(existingProduct?.volume || '750 מ"ל');
+  const [grapeVariety, setGrapeVariety] = useState<string>(existingProduct?.grapeVariety || '');
+  const [vintage, setVintage] = useState<number>(existingProduct?.vintage || new Date().getFullYear());
+  const [servingTemperature, setServingTemperature] = useState<string>(existingProduct?.servingTemperature || '');
 
   // Short description state
   const [shortDescription, setShortDescription] = useState<string>(existingProduct?.shortDescription || '');
@@ -88,6 +97,7 @@ export default function ProductEditor() {
 
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Available products for related products selector (excluding current product)
   const availableProducts = products?.filter(p => p.$id !== id).map(p => ({
@@ -128,7 +138,14 @@ export default function ProductEditor() {
   // Update all state when existingProduct changes (for edit mode)
   useEffect(() => {
     if (existingProduct) {
-      setSelectedCategories(existingProduct.category ? [existingProduct.category] : ['electronics']);
+      // Reset form values with existing product data
+      reset({
+        productName: existingProduct.productName,
+        description: existingProduct.description || '',
+        status: existingProduct.status || ProductStatus.DRAFT,
+      });
+      
+      setSelectedCategories(existingProduct.category ? [existingProduct.category] : [ProductCategory.RED_WINE]);
       setTags(existingProduct.tags || []);
       setShortDescription(existingProduct.shortDescription || '');
       setPrice(existingProduct.price || 0);
@@ -139,8 +156,15 @@ export default function ProductEditor() {
       setIsFeatured(existingProduct.isFeatured || false);
       setFeaturedImage(existingProduct.featuredImage || '');
       setRelatedProductIds(existingProduct.relatedProducts || []);
+      
+      // Update wine specific fields
+      setWineType(existingProduct.wineType || WineType.RED);
+      setVolume(existingProduct.volume || '750 מ"ל');
+      setGrapeVariety(existingProduct.grapeVariety || '');
+      setVintage(existingProduct.vintage || new Date().getFullYear());
+      setServingTemperature(existingProduct.servingTemperature || '');
     }
-  }, [existingProduct]);
+  }, [existingProduct, reset]);
 
   if (isLoadingProducts) {
     return <LoadingState message="טוען..." />;
@@ -167,15 +191,25 @@ export default function ProductEditor() {
         featuredImage: featuredImage || null,
         dateAdded: existingProduct?.dateAdded || new Date().toISOString(),
         stockStatus,
+        // Wine fields
+        wineType: wineType || null,
+        volume: volume || null,
+        grapeVariety: grapeVariety || null,
+        vintage: vintage || null,
+        servingTemperature: servingTemperature || null,
       };
+
       if (isEditMode && id) {
         await updateProduct({ id, ...productData }).unwrap();
       } else {
         await createProduct(productData).unwrap();
       }
+      
+      setSaveError(null);
+      // Navigate back to products page on success
       navigate('/products');
-    } catch {
-      // Error handled by RTK Query
+    } catch (error: any) {
+      setSaveError(error?.message || 'שגיאה בשמירת המוצר. וודא שכל השדות תקינים.');
     }
   };
 
@@ -239,7 +273,7 @@ export default function ProductEditor() {
             items={[
               { label: 'ראשי', href: '#' },
               { label: 'מוצרים', href: '#/products' },
-              { label: isEditMode ? 'עריכת מוצר' : 'יצירת מוצר' }
+              { label: isEditMode ? (existingProduct?.productName || 'עריכת מוצר') : 'יצירת מוצר' }
             ]} 
           />
 
@@ -253,12 +287,22 @@ export default function ProductEditor() {
           >
             <Box>
               <Heading size="2xl" color="fg" mb="1" letterSpacing="tight">
-                {isEditMode ? 'עריכת מוצר' : 'יצירת מוצר'}
+                {isEditMode ? (existingProduct?.productName || 'עריכת מוצר') : 'יצירת מוצר'}
               </Heading>
               <Text color="fg.muted" fontSize="sm">
                 {isEditMode ? 'ערוך את פרטי המוצר, התיאור וההגדרות' : 'צור מוצר חדש עם תיאור והגדרות'}
               </Text>
             </Box>
+            
+            {saveError && (
+              <Box bg="red.500/10" borderLeftWidth="4px" borderColor="red.500" p="4" my="4" rounded="md" w="full">
+                <HStack>
+                  <Text as="span" className="material-symbols-outlined" color="red.500">error</Text>
+                  <Text color="red.600" fontWeight="medium">{saveError}</Text>
+                </HStack>
+              </Box>
+            )}
+
             <Button variant="outline" size="sm" bg="bg.panel" borderColor="border">
               <Text as="span" className="material-symbols-outlined" fontSize="lg">
                 visibility
@@ -382,6 +426,19 @@ export default function ProductEditor() {
                   onSaleChange={setOnSale}
                   salePrice={salePrice}
                   onSalePriceChange={setSalePrice}
+                />
+
+                <WineDetailsCard
+                  wineType={wineType}
+                  onWineTypeChange={setWineType}
+                  volume={volume}
+                  onVolumeChange={setVolume}
+                  grapeVariety={grapeVariety}
+                  onGrapeVarietyChange={setGrapeVariety}
+                  vintage={vintage}
+                  onVintageChange={setVintage}
+                  servingTemperature={servingTemperature}
+                  onServingTemperatureChange={setServingTemperature}
                 />
 
                 <InventoryCard

@@ -1,11 +1,19 @@
 // Product and Category Types
 
 export enum ProductCategory {
-  ELECTRONICS = 'electronics',
-  CLOTHING = 'clothing',
-  HOME = 'home',
-  BEAUTY = 'beauty',
-  SPORTS = 'sports'
+  RED_WINE = 'red-wine',
+  WHITE_WINE = 'white-wine',
+  ROSE_WINE = 'rose-wine',
+  SPARKLING_WINE = 'sparkling-wine',
+  DESSERT_WINE = 'dessert-wine',
+  GIFT_SETS = 'gift-sets'
+}
+
+export enum WineType {
+  RED = 'Red',
+  WHITE = 'White',
+  ROSE = 'Rosé',
+  SPARKLING = 'Sparkling'
 }
 
 export enum ProductStatus {
@@ -44,6 +52,12 @@ export interface Product {
   isFeatured?: boolean;       // optional (default: false)
   featuredImage?: string;     // optional URL
   stockStatus?: StockStatus;  // optional (default: in_stock)
+  // Wine-specific attributes
+  wineType?: WineType;        // optional (red, white, rose, sparkling)
+  volume?: string;            // optional (e.g., "750 מ"ל")
+  grapeVariety?: string;      // optional (e.g., "100% שרדונה")
+  vintage?: number;           // optional (e.g., 2019)
+  servingTemperature?: string; // optional (e.g., "10-12°")
   // UI-only fields (not stored in Appwrite)
   status?: ProductStatus;     // for UI compatibility
 }
