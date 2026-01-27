@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { useAppSelector, useAppDispatch, useToast } from '../store/hooks';
 import { selectCartItems, selectCartTotal, clearCart } from '../store/slices/cartSlice';
 import { useCreateOrderMutation } from '../services/api/ordersApi';
 import { useValidateCouponQuery } from '../services/api/couponsApi';
@@ -21,12 +21,15 @@ import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const toast = useToast();
   const cartItems = useAppSelector(selectCartItems);
   const cartTotal = useAppSelector(selectCartTotal);
   const { data: user } = useGetCurrentUserQuery();
   const { data: prefs } = useGetUserPrefsQuery(undefined, { skip: !user });
   
   const [step, setStep] = useState(1);
+  const prevCouponDataRef = useRef<typeof couponData>(undefined);
+  const prevCouponErrorRef = useRef<typeof couponError>(undefined);
 
   const methods = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutSchema),
@@ -71,6 +74,21 @@ const CheckoutPage: React.FC = () => {
     { code: couponCode || '', cartTotal },
     { skip: !couponCode }
   );
+
+  // Show toast when coupon status changes
+  useEffect(() => {
+    if (couponData && couponData !== prevCouponDataRef.current) {
+      toast.success('הקופון הופעל בהצלחה');
+    }
+    prevCouponDataRef.current = couponData;
+  }, [couponData, toast]);
+
+  useEffect(() => {
+    if (couponError && couponError !== prevCouponErrorRef.current && couponCode) {
+      toast.error('קוד קופון לא תקף');
+    }
+    prevCouponErrorRef.current = couponError;
+  }, [couponError, couponCode, toast]);
 
   const discount = couponData ? (couponData.discountType === 'percentage' ? (cartTotal * couponData.discountValue / 100) : couponData.discountValue) : 0;
   const total = cartTotal - discount;
@@ -120,9 +138,11 @@ const CheckoutPage: React.FC = () => {
 
       trackEvent({ type: 'checkout' });
       dispatch(clearCart());
+      toast.success('ההזמנה בוצעה בהצלחה!');
       navigate(`/order-confirmation/${orderResult.$id}`);
     } catch (err) {
       console.error('Failed to create order:', err);
+      toast.error('שגיאה ביצירת ההזמנה, נסה שוב');
     }
   };
 

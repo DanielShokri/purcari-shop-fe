@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useGetProductByIdQuery, useGetProductsQuery } from '../services/api/productsApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
 import SEO from '../components/SEO';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useToast } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
 import { Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
@@ -16,6 +16,7 @@ const ProductPage: React.FC = () => {
   const { data: allProducts } = useGetProductsQuery();
   const [trackEvent] = useTrackEventMutation();
   const dispatch = useAppDispatch();
+  const toast = useToast();
   const [quantity, setQuantity] = useState(1);
 
   useEffect(() => {
@@ -125,6 +126,7 @@ const ProductPage: React.FC = () => {
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
     trackEvent({ type: 'add_to_cart', productId: product.$id });
+    toast.success(quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל');
   };
 
   return (

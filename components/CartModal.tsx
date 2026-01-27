@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useAppDispatch, useAppSelector, useToast } from '../store/hooks';
 import { selectCartItems, selectCartTotal, removeFromCart, updateQuantity } from '../store/slices/cartSlice';
 import { closeCartModal } from '../store/slices/uiSlice';
 import { X, Trash2, Plus, Minus } from 'lucide-react';
@@ -8,8 +8,14 @@ import { motion } from 'framer-motion';
 
 const CartModal: React.FC = () => {
   const dispatch = useAppDispatch();
+  const toast = useToast();
   const items = useAppSelector(selectCartItems);
   const total = useAppSelector(selectCartTotal);
+
+  const handleRemoveItem = (productId: string, title: string) => {
+    dispatch(removeFromCart(productId));
+    toast.info(`${title} הוסר מהסל`);
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -88,7 +94,7 @@ const CartModal: React.FC = () => {
                       </button>
                     </div>
                     <button 
-                      onClick={() => dispatch(removeFromCart(item.productId))}
+                      onClick={() => handleRemoveItem(item.productId, item.title)}
                       className="text-gray-400 hover:text-red-500 cursor-pointer"
                     >
                       <Trash2 size={18} />

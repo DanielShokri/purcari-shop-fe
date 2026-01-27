@@ -30,7 +30,7 @@ const ContactPage: React.FC = () => {
           transition={{ duration: 0.6 }}
         >
           <p className="text-gray-500 italic">
-            "יין טוב הוא כמו סיפור טוב - הוא משתפר ככל שחולק אותו."
+            "יין טוב הוא כמו סיפור טוב - הוא משתפר ככל שחולקים אותו."
           </p>
         </motion.div>
       </div>

@@ -4,6 +4,7 @@ import Footer from './Footer';
 import CartModal from './CartModal';
 import SearchModal from './SearchModal';
 import AgeVerificationModal from './AgeVerificationModal';
+import { ToastContainer } from './toast';
 import { useAppSelector } from '../store/hooks';
 import { selectIsCartModalOpen } from '../store/slices/uiSlice';
 import { AnimatePresence } from 'framer-motion';
@@ -24,6 +25,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </AnimatePresence>
       <SearchModal />
       <AgeVerificationModal />
+      <ToastContainer />
     </div>
   );
 };

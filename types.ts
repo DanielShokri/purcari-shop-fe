@@ -262,3 +262,13 @@ export interface AnalyticsEvent {
   userId?: string;
   $createdAt: string;
 }
+
+// Toast notification types
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+export interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+  duration?: number;  // Auto-dismiss time in ms (default: 4000)
+}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLoginMutation, useRegisterMutation, useGetCurrentUserQuery } from '../../services/api/authApi';
+import { useToast } from '../../store/hooks';
 import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -11,6 +12,7 @@ const AuthForm: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect');
+  const toast = useToast();
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginSuccess, setLoginSuccess] = useState(false);
@@ -52,13 +54,16 @@ const AuthForm: React.FC = () => {
     try {
       if (isLogin) {
         await login({ email: data.email, password: data.password }).unwrap();
+        toast.success('התחברת בהצלחה');
       } else {
         await registerUser({ email: data.email, password: data.password, name: data.name, phone: data.phone }).unwrap();
+        toast.success('ברוכים הבאים! החשבון נוצר בהצלחה');
       }
       // Set login success flag - the useEffect will handle navigation after user state is confirmed
       setLoginSuccess(true);
     } catch (err: any) {
       setError(err || 'משהו השתבש, נסה שוב מאוחר יותר');
+      toast.error(isLogin ? 'שגיאה בהתחברות' : 'שגיאה בהרשמה');
     }
   };
 

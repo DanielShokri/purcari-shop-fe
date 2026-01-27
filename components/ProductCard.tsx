@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '../types';
-import { useAppDispatch } from '../store/hooks';
+import { useAppDispatch, useToast } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingBag, Eye, Zap, Package, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -54,8 +54,8 @@ const SaleMarquee: React.FC<{ text: string }> = ({ text }) => {
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  console.log('product', product);
   const dispatch = useAppDispatch();
+  const toast = useToast();
   const discountPercent = getDiscountPercent(product.price, product.salePrice);
   
   // Stock status helpers
@@ -80,6 +80,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       maxQuantity: product.quantityInStock || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
+    
+    toast.success('המוצר נוסף לסל');
   };
 
   // Sale banner text
