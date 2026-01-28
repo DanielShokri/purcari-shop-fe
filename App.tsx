@@ -41,7 +41,7 @@ const App: React.FC = () => {
           <Route path="/shipping" element={<ShippingPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="*" element={<div className="p-20 text-center">הדף לא נמצא (404)</div>} />
+          <Route path="*" element={<div className="container mx-auto px-4 py-20 text-center">הדף לא נמצא (404)</div>} />
         </Routes>
       </Layout>
     </Router>

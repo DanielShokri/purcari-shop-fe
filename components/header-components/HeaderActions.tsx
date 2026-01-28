@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Search, User, LogOut, ChevronDown } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { toggleCartModal, openSearchModal } from '../../store/slices/uiSlice';
-import { selectCartItemCount } from '../../store/slices/cartSlice';
+import { selectCartItemCount, handleLogout as handleCartLogout } from '../../store/slices/cartSlice';
 import { useLogoutMutation } from '../../services/api/authApi';
 
 interface HeaderActionsProps {
@@ -33,6 +33,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
   const handleLogout = async () => {
     try {
       await logout().unwrap();
+      dispatch(handleCartLogout());
       setIsUserMenuOpen(false);
       navigate('/');
     } catch (error) {

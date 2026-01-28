@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector, useToast } from '../store/hooks';
-import { selectCartItems, selectCartTotal, removeFromCart, updateQuantity } from '../store/slices/cartSlice';
+import { selectCartItems, selectCartSubtotal, removeFromCart, updateQuantity } from '../store/slices/cartSlice';
 import { closeCartModal } from '../store/slices/uiSlice';
 import { X, Trash2, Plus, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -10,7 +10,7 @@ const CartModal: React.FC = () => {
   const dispatch = useAppDispatch();
   const toast = useToast();
   const items = useAppSelector(selectCartItems);
-  const total = useAppSelector(selectCartTotal);
+  const subtotal = useAppSelector(selectCartSubtotal);
 
   const handleRemoveItem = (productId: string, title: string) => {
     dispatch(removeFromCart(productId));
@@ -109,9 +109,12 @@ const CartModal: React.FC = () => {
         {/* Footer */}
         {items.length > 0 && (
           <div className="p-6 border-t border-gray-100 bg-gray-50">
-            <div className="flex justify-between items-center mb-4 text-lg font-bold text-gray-900">
-              <span>סה"כ לתשלום:</span>
-              <span>₪{total.toFixed(2)}</span>
+            <div className="space-y-2 mb-4">
+              <div className="flex justify-between items-center text-lg font-bold text-gray-900">
+                <span>סכום ביניים:</span>
+                <span>₪{subtotal.toFixed(2)}</span>
+              </div>
+              <p className="text-xs text-gray-500 text-center">משלוח ומע"מ יחושבו בקופה</p>
             </div>
             <Link 
               to="/checkout"

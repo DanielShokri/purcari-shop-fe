@@ -31,8 +31,12 @@ import {
   TabId,
 } from '../components/dashboard';
 
+import { useAppDispatch } from '../store/hooks';
+import { handleLogout as handleCartLogout } from '../store/slices/cartSlice';
+
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState<TabId>('orders');
   
   // Queries & Mutations
@@ -90,6 +94,7 @@ const DashboardPage: React.FC = () => {
   // Handlers
   const handleLogout = async () => {
     await logout().unwrap();
+    dispatch(handleCartLogout());
     navigate('/login');
   };
 

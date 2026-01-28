@@ -14,7 +14,7 @@ const Hero: React.FC = () => {
   }, []);
 
   return (
-    <section className="mt-6 sm:mt-8">
+    <section className={`mt-6 sm:mt-8 ${theme.CONTAINER_PX}`}>
       <div className={`relative h-[65vh] sm:h-[70vh] w-full overflow-hidden rounded-2xl sm:rounded-3xl bg-gray-900 shadow-2xl`}>
         {/* Static Background / Poster Image */}
         <div 

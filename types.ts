@@ -250,9 +250,16 @@ export interface Address {
   isDefault?: boolean;
 }
 
+export interface SavedCart {
+  items: CartItem[];
+  appliedCoupon?: AppliedCoupon | null;
+  updatedAt: string;
+}
+
 export interface UserPreferences {
   addresses?: Address[];
   phone?: string;
+  cart?: SavedCart;
 }
 
 export interface AnalyticsEvent {

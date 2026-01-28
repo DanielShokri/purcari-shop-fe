@@ -4,7 +4,8 @@ import { CartItem } from '../../types';
 
 interface OrderSummarySidebarProps {
   cartItems: CartItem[];
-  cartTotal: number;
+  subtotal: number;
+  shipping: number;
   discount: number;
   total: number;
   couponCode: string;
@@ -15,7 +16,8 @@ interface OrderSummarySidebarProps {
 
 const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({ 
   cartItems, 
-  cartTotal, 
+  subtotal, 
+  shipping,
   discount, 
   total, 
   couponCode, 
@@ -52,21 +54,25 @@ const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
         <div className="space-y-4 mb-6">
           <div className="flex justify-between text-gray-600">
             <span>סכום ביניים</span>
-            <span>₪{cartTotal}</span>
+            <span>₪{subtotal.toFixed(2)}</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between text-red-600 font-medium">
               <span>הנחה</span>
-              <span>-₪{discount}</span>
+              <span>-₪{discount.toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between text-gray-600">
             <span>משלוח</span>
-            <span className="text-green-600">חינם</span>
+            {shipping === 0 ? (
+              <span className="text-green-600">חינם</span>
+            ) : (
+              <span>₪{shipping.toFixed(2)}</span>
+            )}
           </div>
           <div className="flex justify-between text-xl font-bold pt-4 border-t">
             <span>סה"כ</span>
-            <span>₪{total}</span>
+            <span>₪{total.toFixed(2)}</span>
           </div>
         </div>
 

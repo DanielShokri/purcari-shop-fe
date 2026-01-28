@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { X, ChevronLeft, Search, User, LogOut } from 'lucide-react';
 import { useAppDispatch } from '../../store/hooks';
 import { toggleMobileMenu, openSearchModal } from '../../store/slices/uiSlice';
+import { handleLogout as handleCartLogout } from '../../store/slices/cartSlice';
 import { useLogoutMutation } from '../../services/api/authApi';
 import { navLinks } from './navLinks';
 
@@ -27,6 +28,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
   const handleLogout = async () => {
     try {
       await logout().unwrap();
+      dispatch(handleCartLogout());
       handleClose();
       navigate('/');
     } catch (error) {

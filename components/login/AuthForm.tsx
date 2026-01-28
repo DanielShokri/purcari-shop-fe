@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLoginMutation, useRegisterMutation, useGetCurrentUserQuery } from '../../services/api/authApi';
-import { useToast } from '../../store/hooks';
+import { useToast, useAppDispatch } from '../../store/hooks';
+import { syncCartOnLogin } from '../../store/slices/cartSlice';
 import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -10,6 +11,7 @@ import { loginSchema, registerSchema, LoginInput, RegisterInput } from '../../sc
 
 const AuthForm: React.FC = () => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [searchParams] = useSearchParams();
   const redirect = searchParams.get('redirect');
   const toast = useToast();
@@ -59,6 +61,8 @@ const AuthForm: React.FC = () => {
         await registerUser({ email: data.email, password: data.password, name: data.name, phone: data.phone }).unwrap();
         toast.success('ברוכים הבאים! החשבון נוצר בהצלחה');
       }
+      // Sync cart with cloud after login/register
+      dispatch(syncCartOnLogin());
       // Set login success flag - the useEffect will handle navigation after user state is confirmed
       setLoginSuccess(true);
     } catch (err: any) {

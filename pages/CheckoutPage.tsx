@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch, useToast } from '../store/hooks';
-import { selectCartItems, selectCartTotal, clearCart } from '../store/slices/cartSlice';
+import { selectCartItems, selectCartSubtotal, selectShippingCost, clearCart } from '../store/slices/cartSlice';
 import { useCreateOrderMutation } from '../services/api/ordersApi';
 import { useValidateCouponQuery } from '../services/api/couponsApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
@@ -23,7 +23,8 @@ const CheckoutPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const toast = useToast();
   const cartItems = useAppSelector(selectCartItems);
-  const cartTotal = useAppSelector(selectCartTotal);
+  const subtotal = useAppSelector(selectCartSubtotal);
+  const shipping = useAppSelector(selectShippingCost);
   const { data: user } = useGetCurrentUserQuery();
   const { data: prefs } = useGetUserPrefsQuery(undefined, { skip: !user });
   
@@ -71,7 +72,7 @@ const CheckoutPage: React.FC = () => {
   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
   const [trackEvent] = useTrackEventMutation();
   const { data: couponData, error: couponError } = useValidateCouponQuery(
-    { code: couponCode || '', cartTotal },
+    { code: couponCode || '', cartTotal: subtotal },
     { skip: !couponCode }
   );
 
@@ -90,8 +91,8 @@ const CheckoutPage: React.FC = () => {
     prevCouponErrorRef.current = couponError;
   }, [couponError, couponCode, toast]);
 
-  const discount = couponData ? (couponData.discountType === 'percentage' ? (cartTotal * couponData.discountValue / 100) : couponData.discountValue) : 0;
-  const total = cartTotal - discount;
+  const discount = couponData ? (couponData.discountType === 'percentage' ? (subtotal * couponData.discountValue / 100) : couponData.discountValue) : 0;
+  const total = subtotal + shipping - discount;
 
   const nextStep = async () => {
     let fieldsToValidate: (keyof CheckoutInput)[] = [];
@@ -202,7 +203,8 @@ const CheckoutPage: React.FC = () => {
 
           <OrderSummarySidebar 
             cartItems={cartItems}
-            cartTotal={cartTotal}
+            subtotal={subtotal}
+            shipping={shipping}
             discount={discount}
             total={total}
             couponCode={couponCode || ''}
