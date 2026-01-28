@@ -17,6 +17,8 @@ import Analytics from './pages/Analytics';
 import Notifications from './pages/Notifications';
 import Coupons from './pages/Coupons';
 import CouponEditor from './pages/CouponEditor';
+import CartRules from './pages/CartRules';
+import CartRuleEditor from './pages/CartRuleEditor';
 import { Box, Flex, Text, Spinner, VStack } from '@chakra-ui/react';
 
 // Protected Route Wrapper
@@ -143,6 +145,24 @@ export default function App() {
       <Route path="/coupons/:id/edit" element={
         <ProtectedRoute>
           <CouponEditor />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cart-rules" element={
+        <ProtectedRoute>
+          <CartRules />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cart-rules/new" element={
+        <ProtectedRoute>
+          <CartRuleEditor />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/cart-rules/:id/edit" element={
+        <ProtectedRoute>
+          <CartRuleEditor />
         </ProtectedRoute>
       } />
       

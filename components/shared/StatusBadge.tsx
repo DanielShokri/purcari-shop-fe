@@ -103,3 +103,15 @@ export const couponDiscountTypeConfig: Record<string, StatusConfig> = {
   free_product: { colorPalette: 'orange', label: 'מוצר חינם' },
   buy_x_get_y: { colorPalette: 'teal', label: 'קנה X קבל Y' },
 };
+
+export const cartRuleStatusConfig: Record<string, StatusConfig> = {
+  active: { colorPalette: 'green', label: 'פעיל', showDot: true },
+  paused: { colorPalette: 'gray', label: 'מושהה', showDot: true },
+};
+
+export const cartRuleTypeConfig: Record<string, StatusConfig> = {
+  shipping: { colorPalette: 'purple', label: 'משלוח' },
+  discount: { colorPalette: 'orange', label: 'הנחה' },
+  restriction: { colorPalette: 'red', label: 'הגבלות' },
+  benefit: { colorPalette: 'blue', label: 'הטבה' },
+};

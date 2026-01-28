@@ -7,4 +7,5 @@ export * from './orders.types';
 export * from './analytics.types';
 export * from './notifications.types';
 export * from './coupons.types';
+export * from './cartRules.types';
 export * from './common.types';
