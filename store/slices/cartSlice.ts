@@ -1,7 +1,10 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { useSelector } from 'react-redux';
 import { CartItem, AppliedCoupon, CouponDiscountType, SavedCart } from '../../types';
 import { RootState } from '../index';
 import { account } from '../../services/appwrite';
+import { calculateCartTotals } from '../../utils/cartCalculation';
+import { cartRulesApi, useGetCartRulesQuery } from '../../services/api/cartRulesApi';
 
 // Constants
 const FREE_SHIPPING_THRESHOLD = 300; // ILS
@@ -332,32 +335,20 @@ export const selectCartDiscount = (state: RootState) => {
   return coupon.discountAmount;
 };
 
+// Helper function to get cart rules from state (used by both selectors)
+const getCartRulesFromState = (state: RootState): any[] => {
+  try {
+    const rulesResult = cartRulesApi.endpoints.getCartRules.select()(state);
+    return rulesResult.data || [];
+  } catch {
+    return [];
+  }
+};
+
 export const selectShippingCost = (state: RootState) => {
-  const subtotal = selectCartSubtotal(state);
-  const itemCount = selectCartItemCount(state);
-  const coupon = state.cart.appliedCoupon;
-  
-  // Empty cart = no shipping
-  if (state.cart.items.length === 0) {
-    return 0;
-  }
-  
-  // Free shipping coupon
-  if (coupon?.discountType === CouponDiscountType.FREE_SHIPPING) {
-    return 0;
-  }
-  
-  // Free shipping over threshold (₪300+)
-  if (subtotal >= FREE_SHIPPING_THRESHOLD) {
-    return 0;
-  }
-  
-  // Free shipping for 4+ items
-  if (itemCount >= FREE_SHIPPING_ITEM_COUNT) {
-    return 0;
-  }
-  
-  return STANDARD_SHIPPING_COST;
+  const rules = getCartRulesFromState(state);
+  const totals = calculateCartTotals(state.cart.items, rules);
+  return totals.shippingCost;
 };
 
 export const selectCartTotal = (state: RootState) => {
@@ -371,22 +362,49 @@ export const selectCartTotal = (state: RootState) => {
 };
 
 // Summary selector for checkout
-export const selectCartSummary = (state: RootState) => ({
-  items: state.cart.items,
-  itemCount: selectCartItemCount(state),
-  subtotal: selectCartSubtotal(state),
-  shipping: selectShippingCost(state),
-  discount: selectCartDiscount(state),
-  total: selectCartTotal(state),
-  appliedCoupon: state.cart.appliedCoupon,
-  freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
-  amountUntilFreeShipping: Math.max(0, FREE_SHIPPING_THRESHOLD - selectCartSubtotal(state)),
-});
+export const selectCartSummary = (state: RootState) => {
+  const rules = getCartRulesFromState(state);
+  const totals = calculateCartTotals(state.cart.items, rules);
+  
+  // Override discount if coupon is applied manually (since calculation engine handles automatic rules)
+  // Note: Ideally, we should merge them, but for now we prioritize manual coupons if they exist
+  const couponDiscount = selectCartDiscount(state);
+  const totalDiscount = totals.discount + couponDiscount;
+  
+  // Re-calculate total with coupon
+  const finalTotal = Math.max(0, totals.subtotal + totals.shippingCost - totalDiscount);
+
+  return {
+    items: state.cart.items,
+    itemCount: selectCartItemCount(state),
+    subtotal: totals.subtotal,
+    shipping: totals.shippingCost,
+    discount: totalDiscount,
+    total: finalTotal,
+    appliedCoupon: state.cart.appliedCoupon,
+    freeShippingThreshold: FREE_SHIPPING_THRESHOLD, // Keep for backward compat/UI reference
+    amountUntilFreeShipping: Math.max(0, FREE_SHIPPING_THRESHOLD - totals.subtotal), // Placeholder logic, real logic is in rules
+    validationErrors: totals.validationErrors,
+    appliedBenefits: totals.appliedBenefits
+  };
+};
 
 export const selectCartIsSyncing = (state: RootState) => state.cart.isSyncing;
 
 // Legacy selector for backward compatibility
 export const selectLegacyCartTotal = (state: RootState) =>
   state.cart.items.reduce((total, item) => total + item.price * item.quantity, 0);
+
+/**
+ * Custom hook that ensures cart rules are fetched and returns cart summary with rules applied
+ * This hook MUST be used instead of directly calling selectCartSummary to ensure rules are fetched
+ */
+export const useCartSummaryWithRules = () => {
+  // Trigger cart rules fetch - this is crucial!
+  useGetCartRulesQuery();
+  
+  // Now use the selector which will have access to the fetched rules
+  return useSelector(selectCartSummary);
+};
 
 export default cartSlice.reducer;

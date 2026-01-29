@@ -32,6 +32,7 @@ export const APPWRITE_CONFIG = {
   COLLECTION_ORDERS: 'orders',
   COLLECTION_ORDER_ITEMS: 'order_items',
   COLLECTION_COUPONS: 'coupons',
+  COLLECTION_CART_RULES: 'cart_rules',
   COLLECTION_ANALYTICS_EVENTS: 'analytics_events',
   COLLECTION_NOTIFICATIONS: 'notifications', // Admin-only (not used in storefront)
   
@@ -47,6 +48,7 @@ export const collections = {
   orders: APPWRITE_CONFIG.COLLECTION_ORDERS,
   orderItems: APPWRITE_CONFIG.COLLECTION_ORDER_ITEMS,
   coupons: APPWRITE_CONFIG.COLLECTION_COUPONS,
+  cartRules: APPWRITE_CONFIG.COLLECTION_CART_RULES,
   analyticsEvents: APPWRITE_CONFIG.COLLECTION_ANALYTICS_EVENTS,
 } as const;
 

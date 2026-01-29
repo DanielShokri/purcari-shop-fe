@@ -138,6 +138,21 @@ const { data: product, isLoading } = useGetProductByIdQuery(id || '');
 const { data } = useGetProductByIdQuery(id || '', { skip: !id });
 ```
 
+## Selectors using API State
+```typescript
+// Access API cache data within a selector
+import { apiSlice } from '../services/api/someApi';
+
+export const selectComputedData = (state: RootState) => {
+  // Select data from API slice
+  const result = apiSlice.endpoints.getSomeData.select()(state);
+  const data = result.data || [];
+  
+  // Combine with local state to derive new values
+  return computeSomething(state.localSlice.items, data);
+};
+```
+
 ## Cart Slice with localStorage
 ```typescript
 // Pattern for persisted state

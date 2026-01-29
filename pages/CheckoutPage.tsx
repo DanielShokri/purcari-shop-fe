@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch, useToast } from '../store/hooks';
-import { selectCartItems, selectCartSubtotal, selectShippingCost, clearCart } from '../store/slices/cartSlice';
+import { selectCartItems, clearCart, useCartSummaryWithRules } from '../store/slices/cartSlice';
 import { useCreateOrderMutation } from '../services/api/ordersApi';
 import { useValidateCouponQuery } from '../services/api/couponsApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
@@ -22,9 +22,10 @@ const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const toast = useToast();
-  const cartItems = useAppSelector(selectCartItems);
-  const subtotal = useAppSelector(selectCartSubtotal);
-  const shipping = useAppSelector(selectShippingCost);
+  // Use the new hook that triggers cart rules fetch
+  const cartSummary = useCartSummaryWithRules();
+  const { items: cartItems, subtotal, shipping, validationErrors, appliedBenefits, discount: automaticDiscount } = cartSummary;
+  
   const { data: user } = useGetCurrentUserQuery();
   const { data: prefs } = useGetUserPrefsQuery(undefined, { skip: !user });
   
@@ -91,10 +92,16 @@ const CheckoutPage: React.FC = () => {
     prevCouponErrorRef.current = couponError;
   }, [couponError, couponCode, toast]);
 
-  const discount = couponData ? (couponData.discountType === 'percentage' ? (subtotal * couponData.discountValue / 100) : couponData.discountValue) : 0;
-  const total = subtotal + shipping - discount;
+  const manualDiscount = couponData ? (couponData.discountType === 'percentage' ? (subtotal * couponData.discountValue / 100) : couponData.discountValue) : 0;
+  const totalDiscount = automaticDiscount + manualDiscount;
+  const total = Math.max(0, subtotal + shipping - totalDiscount);
 
   const nextStep = async () => {
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
+      return;
+    }
+
     let fieldsToValidate: (keyof CheckoutInput)[] = [];
     if (step === 1) {
       fieldsToValidate = ['name', 'email', 'phone', 'street', 'city', 'postalCode'];
@@ -164,6 +171,28 @@ const CheckoutPage: React.FC = () => {
       <div className="container mx-auto px-4 max-w-4xl">
         <CheckoutProgressBar currentStep={step} />
 
+        {validationErrors.length > 0 && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+            <p className="font-bold">שים לב:</p>
+            <ul className="list-disc list-inside">
+              {validationErrors.map((error, idx) => (
+                <li key={idx}>{error}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {appliedBenefits.length > 0 && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
+            <p className="font-bold">הטבות פעילות:</p>
+            <ul className="list-disc list-inside">
+              {appliedBenefits.map((benefit, idx) => (
+                <li key={idx}>{benefit}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Area */}
           <div className="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm">
@@ -205,7 +234,7 @@ const CheckoutPage: React.FC = () => {
             cartItems={cartItems}
             subtotal={subtotal}
             shipping={shipping}
-            discount={discount}
+            discount={totalDiscount}
             total={total}
             couponCode={couponCode || ''}
             handleInputChange={(e) => setValue('couponCode', e.target.value)}

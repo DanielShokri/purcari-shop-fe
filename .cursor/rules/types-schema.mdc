@@ -57,6 +57,26 @@ export interface Category {
 }
 ```
 
+### Cart Rule Interface
+```typescript
+export enum CartRuleType {
+  SHIPPING = 'shipping',       // Free shipping threshold
+  DISCOUNT = 'discount',       // Automatic discounts
+  RESTRICTION = 'restriction', // Min/Max order limits
+  BENEFIT = 'benefit'          // Free gifts/benefits
+}
+
+export interface CartRule {
+  $id: string;
+  name: string;
+  description?: string;
+  type: CartRuleType;
+  priority: number;            // Lower = Higher priority
+  status: 'active' | 'paused';
+  value?: number;              // Numeric parameter
+}
+```
+
 ## State Types
 
 ### Cart State

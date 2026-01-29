@@ -279,3 +279,25 @@ export interface Toast {
   message: string;
   duration?: number;  // Auto-dismiss time in ms (default: 4000)
 }
+
+export enum CartRuleType {
+  SHIPPING = 'shipping',       // Shipping logic (e.g., Free shipping threshold)
+  DISCOUNT = 'discount',       // Automatic cart discounts
+  RESTRICTION = 'restriction', // Cart restrictions (e.g., Minimum order)
+  BENEFIT = 'benefit'          // Special benefits/gifts
+}
+
+export enum CartRuleStatus {
+  ACTIVE = 'active',
+  PAUSED = 'paused'
+}
+
+export interface CartRule {
+  $id: string;
+  name: string;                // Rule name (e.g., "Free Shipping over 300")
+  description?: string;        // Description shown to user
+  type: CartRuleType;
+  priority: number;            // Lower number = Higher priority
+  status: CartRuleStatus;
+  value?: number;              // Numeric parameter for the rule
+}

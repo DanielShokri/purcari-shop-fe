@@ -15,6 +15,7 @@ This is a Hebrew RTL ecommerce website for **Purcari Winery Israel** - a premium
 - **Currency**: Israeli Shekel (₪)
 - **Brand**: Purcari Winery (established 1827)
 - **Target**: Premium wine consumers in Israel
+- **Cart Rules**: Dynamic shipping, discounts, and restrictions managed via Appwrite.
 
 ## Tech Stack
 - React 18.2 + TypeScript
