@@ -68,8 +68,14 @@ const authApi = api.injectEndpoints({
               await account.deleteSession({ sessionId: 'current' });
               return { data: null };
             }
-          } catch {
+          } catch (error: any) {
             // If we can't verify admin status, destroy session
+            // Check if it's a 401 or unauthorized error
+            if (error?.code === 401 || error?.message?.includes('401') || error?.message?.includes('unauthorized')) {
+              await account.deleteSession({ sessionId: 'current' });
+              return { data: null };
+            }
+            // For other errors, still destroy session for safety
             await account.deleteSession({ sessionId: 'current' });
             return { data: null };
           }
@@ -82,7 +88,8 @@ const authApi = api.injectEndpoints({
           };
           return { data: authUser };
         } catch (error: any) {
-          // No active session - return null (not an error)
+          // No active session or 401 error - return null (not an error state)
+          // Treat any error as "no valid session" which is expected behavior
           return { data: null };
         }
       },

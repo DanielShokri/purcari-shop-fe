@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { api } from './services/api/index';
+import { authMiddleware } from './services/api/authMiddleware';
 import { AuthUser } from './types';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
@@ -70,7 +71,7 @@ export const store = configureStore({
     auth: authSlice.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware),
+    getDefaultMiddleware().concat(api.middleware).concat(authMiddleware),
 });
 
 setupListeners(store.dispatch);

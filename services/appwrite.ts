@@ -31,6 +31,7 @@ export const APPWRITE_CONFIG = {
   COLLECTION_ANALYTICS_EVENTS: 'analytics_events',
   COLLECTION_NOTIFICATIONS: 'notifications',
   COLLECTION_COUPONS: 'coupons',
+  COLLECTION_COUPON_USAGE: 'coupon_usage',
   COLLECTION_CART_RULES: 'cart_rules',
   BUCKET_MEDIA: 'media',
   FUNCTION_USERS: 'users-management' // Cloud Function ID for user management
