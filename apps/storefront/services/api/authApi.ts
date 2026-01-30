@@ -38,6 +38,14 @@ export const authApi = baseApi.injectEndpoints({
     login: builder.mutation<AuthUser, { email: string; password: string }>({
        queryFn: async ({ email, password }) => {
          try {
+           // CRITICAL: Clear any existing sessions first to avoid "session is active" error
+           try {
+             await account.deleteSession('current');
+           } catch {
+             // No active session, which is fine
+           }
+           
+           // Now create a new session
            await account.createEmailPasswordSession({ email, password });
           const user = await account.get();
           return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
