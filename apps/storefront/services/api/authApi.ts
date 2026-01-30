@@ -17,8 +17,8 @@ export const authApi = baseApi.injectEndpoints({
           // Create account
           await account.create(ID.unique(), email, password, name);
           
-          // Auto-login after registration
-          await account.createEmailSession(email, password);
+           // Auto-login after registration
+           await account.createEmailPasswordSession({ email, password });
           
           // Save phone to preferences if provided
           if (phone) {
@@ -36,9 +36,9 @@ export const authApi = baseApi.injectEndpoints({
 
     // Login
     login: builder.mutation<AuthUser, { email: string; password: string }>({
-      queryFn: async ({ email, password }) => {
-        try {
-          await account.createEmailSession(email, password);
+       queryFn: async ({ email, password }) => {
+         try {
+           await account.createEmailPasswordSession({ email, password });
           const user = await account.get();
           return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
         } catch (error: any) {
