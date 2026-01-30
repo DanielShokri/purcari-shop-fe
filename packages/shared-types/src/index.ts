@@ -1,0 +1,485 @@
+/**
+ * Shared Types Package
+ * All types used across storefront and admin applications
+ */
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+// Product status enum - for admin product editor
+export enum ProductStatus {
+  DRAFT = 'draft',
+  ACTIVE = 'active',
+  HIDDEN = 'hidden',
+  DISCONTINUED = 'discontinued',
+}
+
+// User role enum - for user management and permissions
+export enum UserRole {
+  ADMIN = 'admin',
+  EDITOR = 'editor',
+  VIEWER = 'viewer',
+}
+
+// User status enum - for user account status
+export enum UserStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+}
+
+// Analytics interval enum - for analytics queries
+export enum AnalyticsInterval {
+  DAILY = 'daily',
+  WEEKLY = 'weekly',
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
+}
+
+// Stock status enum matching backend
+export enum StockStatus {
+  IN_STOCK = 'in_stock',
+  OUT_OF_STOCK = 'out_of_stock',
+  LOW_STOCK = 'low_stock',
+}
+
+// Wine type enum
+export enum WineType {
+  RED = 'red',
+  WHITE = 'white',
+  ROSE = 'rose',
+  SPARKLING = 'sparkling',
+}
+
+// Category status enum
+export enum CategoryStatus {
+  ACTIVE = 'active',
+  DRAFT = 'draft',
+  HIDDEN = 'hidden',
+}
+
+// Order status enum - for order management
+export enum OrderStatusEnum {
+  PENDING = 'pending',
+  PROCESSING = 'processing',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+  SHIPPED = 'shipped',
+}
+
+export enum CouponDiscountType {
+  PERCENTAGE = 'percentage',
+  FIXED_AMOUNT = 'fixed_amount',
+  FREE_SHIPPING = 'free_shipping',
+  FREE_PRODUCT = 'free_product',
+  BUY_X_GET_Y = 'buy_x_get_y',
+}
+
+export enum CouponStatus {
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+  EXPIRED = 'expired',
+  SCHEDULED = 'scheduled',
+}
+
+export enum CartRuleType {
+  SHIPPING = 'shipping',
+  DISCOUNT = 'discount',
+  RESTRICTION = 'restriction',
+  BENEFIT = 'benefit',
+}
+
+export enum CartRuleStatus {
+  ACTIVE = 'active',
+  PAUSED = 'paused',
+}
+
+export enum NotificationType {
+  SUCCESS = 'success',
+  INFO = 'info',
+  WARNING = 'warning',
+  ORDER = 'order',
+  SYSTEM = 'system',
+}
+
+// ============================================================================
+// PRODUCT & CATEGORY INTERFACES
+// ============================================================================
+
+export interface Product {
+  $id: string;
+  $createdAt?: string;
+  $updatedAt?: string;
+  productName: string;
+  productNameHe?: string;
+  description?: string;
+  descriptionHe?: string;
+  shortDescription?: string;
+  shortDescriptionHe?: string;
+  price: number;
+  salePrice?: number;
+  onSale?: boolean;
+  quantityInStock: number;
+  sku: string;
+  stockStatus?: StockStatus;
+  status?: ProductStatus;
+  category: string;
+  dateAdded?: string;
+  tags?: string[];
+  relatedProducts?: string[];
+  isFeatured?: boolean;
+  featuredImage?: string;
+  images?: string[];
+  wineType?: WineType | 'Red' | 'White' | 'Rosé' | 'Sparkling';
+  region?: string;
+  vintage?: number;
+  alcoholContent?: number;
+  volume?: string;
+  grapeVariety?: string;
+  servingTemperature?: string;
+  tastingNotes?: string;
+}
+
+export interface Category {
+  $id: string;
+  $createdAt?: string;
+  $updatedAt?: string;
+  name: string;
+  nameHe?: string;
+  slug: string;
+  parentId?: string | null;
+  status: CategoryStatus | 'active' | 'draft' | 'hidden' | 'inactive';
+  displayOrder: number;
+  description?: string;
+  descriptionHe?: string;
+  image?: string;
+  icon?: string;
+  iconColor?: string;
+}
+
+export interface CategoryWithChildren extends Category {
+  children?: CategoryWithChildren[];
+}
+
+// ============================================================================
+// CART INTERFACES
+// ============================================================================
+
+export interface CartItem {
+  id: string;
+  productId: string;
+  title: string;
+  price: number;
+  salePrice?: number;
+  originalPrice?: number;
+  quantity: number;
+  maxQuantity: number;
+  imgSrc: string;
+  variant?: string;
+}
+
+export interface SavedCart {
+  items: CartItem[];
+  appliedCoupon?: AppliedCoupon | null;
+  updatedAt: string;
+}
+
+// ============================================================================
+// ORDER INTERFACES
+// ============================================================================
+
+export type OrderStatus = 'pending' | 'processing' | 'completed' | 'cancelled' | 'shipped';
+
+export interface ShippingAddress {
+  street: string;
+  apartment?: string;
+  city: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface PaymentInfo {
+  method: string;
+  cardExpiry?: string;
+  transactionId: string;
+  chargeDate: string;
+}
+
+export interface OrderItem {
+  $id: string;
+  orderId: string;
+  productId: string;
+  productName: string;
+  productImage?: string;
+  variant?: string;
+  quantity: number;
+  price: number;
+  total: number;
+}
+
+export interface Order {
+  $id: string;
+  $createdAt: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  customerAvatar?: string;
+  total: number;
+  subtotal: number;
+  shippingCost: number;
+  tax: number;
+  status: OrderStatus;
+  shippingStreet: string;
+  shippingApartment?: string;
+  shippingCity: string;
+  shippingPostalCode: string;
+  shippingCountry: string;
+  paymentMethod: string;
+  paymentCardExpiry?: string;
+  paymentTransactionId: string;
+  paymentChargeDate: string;
+}
+
+export interface OrderDetails extends Order {
+  shippingAddress: ShippingAddress;
+  payment: PaymentInfo;
+  items: OrderItem[];
+}
+
+export interface CreateOrderPayload {
+  customerName: string;
+  customerEmail: string;
+  customerPhone?: string;
+  shippingAddress: ShippingAddress;
+  payment: PaymentInfo;
+  items: Array<{
+    productId: string;
+    productName: string;
+    productImage?: string;
+    variant?: string;
+    quantity: number;
+    price: number;
+  }>;
+  couponCode?: string;
+  appliedCouponCode?: string;
+  appliedCouponDiscount?: number;
+  appliedCouponType?: CouponDiscountType;
+}
+
+// ============================================================================
+// COUPON INTERFACES
+// ============================================================================
+
+export interface Coupon {
+  $id: string;
+  $createdAt?: string;
+  $updatedAt?: string;
+  code: string;
+  description?: string;
+  discountType: CouponDiscountType;
+  discountValue: number;
+  buyQuantity?: number;
+  getQuantity?: number;
+  startDate: string;
+  endDate?: string;
+  minimumOrder?: number;
+  maximumDiscount?: number;
+  usageLimit?: number;
+  usageLimitPerUser?: number;
+  usageCount: number;
+  categoryIds?: string[];
+  productIds?: string[];
+  userIds?: string[];
+  firstPurchaseOnly?: boolean;
+  excludeOtherCoupons?: boolean;
+  status: CouponStatus | 'active' | 'paused' | 'expired' | 'scheduled' | 'inactive';
+}
+
+export interface CouponValidationResult {
+  valid: boolean;
+  coupon?: Coupon;
+  discountAmount?: number;
+  error?: string;
+}
+
+export interface AppliedCoupon {
+  code: string;
+  discountType: CouponDiscountType;
+  discountValue: number;
+  discountAmount: number;
+}
+
+export interface CouponUsageRecord {
+  $id: string;
+  userId?: string;
+  userEmail: string;
+  couponId: string;
+  couponCode: string;
+  usageCount: number;
+  lastUsedAt: string;
+  $createdAt: string;
+}
+
+// ============================================================================
+// CART RULE INTERFACES
+// ============================================================================
+
+export interface CartRule {
+  $id: string;
+  name: string;
+  description?: string;
+  type: CartRuleType;
+  priority: number;
+  status: CartRuleStatus;
+  value?: number;
+}
+
+// ============================================================================
+// USER & AUTH INTERFACES
+// ============================================================================
+
+export interface AuthUser {
+  $id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  prefs?: Record<string, any>;
+}
+
+export interface Address {
+  id: string;
+  name: string;
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  isDefault?: boolean;
+}
+
+export interface UserPreferences {
+  addresses?: Address[];
+  phone?: string;
+  cart?: SavedCart;
+}
+
+// ============================================================================
+// ANALYTICS & NOTIFICATIONS
+// ============================================================================
+
+export interface AnalyticsEvent {
+  $id: string;
+  type: 'page_view' | 'product_view' | 'add_to_cart' | 'checkout';
+  productId?: string;
+  userId?: string;
+  $createdAt: string;
+}
+
+export interface Notification {
+  $id: string;
+  title: string;
+  message: string;
+  type: NotificationType;
+  isRead: boolean;
+  icon?: string;
+  createdAt: string;
+}
+
+// ============================================================================
+// UI & UTILITY TYPES
+// ============================================================================
+
+export type ToastType = 'success' | 'error' | 'info' | 'warning';
+
+export interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+  duration?: number;
+}
+
+// ============================================================================
+// ANALYTICS TYPES
+// ============================================================================
+
+// Product categories - used in filters
+export enum ProductCategoryEnum {
+  WINES = 'wines',
+  ACCESSORIES = 'accessories',
+  GIFTS = 'gifts',
+  FEATURED = 'featured',
+  BESTSELLERS = 'bestsellers',
+  NEW_ARRIVALS = 'new_arrivals',
+}
+
+export type ProductCategory = 'wines' | 'accessories' | 'gifts' | 'featured' | 'bestsellers' | 'new_arrivals' | string;
+
+export interface TimeSeriesDataPoint {
+  timestamp: string;
+  value: number;
+  name?: string; // For compatibility with chart data
+}
+
+export interface AnalyticsSummary {
+  // Basic metrics
+  totalViews: number;
+  totalVisitors: number;
+  averageSessionDuration: number;
+  bounceRate: number;
+  conversionRate: number;
+  // Extended metrics
+  viewsToday?: number;
+  viewsThisWeek?: number;
+  viewsThisMonth?: number;
+  dau?: number; // Daily Active Users
+  wau?: number; // Weekly Active Users
+  mau?: number; // Monthly Active Users
+  topProducts?: Array<{
+    productId: string;
+    productName: string;
+    views: number;
+  }>;
+  retention?: {
+    week1: number;
+    week7: number;
+    week30: number;
+  };
+}
+
+// ============================================================================
+// USER & ADMIN TYPES
+// ============================================================================
+
+export interface User extends AuthUser {
+  role?: UserRole;
+  status?: UserStatus;
+  avatar?: string;
+  address?: string;
+  joinedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  prefs?: Record<string, any>;
+}
+
+export interface AppwriteUser {
+  $id: string;
+  email: string;
+  name?: string;
+  phone?: string;
+  prefs?: Record<string, any>;
+  $createdAt?: string;
+  [key: string]: any;
+}
+
+export function mapAppwriteUserToUser(appwriteUser: AppwriteUser): User {
+  return {
+    $id: appwriteUser.$id,
+    email: appwriteUser.email,
+    name: appwriteUser.name || '',
+    phone: appwriteUser.phone || '',
+    role: appwriteUser.prefs?.role || UserRole.VIEWER,
+    status: appwriteUser.prefs?.status || UserStatus.ACTIVE,
+    createdAt: appwriteUser.prefs?.createdAt || appwriteUser.$createdAt || new Date().toISOString(),
+    updatedAt: appwriteUser.prefs?.updatedAt || new Date().toISOString(),
+  };
+}

@@ -1,33 +1,30 @@
 {
-  "name": "purcari-israel",
-  "private": true,
+  "name": "purcari-israel-monorepo",
   "version": "0.0.0",
+  "private": true,
   "type": "module",
+  "description": "Purcari Israel Wine Ecommerce - Monorepo with Storefront & Admin Dashboard",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@hookform/resolvers": "^5.2.2",
-    "@reduxjs/toolkit": "2.2.3",
-    "appwrite": "^21.5.0",
-    "framer-motion": "^12.27.1",
-    "lucide-react": "0.378.0",
-    "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "react-helmet-async": "^2.0.5",
-    "react-hook-form": "^7.71.1",
-    "react-redux": "9.1.1",
-    "react-router-dom": "^6.30.3",
-    "zod": "^4.3.5"
+    "dev": "pnpm -r --parallel run dev",
+    "dev:storefront": "pnpm --filter=@apps/storefront dev",
+    "dev:admin": "pnpm --filter=@apps/admin dev",
+    "build": "pnpm -r --filter=./apps/* build",
+    "build:storefront": "pnpm --filter=@apps/storefront build",
+    "build:admin": "pnpm --filter=@apps/admin build",
+    "preview": "pnpm -r --parallel run preview",
+    "type-check": "pnpm -r --parallel run type-check",
+    "lint": "pnpm -r --parallel run lint",
+    "clean": "pnpm -r --parallel run clean && rm -rf node_modules",
+    "test:appwrite": "tsx scripts/test-appwrite.ts"
   },
   "devDependencies": {
-    "@tailwindcss/vite": "^4.1.18",
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "tailwindcss": "^4.1.18",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "@types/node": "^22.19.7",
+    "@types/react": "^18.3.27",
+    "@types/react-dom": "^18.3.7",
+    "typescript": "~5.8.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
   }
 }

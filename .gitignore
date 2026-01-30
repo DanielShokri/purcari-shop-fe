@@ -8,9 +8,19 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
-dist
-dist-ssr
+**/dist
+**/dist-ssr
 *.local
+
+# Build outputs for monorepo
+apps/*/dist
+packages/*/dist
+packages/*/.turbo
+
+# Environment files
+.env
+.env.local
+.env.*.local
 
 # Editor directories and files
 .vscode/*
@@ -22,3 +32,5 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.cursor
+.cursorignore
