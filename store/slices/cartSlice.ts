@@ -1,10 +1,11 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
-import { useSelector } from 'react-redux';
-import { CartItem, AppliedCoupon, CouponDiscountType, SavedCart } from '../../types';
+import { useSelector, useDispatch } from 'react-redux';
+import { CartItem, AppliedCoupon, CouponDiscountType, SavedCart, CouponValidationResult } from '../../types';
 import { RootState } from '../index';
 import { account } from '../../services/appwrite';
 import { calculateCartTotals } from '../../utils/cartCalculation';
 import { cartRulesApi, useGetCartRulesQuery } from '../../services/api/cartRulesApi';
+import { useLazyValidateCouponQuery } from '../../services/api/couponsApi';
 
 // Constants
 const FREE_SHIPPING_THRESHOLD = 300; // ILS
@@ -18,6 +19,10 @@ interface CartState {
   appliedCoupon: AppliedCoupon | null;
   isSyncing: boolean;
   lastSyncedAt: string | null;
+  // Coupon validation state (NEW)
+  couponValidationState: 'idle' | 'validating' | 'valid' | 'invalid';
+  couponValidationError?: string;
+  lastValidatedCode?: string;
 }
 
 // Initial state
@@ -27,6 +32,9 @@ const initialState: CartState = {
   appliedCoupon: null,
   isSyncing: false,
   lastSyncedAt: null,
+  couponValidationState: 'idle',
+  couponValidationError: undefined,
+  lastValidatedCode: undefined,
 };
 
 // Load cart from localStorage (for guests)
@@ -261,12 +269,25 @@ const cartSlice = createSlice({
       saveCartToCloud([], null);
     },
 
-    // For direct cart replacement (used after order completion)
-    setCart: (state, action: PayloadAction<{ items: CartItem[]; appliedCoupon: AppliedCoupon | null }>) => {
-      state.items = action.payload.items;
-      state.appliedCoupon = action.payload.appliedCoupon;
-    },
-  },
+     // For direct cart replacement (used after order completion)
+     setCart: (state, action: PayloadAction<{ items: CartItem[]; appliedCoupon: AppliedCoupon | null }>) => {
+       state.items = action.payload.items;
+       state.appliedCoupon = action.payload.appliedCoupon;
+     },
+
+     // Coupon validation state reducers (NEW)
+     setCouponValidationState: (state, action: PayloadAction<'idle' | 'validating' | 'valid' | 'invalid'>) => {
+       state.couponValidationState = action.payload;
+     },
+
+     setCouponValidationError: (state, action: PayloadAction<string | undefined>) => {
+       state.couponValidationError = action.payload;
+     },
+
+     setLastValidatedCode: (state, action: PayloadAction<string | undefined>) => {
+       state.lastValidatedCode = action.payload;
+     },
+   },
   extraReducers: (builder) => {
     builder
       // Initialize cart
@@ -313,6 +334,9 @@ export const {
   removeCoupon,
   clearCart,
   setCart,
+  setCouponValidationState,
+  setCouponValidationError,
+  setLastValidatedCode,
 } = cartSlice.actions;
 
 // Selectors
@@ -328,6 +352,13 @@ export const selectCartSubtotal = (state: RootState) =>
   }, 0);
 
 export const selectAppliedCoupon = (state: RootState) => state.cart.appliedCoupon;
+
+// Coupon validation state selectors (NEW)
+export const selectCouponValidationState = (state: RootState) => state.cart.couponValidationState;
+
+export const selectCouponValidationError = (state: RootState) => state.cart.couponValidationError;
+
+export const selectLastValidatedCode = (state: RootState) => state.cart.lastValidatedCode;
 
 export const selectCartDiscount = (state: RootState) => {
   const coupon = state.cart.appliedCoupon;
@@ -405,6 +436,114 @@ export const useCartSummaryWithRules = () => {
   
   // Now use the selector which will have access to the fetched rules
   return useSelector(selectCartSummary);
+};
+
+/**
+ * Custom hook for managing the coupon validation and application flow
+ * Separates validation (check coupon) from application (apply coupon)
+ * 
+ * Returns:
+ * - validationState: Current state of validation (idle, validating, valid, invalid)
+ * - validationError: Error message if validation failed
+ * - appliedCoupon: Currently applied coupon (from state)
+ * - handleValidateCoupon: Async function to validate a coupon code
+ * - handleApplyCoupon: Function to apply a validated coupon
+ * - handleRemoveCoupon: Function to remove the applied coupon
+ */
+export const useCouponFlow = () => {
+  const dispatch = useDispatch();
+  const validationState = useSelector(selectCouponValidationState);
+  const validationError = useSelector(selectCouponValidationError);
+  const lastValidatedCode = useSelector(selectLastValidatedCode);
+  const appliedCoupon = useSelector(selectAppliedCoupon);
+  const cartSummary = useCartSummaryWithRules();
+
+  // Import the lazy validate coupon query hook
+  const [validateCouponTrigger] = useLazyValidateCouponQuery();
+
+  const handleValidateCoupon = async (code: string): Promise<CouponValidationResult | null> => {
+    try {
+      dispatch(setCouponValidationState('validating'));
+      dispatch(setCouponValidationError(undefined));
+
+      // Get current user email for per-user limit checks
+      let userEmail = '';
+      let userId: string | undefined = undefined;
+      
+      try {
+        const user = await account.get();
+        userEmail = user.email;
+        userId = user.$id;
+      } catch {
+        // Guest user - use placeholder
+        userEmail = 'guest@example.com';
+      }
+
+      // Validate coupon with cart context
+      const result = await validateCouponTrigger({
+        code: code.trim().toUpperCase(),
+        cartItems: cartSummary.items,
+        subtotal: cartSummary.subtotal,
+        userEmail,
+        userId,
+      }).unwrap();
+
+      if (result.valid) {
+        dispatch(setCouponValidationState('valid'));
+        dispatch(setLastValidatedCode(code.toUpperCase()));
+        return result;
+      } else {
+        dispatch(setCouponValidationState('invalid'));
+        dispatch(setCouponValidationError(result.error));
+        return null;
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'שגיאה בבדיקת הקופון';
+      dispatch(setCouponValidationState('invalid'));
+      dispatch(setCouponValidationError(errorMessage));
+      return null;
+    }
+  };
+
+  const handleApplyCoupon = (validationResult: CouponValidationResult) => {
+    if (!validationResult.valid || !validationResult.coupon) {
+      dispatch(setCouponValidationError('לא ניתן להחיל קופון לא תקין'));
+      return;
+    }
+
+    // Prevent stacking coupons - remove previous coupon if exists
+    if (appliedCoupon && appliedCoupon.code !== lastValidatedCode) {
+      console.warn('[CouponFlow] Removing previously applied coupon to prevent stacking');
+    }
+
+    // Build AppliedCoupon object from validation result
+    const newCoupon: AppliedCoupon = {
+      code: validationResult.coupon.code,
+      discountType: validationResult.coupon.discountType,
+      discountValue: validationResult.coupon.discountValue,
+      discountAmount: validationResult.discountAmount || 0,
+    };
+
+    dispatch(applyCoupon(newCoupon));
+    dispatch(setCouponValidationState('idle'));
+  };
+
+  const handleRemoveCoupon = () => {
+    dispatch(removeCoupon());
+    dispatch(setCouponValidationState('idle'));
+    dispatch(setCouponValidationError(undefined));
+    dispatch(setLastValidatedCode(undefined));
+  };
+
+  return {
+    validationState,
+    validationError,
+    appliedCoupon,
+    lastValidatedCode,
+    handleValidateCoupon,
+    handleApplyCoupon,
+    handleRemoveCoupon,
+  };
 };
 
 export default cartSlice.reducer;

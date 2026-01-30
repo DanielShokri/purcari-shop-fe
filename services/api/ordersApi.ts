@@ -1,5 +1,5 @@
 import { api } from './baseApi';
-import { databases, APPWRITE_CONFIG, account } from '../appwrite';
+import { databases, APPWRITE_CONFIG, account, functions } from '../appwrite';
 import { ID, Query, Permission, Role } from 'appwrite';
 import { Order, OrderItem, OrderDetails, CreateOrderPayload, OrderStatus, ShippingAddress, PaymentInfo } from '../../types';
 
@@ -90,55 +90,89 @@ export const ordersApi = api.injectEndpoints({
           
           const orderId = ID.unique();
           
-          // Create order document (flattened structure matching backend schema)
-          const orderResponse = await databases.createDocument(
-            APPWRITE_CONFIG.DATABASE_ID,
-            APPWRITE_CONFIG.COLLECTION_ORDERS,
-            orderId,
-            {
-              customerName: payload.customerName,
-              customerEmail: payload.customerEmail,
-              customerPhone: payload.customerPhone || '',
-              total,
-              subtotal,
-              shippingCost,
-              tax,
-              status: 'pending' as OrderStatus,
-              // Flattened shipping address
-              shippingStreet: payload.shippingAddress.street,
-              shippingApartment: payload.shippingAddress.apartment || '',
-              shippingCity: payload.shippingAddress.city,
-              shippingPostalCode: payload.shippingAddress.postalCode,
-              shippingCountry: payload.shippingAddress.country,
-              // Flattened payment info
-              paymentMethod: payload.payment.method,
-              paymentCardExpiry: payload.payment.cardExpiry || '',
-              paymentTransactionId: payload.payment.transactionId,
-              paymentChargeDate: payload.payment.chargeDate,
-            },
-            permissions
-          );
+           // Build order document with coupon snapshot
+           const orderData: any = {
+             customerName: payload.customerName,
+             customerEmail: payload.customerEmail,
+             customerPhone: payload.customerPhone || '',
+             total,
+             subtotal,
+             shippingCost,
+             tax,
+             status: 'pending' as OrderStatus,
+             // Flattened shipping address
+             shippingStreet: payload.shippingAddress.street,
+             shippingApartment: payload.shippingAddress.apartment || '',
+             shippingCity: payload.shippingAddress.city,
+             shippingPostalCode: payload.shippingAddress.postalCode,
+             shippingCountry: payload.shippingAddress.country,
+             // Flattened payment info
+             paymentMethod: payload.payment.method,
+             paymentCardExpiry: payload.payment.cardExpiry || '',
+             paymentTransactionId: payload.payment.transactionId,
+             paymentChargeDate: payload.payment.chargeDate,
+           };
+           
+           // Add coupon snapshot if provided
+           if (payload.appliedCouponCode) {
+             orderData.appliedCouponCode = payload.appliedCouponCode;
+             orderData.appliedCouponDiscount = payload.appliedCouponDiscount || 0;
+             orderData.appliedCouponType = payload.appliedCouponType || 'percentage';
+           }
+           
+           // Create order document (flattened structure matching backend schema)
+           const orderResponse = await databases.createDocument(
+             APPWRITE_CONFIG.DATABASE_ID,
+             APPWRITE_CONFIG.COLLECTION_ORDERS,
+             orderId,
+             orderData,
+             permissions
+           );
           
-          // Create order items in parallel
-          await Promise.all(
-            payload.items.map((item) =>
-              databases.createDocument(
-                APPWRITE_CONFIG.DATABASE_ID,
-                APPWRITE_CONFIG.COLLECTION_ORDER_ITEMS,
-                ID.unique(),
-                {
-                  orderId,
-                  productName: item.productName,
-                  productImage: item.productImage || '',
-                  variant: item.variant || '',
-                  quantity: item.quantity,
-                  price: item.price,
-                  total: Math.round(item.price * item.quantity * 100) / 100,
-                },
-                permissions
-              )
-            )
-          );
+           // Create order items in parallel
+           await Promise.all(
+             payload.items.map((item) =>
+               databases.createDocument(
+                 APPWRITE_CONFIG.DATABASE_ID,
+                 APPWRITE_CONFIG.COLLECTION_ORDER_ITEMS,
+                 ID.unique(),
+                 {
+                   orderId,
+                   productName: item.productName,
+                   productImage: item.productImage || '',
+                   variant: item.variant || '',
+                   quantity: item.quantity,
+                   price: item.price,
+                   total: Math.round(item.price * item.quantity * 100) / 100,
+                 },
+                 permissions
+               )
+             )
+           );
+           
+           // After successful order creation, increment coupon usage if coupon was applied
+           if (payload.appliedCouponCode) {
+             try {
+               console.debug('[OrdersApi] Incrementing coupon usage for:', payload.appliedCouponCode);
+               
+               await functions.createExecution(
+                 APPWRITE_CONFIG.FUNCTION_INCREMENT_COUPON_USAGE,
+                 JSON.stringify({
+                   couponCode: payload.appliedCouponCode.toUpperCase(),
+                   userEmail: payload.customerEmail,
+                   userId: userId || undefined
+                 }),
+                 false,  // async: false - wait for result
+                 '/'     // path
+               );
+               
+               console.debug('[OrdersApi] Coupon usage incremented successfully');
+             } catch (error: any) {
+               // Non-blocking error: log but don't fail the order
+               console.error('[OrdersApi] Error incrementing coupon usage:', error.message);
+               // Continue - order already created successfully
+             }
+           }
           
           return {
             data: {

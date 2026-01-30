@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch, useToast } from '../store/hooks';
-import { selectCartItems, clearCart, useCartSummaryWithRules } from '../store/slices/cartSlice';
+import { selectCartItems, clearCart, useCartSummaryWithRules, useCouponFlow } from '../store/slices/cartSlice';
 import { useCreateOrderMutation } from '../services/api/ordersApi';
-import { useValidateCouponQuery } from '../services/api/couponsApi';
 import { useTrackEventMutation } from '../services/api/analyticsApi';
 import { useGetCurrentUserQuery, useGetUserPrefsQuery } from '../services/api/authApi';
 import { ShoppingBag } from 'lucide-react';
@@ -29,31 +28,37 @@ const CheckoutPage: React.FC = () => {
   const { data: user } = useGetCurrentUserQuery();
   const { data: prefs } = useGetUserPrefsQuery(undefined, { skip: !user });
   
-  const [step, setStep] = useState(1);
-  const prevCouponDataRef = useRef<typeof couponData>(undefined);
-  const prevCouponErrorRef = useRef<typeof couponError>(undefined);
+   const [step, setStep] = useState(1);
 
-  const methods = useForm<CheckoutInput>({
-    resolver: zodResolver(checkoutSchema),
-    defaultValues: {
-      name: '',
-      email: '',
-      phone: '',
-      street: '',
-      city: '',
-      postalCode: '',
-      country: 'Israel',
-      cardNumber: '',
-      expiryDate: '',
-      cvv: '',
-      couponCode: '',
-    }
-  });
+   // Initialize coupon flow
+   const {
+     validationState,
+     validationError,
+     appliedCoupon,
+     handleValidateCoupon,
+     handleApplyCoupon,
+     handleRemoveCoupon,
+   } = useCouponFlow();
 
-  const { watch, setValue, trigger, handleSubmit } = methods;
-  const couponCode = watch('couponCode');
+   const methods = useForm<CheckoutInput>({
+     resolver: zodResolver(checkoutSchema),
+     defaultValues: {
+       name: '',
+       email: '',
+       phone: '',
+       street: '',
+       city: '',
+       postalCode: '',
+       country: 'Israel',
+       cardNumber: '',
+       expiryDate: '',
+       cvv: '',
+     }
+   });
 
-  // Pre-fill form if user is logged in
+   const { watch, setValue, trigger, handleSubmit } = methods;
+
+   // Pre-fill form if user is logged in
   useEffect(() => {
     if (user) {
       setValue('name', user.name || '');
@@ -70,31 +75,13 @@ const CheckoutPage: React.FC = () => {
     }
   }, [user, prefs, setValue]);
 
-  const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
-  const [trackEvent] = useTrackEventMutation();
-  const { data: couponData, error: couponError } = useValidateCouponQuery(
-    { code: couponCode || '', cartTotal: subtotal },
-    { skip: !couponCode }
-  );
+   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+   const [trackEvent] = useTrackEventMutation();
 
-  // Show toast when coupon status changes
-  useEffect(() => {
-    if (couponData && couponData !== prevCouponDataRef.current) {
-      toast.success('הקופון הופעל בהצלחה');
-    }
-    prevCouponDataRef.current = couponData;
-  }, [couponData, toast]);
-
-  useEffect(() => {
-    if (couponError && couponError !== prevCouponErrorRef.current && couponCode) {
-      toast.error('קוד קופון לא תקף');
-    }
-    prevCouponErrorRef.current = couponError;
-  }, [couponError, couponCode, toast]);
-
-  const manualDiscount = couponData ? (couponData.discountType === 'percentage' ? (subtotal * couponData.discountValue / 100) : couponData.discountValue) : 0;
-  const totalDiscount = automaticDiscount + manualDiscount;
-  const total = Math.max(0, subtotal + shipping - totalDiscount);
+   // Calculate total discount (automatic + applied coupon)
+   const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+   const totalDiscount = automaticDiscount + couponDiscount;
+   const total = Math.max(0, subtotal + shipping - totalDiscount);
 
   const nextStep = async () => {
     if (validationErrors.length > 0) {
@@ -117,42 +104,48 @@ const CheckoutPage: React.FC = () => {
 
   const prevStep = () => setStep(s => s - 1);
 
-  const onSubmit = async (data: CheckoutInput) => {
-    try {
-      const orderResult = await createOrder({
-        customerName: data.name,
-        customerEmail: data.email,
-        customerPhone: data.phone,
-        shippingAddress: {
-          street: data.street,
-          city: data.city,
-          postalCode: data.postalCode || '',
-          country: data.country,
-        },
-        payment: {
-          method: 'Credit Card',
-          transactionId: `mock_${Date.now()}`,
-          chargeDate: new Date().toISOString(),
-        },
-        items: cartItems.map(item => ({
-          productId: item.productId,
-          productName: item.title,
-          productImage: item.imgSrc,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.price * item.quantity,
-        })),
-      }).unwrap();
+   const onSubmit = async (data: CheckoutInput) => {
+     try {
+       const orderResult = await createOrder({
+         customerName: data.name,
+         customerEmail: data.email,
+         customerPhone: data.phone,
+         shippingAddress: {
+           street: data.street,
+           city: data.city,
+           postalCode: data.postalCode || '',
+           country: data.country,
+         },
+         payment: {
+           method: 'Credit Card',
+           transactionId: `mock_${Date.now()}`,
+           chargeDate: new Date().toISOString(),
+         },
+         items: cartItems.map(item => ({
+           productId: item.productId,
+           productName: item.title,
+           productImage: item.imgSrc,
+           quantity: item.quantity,
+           price: item.price,
+           total: item.price * item.quantity,
+         })),
+         // Add coupon snapshot if applied
+         ...(appliedCoupon && {
+           appliedCouponCode: appliedCoupon.code,
+           appliedCouponDiscount: appliedCoupon.discountAmount,
+           appliedCouponType: appliedCoupon.discountType,
+         }),
+       }).unwrap();
 
-      trackEvent({ type: 'checkout' });
-      dispatch(clearCart());
-      toast.success('ההזמנה בוצעה בהצלחה!');
-      navigate(`/order-confirmation/${orderResult.$id}`);
-    } catch (err) {
-      console.error('Failed to create order:', err);
-      toast.error('שגיאה ביצירת ההזמנה, נסה שוב');
-    }
-  };
+       trackEvent({ type: 'checkout' });
+       dispatch(clearCart());
+       toast.success('ההזמנה בוצעה בהצלחה!');
+       navigate(`/order-confirmation/${orderResult.$id}`);
+     } catch (err) {
+       console.error('Failed to create order:', err);
+       toast.error('שגיאה ביצירת ההזמנה, נסה שוב');
+     }
+   };
 
   if (cartItems.length === 0 && step !== 4) {
     return (
@@ -230,17 +223,19 @@ const CheckoutPage: React.FC = () => {
             </FormProvider>
           </div>
 
-          <OrderSummarySidebar 
-            cartItems={cartItems}
-            subtotal={subtotal}
-            shipping={shipping}
-            discount={totalDiscount}
-            total={total}
-            couponCode={couponCode || ''}
-            handleInputChange={(e) => setValue('couponCode', e.target.value)}
-            couponError={couponError}
-            couponData={couponData}
-          />
+           <OrderSummarySidebar 
+             cartItems={cartItems}
+             subtotal={subtotal}
+             shipping={shipping}
+             discount={totalDiscount}
+             total={total}
+             appliedCoupon={appliedCoupon}
+             validationState={validationState}
+             validationError={validationError}
+             onValidateCoupon={handleValidateCoupon}
+             onApplyCoupon={handleApplyCoupon}
+             onRemoveCoupon={handleRemoveCoupon}
+           />
         </div>
       </div>
     </div>

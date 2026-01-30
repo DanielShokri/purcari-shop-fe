@@ -1,7 +1,7 @@
 import { api } from './baseApi';
-import { databases, account, APPWRITE_CONFIG } from '../appwrite';
+import { databases, account, functions, APPWRITE_CONFIG } from '../appwrite';
 import { Query } from 'appwrite';
-import { Coupon, CouponValidationResult, CartItem, CouponDiscountType } from '../../types';
+import { Coupon, CouponValidationResult, CartItem, CouponDiscountType, CouponUsageRecord } from '../../types';
 
 // Standard shipping cost for free shipping calculation
 const STANDARD_SHIPPING_COST = 29.90;
@@ -11,13 +11,15 @@ interface ValidateCouponInput {
   code: string;
   cartItems: CartItem[];
   subtotal: number;
+  userEmail?: string;    // NEW: for per-user limit checks
+  userId?: string;       // NEW: for authenticated users
 }
 
 export const couponsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     // Validate coupon code with full validation logic
     validateCoupon: builder.query<CouponValidationResult, ValidateCouponInput>({
-      queryFn: async ({ code, cartItems, subtotal }) => {
+      queryFn: async ({ code, cartItems, subtotal, userEmail, userId }) => {
         try {
           // Find coupon by code
           const response = await databases.listDocuments(
@@ -80,6 +82,70 @@ export const couponsApi = api.injectEndpoints({
               },
             };
           }
+          
+          // NEW: Check per-user usage limit (from coupon_usage collection)
+          if (coupon.usageLimitPerUser && userEmail) {
+            try {
+              const usageResponse = await databases.listDocuments(
+                APPWRITE_CONFIG.DATABASE_ID,
+                APPWRITE_CONFIG.COLLECTION_COUPON_USAGE,
+                [
+                  Query.equal('couponCode', code.toUpperCase()),
+                  Query.equal('userEmail', userEmail),
+                  Query.limit(1)
+                ]
+              );
+              
+              if (usageResponse.documents.length > 0) {
+                const usage = usageResponse.documents[0] as unknown as CouponUsageRecord;
+                if (usage.usageCount >= coupon.usageLimitPerUser) {
+                  return {
+                    data: {
+                      valid: false,
+                      error: `You have reached the maximum usage limit for this coupon (${coupon.usageLimitPerUser} uses)`,
+                    },
+                  };
+                }
+              }
+            } catch (error) {
+              console.error('[CouponsApi] Error checking coupon usage:', error);
+              // Continue anyway - don't block validation on DB errors
+            }
+          }
+           
+           // NEW: Check per-user usage limit (from coupon_usage collection)
+           if (coupon.usageLimitPerUser) {
+             const userIdentifier = userEmail || (await account.get().then(u => u.email).catch(() => null));
+             
+             if (userIdentifier) {
+               try {
+                 const usageResponse = await databases.listDocuments(
+                   APPWRITE_CONFIG.DATABASE_ID,
+                   APPWRITE_CONFIG.COLLECTION_COUPON_USAGE,
+                   [
+                     Query.equal('couponCode', code.toUpperCase()),
+                     Query.equal('userEmail', userIdentifier),
+                     Query.limit(1)
+                   ]
+                 );
+                 
+                 if (usageResponse.documents.length > 0) {
+                   const usage = usageResponse.documents[0] as unknown as CouponUsageRecord;
+                   if (usage.usageCount >= coupon.usageLimitPerUser) {
+                     return {
+                       data: {
+                         valid: false,
+                         error: `You have reached the maximum usage limit for this coupon (${coupon.usageLimitPerUser} uses)`,
+                       },
+                     };
+                   }
+                 }
+               } catch (error) {
+                 console.error('[CouponsApi] Error checking coupon usage:', error);
+                 // Continue anyway - don't block validation on DB errors
+               }
+             }
+           }
           
           // Check minimum order
           if (coupon.minimumOrder && subtotal < coupon.minimumOrder) {
@@ -220,8 +286,48 @@ export const couponsApi = api.injectEndpoints({
       },
       providesTags: ['Coupons'],
     }),
+    
+    // NEW: Increment coupon usage via Cloud Function
+    incrementCouponUsage: builder.mutation<void, {
+      couponCode: string;
+      userEmail: string;
+      userId?: string;
+    }>({
+      queryFn: async (payload) => {
+        try {
+          console.debug('[CouponsApi] Calling incrementCouponUsage function:', payload);
+          
+          const result = await functions.createExecution(
+            APPWRITE_CONFIG.FUNCTION_INCREMENT_COUPON_USAGE,
+            JSON.stringify({
+              couponCode: payload.couponCode.toUpperCase(),
+              userEmail: payload.userEmail,
+              userId: payload.userId
+            }),
+            false,  // async: false - wait for result
+            '/'     // path
+          );
+          
+          console.debug('[CouponsApi] Function execution result:', result);
+          
+          if (result.status !== 'completed') {
+            throw new Error(`Function execution failed: ${result.errors || 'Unknown error'}`);
+          }
+          
+          return { data: undefined };
+        } catch (error: any) {
+          console.error('[CouponsApi] Error incrementing coupon usage:', error);
+          return { error: error.message };
+        }
+      },
+      invalidatesTags: ['Coupons']
+    }),
   }),
   overrideExisting: true,
 });
 
-export const { useValidateCouponQuery, useLazyValidateCouponQuery } = couponsApi;
+export const { 
+  useValidateCouponQuery, 
+  useLazyValidateCouponQuery,
+  useIncrementCouponUsageMutation  // NEW
+} = couponsApi;

@@ -166,6 +166,11 @@ export interface CreateOrderPayload {
     price: number;
   }>;
   couponCode?: string;
+  
+  // Coupon snapshot fields (NEW)
+  appliedCouponCode?: string;          // Coupon code that was applied
+  appliedCouponDiscount?: number;      // Discount amount in ILS (snapshot)
+  appliedCouponType?: CouponDiscountType;  // Type of discount (snapshot)
 }
 
 export enum CouponDiscountType {
@@ -232,6 +237,19 @@ export interface AppliedCoupon {
   discountValue: number;
   discountAmount: number;    // Calculated discount in ILS
 }
+
+// Coupon usage tracking record (from coupon_usage collection)
+export interface CouponUsageRecord {
+  $id: string;
+  userId?: string;                    // Optional: authenticated user ID
+  userEmail: string;                  // Required: for tracking
+  couponId: string;                   // Coupon document ID
+  couponCode: string;                 // Coupon code (uppercase)
+  usageCount: number;                 // Number of times used
+  lastUsedAt: string;                 // ISO timestamp
+  $createdAt: string;                 // Auto-set by Appwrite
+}
+
 
 export interface AuthUser {
   $id: string;

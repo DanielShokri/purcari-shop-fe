@@ -1,4 +1,4 @@
-import { Client, Account, Databases, Storage } from 'appwrite';
+import { Client, Account, Databases, Storage, Functions } from 'appwrite';
 
 /**
  * Appwrite Client Configuration
@@ -16,6 +16,7 @@ const client = new Client()
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
+export const functions = new Functions(client);
 
 /**
  * Database & Collection IDs
@@ -32,9 +33,13 @@ export const APPWRITE_CONFIG = {
   COLLECTION_ORDERS: 'orders',
   COLLECTION_ORDER_ITEMS: 'order_items',
   COLLECTION_COUPONS: 'coupons',
+  COLLECTION_COUPON_USAGE: 'coupon_usage',  // NEW: For per-user coupon tracking
   COLLECTION_CART_RULES: 'cart_rules',
   COLLECTION_ANALYTICS_EVENTS: 'analytics_events',
   COLLECTION_NOTIFICATIONS: 'notifications', // Admin-only (not used in storefront)
+  
+  // Cloud Functions
+  FUNCTION_INCREMENT_COUPON_USAGE: import.meta.env.VITE_APPWRITE_FUNCTION_INCREMENT_COUPON_USAGE || 'increment-coupon-usage',
   
   // Storage Buckets
   BUCKET_MEDIA: import.meta.env.VITE_APPWRITE_BUCKET_ID || 'media',
