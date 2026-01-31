@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from '@convex/api';
 import { UserRole } from '@shared/types';
 import { 
   VStack, 
