@@ -2,6 +2,16 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
 /**
+ * Admin: Get coupon by ID.
+ */
+export const get = query({
+  args: { id: v.id("coupons") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});
+
+/**
  * Admin: List all coupons.
  */
 export const list = query({
@@ -64,7 +74,7 @@ export const create = mutation({
     return await ctx.db.insert("coupons", {
       ...args,
       code: args.code.toUpperCase(),
-      usageCount: 0,
+      usageCount: 0n,
       createdAt: now,
       updatedAt: now,
     });
@@ -130,7 +140,7 @@ export const incrementUsage = mutation({
 
     // 1. Update global usage count
     await ctx.db.patch(coupon._id, {
-      usageCount: coupon.usageCount + 1,
+      usageCount: (coupon.usageCount || 0n) + 1n,
       updatedAt: now,
     });
 
@@ -144,7 +154,7 @@ export const incrementUsage = mutation({
 
     if (existingUsage) {
       await ctx.db.patch(existingUsage._id, {
-        usageCount: existingUsage.usageCount + 1,
+        usageCount: (existingUsage.usageCount || 0n) + 1n,
         lastUsedAt: now,
       });
     } else {
@@ -153,7 +163,7 @@ export const incrementUsage = mutation({
         couponCode: code,
         userId: args.userId,
         userEmail: args.userEmail,
-        usageCount: 1,
+        usageCount: 1n,
         lastUsedAt: now,
         createdAt: now,
       });
