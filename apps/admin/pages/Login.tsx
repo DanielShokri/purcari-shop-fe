@@ -2,6 +2,19 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useNavigate } from 'react-router-dom';
+import {
+  Flex,
+  Box,
+  VStack,
+  Heading,
+  Text,
+  Input,
+  Button,
+  Card,
+  Alert,
+  Field,
+} from '@chakra-ui/react';
+import { ColorModeButton } from '../components/ui/color-mode';
 
 interface LoginFormData {
   email: string;

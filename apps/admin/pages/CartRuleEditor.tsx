@@ -17,7 +17,7 @@ export default function CartRuleEditor() {
 
   const { form, state, handlers } = useCartRuleEditor({ id });
   const { register, formState: { errors }, watch, control } = form;
-  const ruleType = watch('type');
+  const ruleType = watch('ruleType');
 
   // Loading state
   if (state.isEditMode && state.isLoadingCartRule) {

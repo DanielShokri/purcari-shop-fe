@@ -20,7 +20,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["packages/shared-*/src"]
+      "@shared/*": ["packages/shared-*/src"],
+      "@convex/api": ["convex/_generated/api"],
+      "@convex/dataModel": ["convex/_generated/dataModel"]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true,

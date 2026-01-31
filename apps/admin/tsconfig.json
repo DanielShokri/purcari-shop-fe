@@ -9,11 +9,26 @@
       "@/*": [
         "./*"
       ],
-      "@shared/*": [
-        "../../packages/shared-*/src"
+      "@shared/api/*": [
+        "../../packages/shared-api/src/*"
+      ],
+      "@shared/constants/*": [
+        "../../packages/shared-constants/src/*"
+      ],
+      "@shared/services/*": [
+        "../../packages/shared-services/src/*"
+      ],
+      "@shared/types/*": [
+        "../../packages/shared-types/src/*"
       ],
       "@convex/*": [
-        "../../convex/_generated/*"
+        "../../convex/*"
+      ],
+      "@convex/api": [
+        "../../convex/_generated/api"
+      ],
+      "@convex/dataModel": [
+        "../../convex/_generated/dataModel"
       ]
     }
   },

@@ -11,7 +11,7 @@ import {
   Grid,
 } from '@chakra-ui/react';
 import { useQuery } from 'convex/react';
-import { api } from "../../convex/_generated/api";
+import { api } from "@convex/api";
 import { Breadcrumbs } from '../components/shared';
 import {
   SearchResultsSection,
@@ -287,7 +287,7 @@ export default function Search() {
                   {results.orders.slice(0, activeTab === 'all' ? 3 : undefined).map((order) => (
                     <OrderResultCard
                       key={order._id}
-                      order={{ ...order, $id: order._id }}
+                      order={{ ...order, $id: order._id, $createdAt: order._creationTime ? new Date(order._creationTime).toISOString() : order.createdAt }}
                       searchTerm={queryParam}
                     />
                   ))}
@@ -356,7 +356,7 @@ export default function Search() {
                   {results.categories.slice(0, activeTab === 'all' ? 4 : undefined).map((category) => (
                     <CategoryResultCard
                       key={category._id}
-                      category={{ ...category, $id: category._id }}
+                      category={{ ...category, $id: category._id, displayOrder: Number(category.order ?? 0) }}
                       searchTerm={queryParam}
                     />
                   ))}

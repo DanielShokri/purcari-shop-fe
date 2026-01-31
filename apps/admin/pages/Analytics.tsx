@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { VStack, SimpleGrid, Heading, Text, Box, Flex, Card, Table } from '@chakra-ui/react';
-import { 
-  useGetAnalyticsSummaryQuery, 
-  useGetViewsSeriesQuery, 
-  useGetNewUsersSeriesQuery 
-} from '../services/api';
+import { useQuery } from 'convex/react';
+import { api } from '@convex/api';
 import { LoadingState } from '../components/shared';
 import { StatCard } from '../components/dashboard';
 import { ViewsLineChart, PopularProductsChart, RetentionCard } from '../components/analytics';
@@ -16,11 +13,11 @@ export default function Analytics() {
    const [viewsInterval, setViewsInterval] = useState<AnalyticsInterval>(AnalyticsInterval.DAILY);
    const [usersInterval, setUsersInterval] = useState<AnalyticsInterval>(AnalyticsInterval.MONTHLY);
 
-  const { data: summary, isLoading: summaryLoading } = useGetAnalyticsSummaryQuery();
-  const { data: viewsSeries, isLoading: viewsLoading } = useGetViewsSeriesQuery(viewsInterval);
-  const { data: newUsersSeries, isLoading: usersLoading } = useGetNewUsersSeriesQuery(usersInterval);
+  const summary = useQuery(api.analytics.getSummary);
+  const viewsSeries = useQuery(api.analytics.getViewsSeries, { interval: viewsInterval });
+  const newUsersSeries = useQuery(api.analytics.getNewUsersSeries, { interval: usersInterval });
 
-  const isLoading = summaryLoading || viewsLoading || usersLoading;
+  const isLoading = summary === undefined || viewsSeries === undefined || newUsersSeries === undefined;
 
   const chartStroke = useColorModeValue('#10b981', '#10B981');
   const chartGridStroke = useColorModeValue('#e2e8f0', '#374151');

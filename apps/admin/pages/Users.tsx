@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from "convex/react";
 import { api } from '@convex/api';
-import { UserRole } from '@shared/types';
+import { UserRole, dbUsersToAppwrite } from '@shared/types';
 import { 
   VStack, 
   Dialog, 
@@ -109,11 +109,13 @@ export default function Users() {
     return matchesSearch && matchesRole && matchesStatus;
   }) || [];
 
-  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-  const paginatedUsers = filteredUsers.slice(
-    (currentPage - 1) * usersPerPage,
-    currentPage * usersPerPage
-  );
+   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+   const paginatedUsers = dbUsersToAppwrite(
+     filteredUsers.slice(
+       (currentPage - 1) * usersPerPage,
+       currentPage * usersPerPage
+     )
+   );
 
   const handleDelete = (id: string) => {
     setUserToDelete(id);

@@ -109,7 +109,9 @@ export enum NotificationType {
 
 export interface Product {
   $id: string;
+  _id?: string;
   $createdAt?: string;
+  _creationTime?: number;
   $updatedAt?: string;
   productName: string;
   productNameHe?: string;
@@ -120,7 +122,7 @@ export interface Product {
   price: number;
   salePrice?: number;
   onSale?: boolean;
-  quantityInStock: number;
+  quantityInStock: number | bigint;
   sku: string;
   stockStatus?: StockStatus;
   status?: ProductStatus;
@@ -143,7 +145,9 @@ export interface Product {
 
 export interface Category {
   $id: string;
+  _id?: string;
   $createdAt?: string;
+  _creationTime?: number;
   $updatedAt?: string;
   name: string;
   nameHe?: string;
@@ -220,7 +224,9 @@ export interface OrderItem {
 
 export interface Order {
   $id: string;
+  _id?: string;
   $createdAt: string;
+  _creationTime?: number;
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
@@ -327,12 +333,15 @@ export interface CouponUsageRecord {
 
 export interface CartRule {
   $id: string;
+  _id?: string;
   name: string;
   description?: string;
-  type: CartRuleType;
-  priority: number;
-  status: CartRuleStatus;
+  type?: CartRuleType;
+  ruleType?: 'buy_x_get_y' | 'bulk_discount' | string;
+  priority?: number;
+  status: CartRuleStatus | string;
   value?: number;
+  config?: any;
 }
 
 // ============================================================================
@@ -341,6 +350,7 @@ export interface CartRule {
 
 export interface AuthUser {
   $id: string;
+  _id?: string;
   name: string;
   email: string;
   phone?: string;
@@ -377,6 +387,7 @@ export interface AnalyticsEvent {
 
 export interface Notification {
   $id: string;
+  _id?: string;
   title: string;
   message: string;
   type: NotificationType;
@@ -483,3 +494,25 @@ export function mapAppwriteUserToUser(appwriteUser: AppwriteUser): User {
     updatedAt: appwriteUser.prefs?.updatedAt || new Date().toISOString(),
   };
 }
+
+// ============================================================================
+// CONVEX ADAPTERS (Export from adapters.ts)
+// ============================================================================
+
+export {
+  dbProductToAppwrite,
+  dbUserToAppwrite,
+  dbUserToAuthUser,
+  dbOrderToAppwrite,
+  dbNotificationToAppwrite,
+  dbCategoryToAppwrite,
+  dbCartRuleToAppwrite,
+  dbCouponToAppwrite,
+  dbCouponUsageToAppwrite,
+  dbUserAddressToAppwrite,
+  dbProductsToAppwrite,
+  dbUsersToAppwrite,
+  dbOrdersToAppwrite,
+  dbCategoriesToAppwrite,
+  dbUserAddressesToAppwrite,
+} from './adapters';

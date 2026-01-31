@@ -10,22 +10,22 @@ import {
   Portal,
   Spinner,
 } from '@chakra-ui/react';
-import {
-  useGetRecentNotificationsQuery,
-  useGetUnreadCountQuery,
-  useMarkAsReadMutation,
-} from '../../services/api';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@convex/api';
+import { dbNotificationToAppwrite } from '@shared/types';
 import NotificationItem from './NotificationItem';
 
 export default function NotificationDropdown() {
   const navigate = useNavigate();
-  const { data: notifications, isLoading } = useGetRecentNotificationsQuery(5);
-  const { data: unreadCount } = useGetUnreadCountQuery();
-  const [markAsRead] = useMarkAsReadMutation();
+  const notifications = useQuery(api.notifications.list);
+  const unreadCount = useQuery(api.notifications.getUnreadCount);
+  const markAsRead = useMutation(api.notifications.markAsRead);
+
+  const isLoading = notifications === undefined;
 
   const handleNotificationClick = (notification: any) => {
     if (!notification.isRead) {
-      markAsRead(notification.$id);
+      markAsRead({ id: notification._id });
     }
     // Navigate to notifications page
     navigate('/notifications');
@@ -139,18 +139,18 @@ export default function NotificationDropdown() {
                     </Text>
                   </VStack>
                 </Flex>
-              ) : notifications && notifications.length > 0 ? (
-                <VStack gap="2" align="stretch">
-                  {notifications.map((notification) => (
-                    <NotificationItem
-                      key={notification.$id}
-                      notification={notification}
-                      variant="compact"
-                      onClick={handleNotificationClick}
-                      onMarkAsRead={(id) => markAsRead(id)}
-                    />
-                  ))}
-                </VStack>
+               ) : notifications && notifications.length > 0 ? (
+                 <VStack gap="2" align="stretch">
+                   {notifications.map((notification) => (
+                     <NotificationItem
+                       key={notification._id}
+                       notification={dbNotificationToAppwrite(notification)}
+                       variant="compact"
+                       onClick={handleNotificationClick}
+                       onMarkAsRead={(id) => markAsRead({ id: id as any })}
+                     />
+                   ))}
+                 </VStack>
               ) : (
                 <Flex direction="column" align="center" justify="center" py="8" gap="2">
                   <Text

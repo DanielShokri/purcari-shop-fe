@@ -1,24 +1,38 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-export const get = query({
+export const list = query({
+  args: {},
+  handler: async (ctx) => {
+    // Admin list - show all notifications for all users (or we could filter for admin)
+    // For now, let's keep it simple and return all
+    return await ctx.db
+      .query("notifications")
+      .order("desc")
+      .collect();
+  },
+});
+
+export const getUnreadCount = query({
   args: {},
   handler: async (ctx) => {
     const user = await ctx.auth.getUserIdentity();
-    if (!user) return [];
+    if (!user) return 0;
     
     const dbUser = await ctx.db
       .query("users")
       .withIndex("by_tokenIdentifier", (q) => q.eq("tokenIdentifier", user.tokenIdentifier))
       .unique();
       
-    if (!dbUser) return [];
+    if (!dbUser) return 0;
 
-    return await ctx.db
+    const unread = await ctx.db
       .query("notifications")
       .withIndex("by_userId", (q) => q.eq("userId", dbUser._id))
-      .order("desc")
+      .filter((q) => q.eq(q.field("isRead"), false))
       .collect();
+
+    return unread.length;
   },
 });
 

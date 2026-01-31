@@ -8,7 +8,7 @@ import { useQuery, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from '@convex/api';
 
-import { Address } from '@shared/types';
+import { Address, dbUserToAuthUser, dbOrdersToAppwrite, dbUserAddressesToAppwrite } from '@shared/types';
 import { 
   profileSchema, 
   addressFormSchema, 
@@ -35,14 +35,17 @@ const DashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('orders');
   
   // Queries & Mutations
-  const user = useQuery(api.users.get);
-  const isUserLoading = user === undefined;
+  const convexUser = useQuery(api.users.get);
+  const user = convexUser ? dbUserToAuthUser(convexUser) : null;
+  const isUserLoading = convexUser === undefined;
 
-  const orders = useQuery(api.orders.listByCustomer, user ? { email: user.email } : "skip");
-  const isOrdersLoading = orders === undefined;
+  const convexOrders = useQuery(api.orders.listByCustomer, convexUser ? { email: convexUser.email } : "skip");
+  const orders = convexOrders ? dbOrdersToAppwrite(convexOrders) : [];
+  const isOrdersLoading = convexOrders === undefined;
   
-  const addresses = useQuery(api.userAddresses.list, user ? { userId: user._id } : "skip");
-  const isPrefsLoading = addresses === undefined;
+  const convexAddresses = useQuery(api.userAddresses.list, convexUser ? { userId: convexUser._id } : "skip");
+  const addresses = convexAddresses ? dbUserAddressesToAppwrite(convexAddresses) : [];
+  const isPrefsLoading = convexAddresses === undefined;
   
   const { signOut } = useAuthActions();
   const updateProfileMutation = useMutation(api.users.updateProfile);
@@ -115,21 +118,23 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const onAddressSubmit = async (data: AddressFormInput) => {
-    if (!user) return;
-    setIsUpdatingPrefs(true);
-    try {
-      if (editingAddressId) {
-        await updateAddress({
-          addressId: editingAddressId as any,
-          ...data
-        });
-      } else {
-        await createAddress({
-          userId: user._id,
-          ...data
-        });
-      }
+   const onAddressSubmit = async (data: AddressFormInput) => {
+     if (!user) return;
+     setIsUpdatingPrefs(true);
+     try {
+       if (editingAddressId) {
+         await updateAddress({
+           addressId: editingAddressId as any,
+           ...data,
+           postalCode: data.postalCode || '',
+         } as any);
+       } else {
+          await createAddress({
+            userId: convexUser?._id as any,
+            ...data,
+            postalCode: data.postalCode || '',
+          } as any);
+       }
       closeAddressModal();
     } catch (err) {
       console.error('Failed to update addresses:', err);

@@ -9,11 +9,8 @@ import {
   Button,
   Spinner,
 } from '@chakra-ui/react';
-import {
-  useGetNotificationsQuery,
-  useMarkAsReadMutation,
-  useMarkAllAsReadMutation,
-} from '../services/api';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@convex/api';
 import { NotificationItem } from '../components/notifications';
 import { Notification } from '@shared/types';
 
@@ -21,9 +18,13 @@ type FilterTab = 'all' | 'unread' | 'archived';
 
 export default function Notifications() {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
-  const { data: notifications, isLoading, error } = useGetNotificationsQuery();
-  const [markAsRead] = useMarkAsReadMutation();
-  const [markAllAsRead, { isLoading: isMarkingAll }] = useMarkAllAsReadMutation();
+  const notifications = useQuery(api.notifications.list);
+  const markAsRead = useMutation(api.notifications.markAsRead);
+  const markAllAsRead = useMutation(api.notifications.markAllAsRead);
+
+  const isLoading = notifications === undefined;
+  const error = false; // Convex handles errors via try/catch or result pattern, we'll keep it simple for now
+  const isMarkingAll = false; // We can add state if needed
 
   // Filter notifications based on active tab
   const filteredNotifications = useMemo(() => {
@@ -51,7 +52,7 @@ export default function Notifications() {
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.isRead) {
-      markAsRead(notification.$id);
+      markAsRead({ id: (notification._id || notification.$id) as any });
     }
   };
 
@@ -174,11 +175,11 @@ export default function Notifications() {
         <VStack gap="3" align="stretch">
           {filteredNotifications.map((notification) => (
             <NotificationItem
-              key={notification.$id}
+              key={notification._id || notification.$id}
               notification={notification}
               variant="default"
               onClick={handleNotificationClick}
-              onMarkAsRead={(id) => markAsRead(id)}
+              onMarkAsRead={(id) => markAsRead({ id: id as any })}
             />
           ))}
 

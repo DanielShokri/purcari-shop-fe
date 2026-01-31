@@ -17,6 +17,11 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          '@shared/api': path.resolve(__dirname, '../../packages/shared-api/src'),
+          '@shared/constants': path.resolve(__dirname, '../../packages/shared-constants/src'),
+          '@shared/services': path.resolve(__dirname, '../../packages/shared-services/src'),
+          '@shared/types': path.resolve(__dirname, '../../packages/shared-types/src'),
+          '@convex': path.resolve(__dirname, '../../convex'),
         }
       }
     };

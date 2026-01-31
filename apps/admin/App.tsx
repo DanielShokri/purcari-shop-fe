@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Authenticated, Unauthenticated, AuthLoading, useQuery } from "convex/react";
-import { api } from "../convex/_generated/api";
+import { api } from "@convex/api";
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';

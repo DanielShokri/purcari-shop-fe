@@ -2,14 +2,17 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../../convex/_generated/api';
-import { Id } from '../../../convex/_generated/dataModel';
+import { api } from '@convex/api';
+import { Id } from '@convex/dataModel';
+
+import { CartRuleType, CartRuleStatus } from '@shared/types';
 
 interface CartRuleForm {
   name: string;
   description: string;
-  status: 'active' | 'inactive';
+  status: CartRuleStatus;
   ruleType: 'buy_x_get_y' | 'bulk_discount';
+  type: CartRuleType;
   config: any;
 }
 

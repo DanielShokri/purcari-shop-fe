@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from "convex/react";
 import { api } from '@convex/api';
-import { OrderStatus } from '@shared/types';
+import { OrderStatus, dbOrdersToAppwrite } from '@shared/types';
 import { VStack, HStack, Button, Text } from '@chakra-ui/react';
 import { LoadingState, PageHeader, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { OrdersFilterToolbar, OrderStatusChips, OrdersTable } from '../components/orders';
@@ -86,11 +86,13 @@ export default function Orders() {
     return matchesSearch && matchesStatusFilter && matchesChip && matchesDate;
   }) || [];
 
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
-  const paginatedOrders = filteredOrders.slice(
-    (currentPage - 1) * ordersPerPage,
-    currentPage * ordersPerPage
-  );
+   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+   const paginatedOrders = dbOrdersToAppwrite(
+     filteredOrders.slice(
+       (currentPage - 1) * ordersPerPage,
+       currentPage * ordersPerPage
+     )
+   );
 
   const handleDelete = (order: any) => {
     setOrderToDelete(order);

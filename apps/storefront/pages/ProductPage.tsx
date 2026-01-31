@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
+import { dbProductToAppwrite, dbProductsToAppwrite } from '@shared/types';
 import SEO from '../components/SEO';
 import { useAppDispatch, useToast } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
@@ -39,25 +40,31 @@ const ProductPage: React.FC = () => {
     setQuantity(1);
   }, [id]);
 
-  // Get related products - first try relatedProducts field, then fallback to same category/wineType
-  const relatedProducts = useMemo(() => {
-    if (!product || !allProducts) return [];
-    
-    // If product has explicit related products, use those
-    if (product.relatedProducts && product.relatedProducts.length > 0) {
-      return allProducts
-        .filter(p => product.relatedProducts?.includes(p._id) && p._id !== product._id)
-        .slice(0, 4);
-    }
-    
-    // Fallback: find products with same wineType or category
-    return allProducts
-      .filter(p => 
-        p._id !== product._id && 
-        (p.wineType === product.wineType || p.category === product.category)
-      )
-      .slice(0, 4);
-  }, [product, allProducts]);
+   // Get related products - first try relatedProducts field, then fallback to same category/wineType
+   // Keep raw data for filtering logic
+   const relatedProductsRaw = useMemo(() => {
+     if (!product || !allProducts) return [];
+     
+     // If product has explicit related products, use those
+     if (product.relatedProducts && product.relatedProducts.length > 0) {
+       return allProducts
+         .filter(p => product.relatedProducts?.includes(p._id) && p._id !== product._id)
+         .slice(0, 4);
+     }
+     
+     // Fallback: find products with same wineType or category
+     return allProducts
+       .filter(p => 
+         p._id !== product._id && 
+         (p.wineType === product.wineType || p.category === product.category)
+       )
+       .slice(0, 4);
+   }, [product, allProducts]);
+
+   // Adapt related products for rendering
+   const relatedProducts = useMemo(() => {
+     return dbProductsToAppwrite(relatedProductsRaw);
+   }, [relatedProductsRaw]);
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-900" dir="rtl">טוען...</div>;
   if (!product) return <div className="min-h-screen flex items-center justify-center text-gray-900" dir="rtl">המוצר לא נמצא</div>;
@@ -210,14 +217,14 @@ const ProductPage: React.FC = () => {
               {product.descriptionHe || product.description}
             </p>
 
-            {/* Wine Attributes Grid */}
-            <div className="grid grid-cols-2 gap-4 mb-8 text-sm text-gray-600">
-              {product.vintage && (
-                <div className="p-3 bg-gray-50 rounded border border-gray-100">
-                  <span className="block font-bold text-gray-900 mb-1">בציר</span>
-                  {product.vintage}
-                </div>
-              )}
+             {/* Wine Attributes Grid */}
+             <div className="grid grid-cols-2 gap-4 mb-8 text-sm text-gray-600">
+               {product.vintage && (
+                 <div className="p-3 bg-gray-50 rounded border border-gray-100">
+                   <span className="block font-bold text-gray-900 mb-1">בציר</span>
+                   {String(product.vintage)}
+                 </div>
+               )}
               {product.volume && (
                 <div className="p-3 bg-gray-50 rounded border border-gray-100">
                   <span className="block font-bold text-gray-900 mb-1">נפח</span>
