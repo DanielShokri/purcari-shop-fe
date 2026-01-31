@@ -1,17 +1,17 @@
 import React from 'react';
 import { Box, Flex, HStack, Text, Button, Card, Menu, Portal } from '@chakra-ui/react';
 import { SearchInput } from '../shared';
-import { ProductCategory } from '../../types';
+import { ProductCategory } from '@shared/types';
 
 // Category options matching Appwrite enum
 const categoryOptions = [
   { value: 'all', label: 'הכל' },
-  { value: ProductCategory.RED_WINE, label: 'יינות אדומים' },
-  { value: ProductCategory.WHITE_WINE, label: 'יינות לבנים' },
-  { value: ProductCategory.ROSE_WINE, label: 'יינות רוזה' },
-  { value: ProductCategory.SPARKLING_WINE, label: 'יינות מבעבעים' },
-  { value: ProductCategory.DESSERT_WINE, label: 'יינות קינוח' },
-  { value: ProductCategory.GIFT_SETS, label: 'מארזי מתנה' },
+  { value: 'red_wine', label: 'יינות אדומים' },
+  { value: 'white_wine', label: 'יינות לבנים' },
+  { value: 'rose_wine', label: 'יינות רוזה' },
+  { value: 'sparkling_wine', label: 'יינות מבעבעים' },
+  { value: 'dessert_wine', label: 'יינות קינוח' },
+  { value: 'gift_sets', label: 'מארזי מתנה' },
 ];
 
 interface ProductsFilterToolbarProps {

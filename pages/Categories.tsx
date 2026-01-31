@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useGetCategoriesQuery, useCreateCategoryMutation, useUpdateCategoryMutation, useDeleteCategoryMutation } from '../services/api';
-import { Category, CategoryStatus } from '../types';
+import { Category, CategoryStatus } from '@shared/types';
 import {
   Box,
   Flex,
@@ -84,18 +84,18 @@ export default function Categories() {
     return buildCategoryTree(filtered);
   }, [categories, searchTerm]);
 
-  // Update form when category is selected
-  useEffect(() => {
-    if (selectedCategory) {
-      reset({
-        name: selectedCategory.name,
-        parentId: selectedCategory.parentId || null,
-        displayOrder: selectedCategory.displayOrder,
-        status: selectedCategory.status,
-        description: selectedCategory.description || '',
-      });
-    }
-  }, [selectedCategory, reset]);
+   // Update form when category is selected
+   useEffect(() => {
+     if (selectedCategory) {
+       reset({
+         name: selectedCategory.name,
+         parentId: selectedCategory.parentId || null,
+         displayOrder: selectedCategory.displayOrder,
+         status: selectedCategory.status as CategoryStatus,
+         description: selectedCategory.description || '',
+       });
+     }
+   }, [selectedCategory, reset]);
 
   if (isLoading) {
     return <LoadingState message="טוען קטגוריות..." />;

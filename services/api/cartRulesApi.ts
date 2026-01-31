@@ -1,6 +1,6 @@
-import { api } from './baseApi';
-import { CartRule, CartRuleStatus, CartRuleType } from '../../types';
-import { databases, APPWRITE_CONFIG } from '../appwrite';
+import { api } from '@shared/api';
+import { CartRule, CartRuleStatus, CartRuleType } from '@shared/types';
+import { databases, APPWRITE_CONFIG } from '@shared/services';
 import { ID, Query } from 'appwrite';
 
 const cartRulesApi = api.injectEndpoints({

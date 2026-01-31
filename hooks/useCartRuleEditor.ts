@@ -7,7 +7,7 @@ import {
   useUpdateCartRuleMutation,
   useDeleteCartRuleMutation,
 } from '../services/api';
-import { CartRule, CartRuleStatus, CartRuleType } from '../types';
+import { CartRule, CartRuleStatus, CartRuleType } from '@shared/types';
 
 interface UseCartRuleEditorProps {
   id?: string;

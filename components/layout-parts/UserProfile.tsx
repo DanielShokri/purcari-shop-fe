@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, HStack, VStack, Text } from '@chakra-ui/react';
-import { AuthUser } from '@/types';
+import { AuthUser } from '@shared/types';
 
 interface UserProfileProps {
   user: AuthUser | null;

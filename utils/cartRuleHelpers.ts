@@ -1,5 +1,5 @@
 import { createListCollection } from '@chakra-ui/react';
-import { CartRuleType, CartRuleStatus } from '../types';
+import { CartRuleType, CartRuleStatus } from '@shared/types';
 
 // Cart Rule Type options
 export const typeOptions = createListCollection({

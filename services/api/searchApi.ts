@@ -1,6 +1,6 @@
-import { api } from './baseApi';
-import { User, Order, Product, Category, OrderStatus, AppwriteUser, mapAppwriteUserToUser, CategoryStatus } from '../../types';
-import { databases, APPWRITE_CONFIG, usersApi } from '../appwrite';
+import { api } from '@shared/api';
+import { User, Order, Product, Category, OrderStatus, AppwriteUser, mapAppwriteUserToUser, CategoryStatus } from '@shared/types';
+import { databases, APPWRITE_CONFIG, usersApi } from '@shared/services';
 import { Query } from 'appwrite';
 
 // Global search result interface
@@ -70,73 +70,86 @@ const searchApiSlice = api.injectEndpoints({
                 .map(mapAppwriteUserToUser);
             }),
 
-            // Search Orders
-            databases.listDocuments({
-              databaseId: APPWRITE_CONFIG.DATABASE_ID,
-              collectionId: APPWRITE_CONFIG.COLLECTION_ORDERS,
-              queries: [Query.limit(100)]
-            }).then(response => {
-              // Filter client-side for more flexible matching
-              return response.documents
-                .filter((doc: any) =>
-                  doc.customerName?.toLowerCase().includes(term.toLowerCase()) ||
-                  doc.customerEmail?.toLowerCase().includes(term.toLowerCase()) ||
-                  doc.$id?.toLowerCase().includes(term.toLowerCase())
-                )
-                .map((doc: any): Order => ({
-                  $id: doc.$id,
-                  customerName: doc.customerName,
-                  customerEmail: doc.customerEmail,
-                  customerAvatar: doc.customerAvatar || undefined,
-                  total: doc.total,
-                  status: doc.status as OrderStatus,
-                  createdAt: doc.$createdAt,
-                }));
-            }),
+             // Search Orders
+             databases.listDocuments(
+               APPWRITE_CONFIG.DATABASE_ID,
+               APPWRITE_CONFIG.COLLECTION_ORDERS,
+               [Query.limit(100)]
+             ).then(response => {
+               // Filter client-side for more flexible matching
+               return response.documents
+                 .filter((doc: any) =>
+                   doc.customerName?.toLowerCase().includes(term.toLowerCase()) ||
+                   doc.customerEmail?.toLowerCase().includes(term.toLowerCase()) ||
+                   doc.$id?.toLowerCase().includes(term.toLowerCase())
+                 )
+                 .map((doc: any): Order => ({
+                   $id: doc.$id,
+                   $createdAt: doc.$createdAt,
+                   customerName: doc.customerName,
+                   customerEmail: doc.customerEmail,
+                   customerPhone: doc.customerPhone || '',
+                   customerAvatar: doc.customerAvatar || '',
+                   total: doc.total,
+                   subtotal: doc.subtotal || 0,
+                   shippingCost: doc.shippingCost || 0,
+                   tax: doc.tax || 0,
+                   status: doc.status as OrderStatus,
+                   shippingStreet: doc.shippingStreet,
+                   shippingApartment: doc.shippingApartment || '',
+                   shippingCity: doc.shippingCity,
+                   shippingPostalCode: doc.shippingPostalCode,
+                   shippingCountry: doc.shippingCountry,
+                   paymentMethod: doc.paymentMethod,
+                   paymentCardExpiry: doc.paymentCardExpiry || '',
+                   paymentTransactionId: doc.paymentTransactionId,
+                   paymentChargeDate: doc.paymentChargeDate,
+                 }));
+             }),
 
-            // Search Products
-            databases.listDocuments({
-              databaseId: APPWRITE_CONFIG.DATABASE_ID,
-              collectionId: APPWRITE_CONFIG.COLLECTION_PRODUCTS,
-              queries: [Query.limit(100)]
-            }).then(response => {
-              // Filter client-side for more flexible matching
-              return response.documents
-                .filter((doc: any) =>
-                  doc.productName?.toLowerCase().includes(term.toLowerCase()) ||
-                  doc.sku?.toLowerCase().includes(term.toLowerCase()) ||
-                  doc.shortDescription?.toLowerCase().includes(term.toLowerCase()) ||
-                  doc.$id?.toLowerCase().includes(term.toLowerCase())
-                ) as unknown as Product[];
-            }),
+             // Search Products
+             databases.listDocuments(
+               APPWRITE_CONFIG.DATABASE_ID,
+               APPWRITE_CONFIG.COLLECTION_PRODUCTS,
+               [Query.limit(100)]
+             ).then(response => {
+               // Filter client-side for more flexible matching
+               return response.documents
+                 .filter((doc: any) =>
+                   doc.productName?.toLowerCase().includes(term.toLowerCase()) ||
+                   doc.sku?.toLowerCase().includes(term.toLowerCase()) ||
+                   doc.shortDescription?.toLowerCase().includes(term.toLowerCase()) ||
+                   doc.$id?.toLowerCase().includes(term.toLowerCase())
+                 ) as unknown as Product[];
+             }),
 
-            // Search Categories
-            databases.listDocuments({
-              databaseId: APPWRITE_CONFIG.DATABASE_ID,
-              collectionId: APPWRITE_CONFIG.COLLECTION_CATEGORIES,
-              queries: [Query.limit(100)]
-            }).then(response => {
-              // Filter client-side for more flexible matching
-              return response.documents
-                .filter((doc: any) =>
-                  doc.name?.toLowerCase().includes(term.toLowerCase()) ||
-                  doc.slug?.toLowerCase().includes(term.toLowerCase()) ||
-                  doc.description?.toLowerCase().includes(term.toLowerCase()) ||
-                  doc.$id?.toLowerCase().includes(term.toLowerCase())
-                )
-                .map((doc: any): Category => ({
-                  $id: doc.$id,
-                  name: doc.name,
-                  slug: doc.slug,
-                  parentId: doc.parentId || null,
-                  status: doc.status as CategoryStatus,
-                  displayOrder: doc.displayOrder || 0,
-                  description: doc.description,
-                  image: doc.image,
-                  icon: doc.icon,
-                  iconColor: doc.iconColor,
-                }));
-            }),
+             // Search Categories
+             databases.listDocuments(
+               APPWRITE_CONFIG.DATABASE_ID,
+               APPWRITE_CONFIG.COLLECTION_CATEGORIES,
+               [Query.limit(100)]
+             ).then(response => {
+               // Filter client-side for more flexible matching
+               return response.documents
+                 .filter((doc: any) =>
+                   doc.name?.toLowerCase().includes(term.toLowerCase()) ||
+                   doc.slug?.toLowerCase().includes(term.toLowerCase()) ||
+                   doc.description?.toLowerCase().includes(term.toLowerCase()) ||
+                   doc.$id?.toLowerCase().includes(term.toLowerCase())
+                 )
+                 .map((doc: any): Category => ({
+                   $id: doc.$id,
+                   name: doc.name,
+                   slug: doc.slug,
+                   parentId: doc.parentId || null,
+                   status: doc.status as CategoryStatus,
+                   displayOrder: doc.displayOrder || 0,
+                   description: doc.description,
+                   image: doc.image,
+                   icon: doc.icon,
+                   iconColor: doc.iconColor,
+                 }));
+             }),
           ]);
 
           // Extract results, handling failures gracefully

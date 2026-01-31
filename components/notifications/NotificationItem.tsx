@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Flex, Text, IconButton } from '@chakra-ui/react';
-import { Notification, NotificationType } from '../../types';
+import { Notification, NotificationType } from '@shared/types';
 
 // Helper to format relative time in Hebrew
 export function formatRelativeTime(dateStr: string): string {
@@ -182,7 +182,6 @@ export default function NotificationItem({
             fontSize={isCompact ? 'xs' : 'sm'}
             fontWeight="normal"
             lineHeight="relaxed"
-            noOfLines={isCompact ? 1 : 2}
           >
             {notification.message}
           </Text>

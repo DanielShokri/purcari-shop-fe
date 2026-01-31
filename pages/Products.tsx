@@ -4,7 +4,7 @@ import { useGetProductsQuery, useDeleteProductMutation } from '../services/api';
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { ProductsFilterToolbar, ProductsTable } from '../components/products';
-import { ProductCategory } from '../types';
+import { ProductCategory } from '@shared/types';
 
 // Sample product images for display
 const productImages = [
@@ -17,12 +17,12 @@ const productImages = [
 
 // Category labels in Hebrew (matching Appwrite enum values with hyphens)
 const categoryLabels: Record<string, string> = {
-  [ProductCategory.RED_WINE]: 'יינות אדומים',
-  [ProductCategory.WHITE_WINE]: 'יינות לבנים',
-  [ProductCategory.ROSE_WINE]: 'יינות רוזה',
-  [ProductCategory.SPARKLING_WINE]: 'יינות מבעבעים',
-  [ProductCategory.DESSERT_WINE]: 'יינות קינוח',
-  [ProductCategory.GIFT_SETS]: 'מארזי מתנה',
+  'red_wine': 'יינות אדומים',
+  'white_wine': 'יינות לבנים',
+  'rose_wine': 'יינות רוזה',
+  'sparkling_wine': 'יינות מבעבעים',
+  'dessert_wine': 'יינות קינוח',
+  'gift_sets': 'מארזי מתנה',
 };
 
 export default function Products() {

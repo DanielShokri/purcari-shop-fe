@@ -1,6 +1,6 @@
-import { api } from './baseApi';
-import { User, UserRole, UserStatus, AppwriteUser, mapAppwriteUserToUser } from '../../types';
-import { usersApi } from '../appwrite';
+import { api } from '@shared/api';
+import { User, UserRole, UserStatus, AppwriteUser, mapAppwriteUserToUser } from '@shared/types';
+import { usersApi } from '@shared/services';
 import { ID } from 'appwrite';
 
 const usersApiSlice = api.injectEndpoints({

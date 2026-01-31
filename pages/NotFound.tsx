@@ -219,33 +219,36 @@ export default function NotFound() {
         >
           <Text display={{ base: 'none', sm: 'inline' }}>קישורים שימושיים:</Text>
           <Link
-            as={RouterLink}
-            to="/"
+            asChild
             color="fg.muted"
             _hover={{ color: 'blue.500' }}
             transition="colors 0.2s"
           >
-            עמוד הבית
+            <RouterLink to="/">
+              עמוד הבית
+            </RouterLink>
           </Link>
           <Box w="1" h="1" bg="gray.300" rounded="full" _dark={{ bg: 'gray.600' }} />
           <Link
-            as={RouterLink}
-            to="/settings"
+            asChild
             color="fg.muted"
             _hover={{ color: 'blue.500' }}
             transition="colors 0.2s"
           >
-            מרכז עזרה
+            <RouterLink to="/settings">
+              מרכז עזרה
+            </RouterLink>
           </Link>
           <Box w="1" h="1" bg="gray.300" rounded="full" _dark={{ bg: 'gray.600' }} />
           <Link
-            as={RouterLink}
-            to="/settings"
+            asChild
             color="fg.muted"
             _hover={{ color: 'blue.500' }}
             transition="colors 0.2s"
           >
-            דיווח על תקלה
+            <RouterLink to="/settings">
+              דיווח על תקלה
+            </RouterLink>
           </Link>
         </HStack>
       </VStack>

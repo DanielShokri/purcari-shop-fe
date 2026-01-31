@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Flex, HStack, Text, Button } from '@chakra-ui/react';
-import { User } from '../../types';
+import { User } from '@shared/types';
 import { StatusBadge, userRoleConfig } from '../shared';
 import HighlightText from './HighlightText';
 

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Box, Flex, Heading, Card, Select, Portal, createListCollection, HStack, Button } from '@chakra-ui/react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useColorModeValue } from '../ui/color-mode';
-import { TimeSeriesDataPoint, AnalyticsInterval } from '../../types';
+import { TimeSeriesDataPoint, AnalyticsInterval } from '@shared/types';
 
 interface ViewsLineChartProps {
   data: TimeSeriesDataPoint[];

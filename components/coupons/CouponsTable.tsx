@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Table, Checkbox, Card } from '@chakra-ui/react';
-import { Coupon } from '../../types';
+import { Coupon } from '@shared/types';
 import { Pagination } from '../shared';
 import CouponTableRow from './CouponTableRow';
 

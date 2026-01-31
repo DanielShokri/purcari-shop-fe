@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Flex, HStack, Text, Button, Card, Menu, Portal } from '@chakra-ui/react';
 import { SearchInput } from '../shared';
-import { CartRuleStatus, CartRuleType } from '../../types';
+import { CartRuleStatus, CartRuleType } from '@shared/types';
 
 // Type options
 const typeOptions = [

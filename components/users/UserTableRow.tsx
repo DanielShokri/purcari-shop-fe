@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, HStack, VStack, Text, Table, Checkbox, IconButton } from '@chakra-ui/react';
-import { User } from '../../types';
+import { User } from '@shared/types';
 import { StatusBadge, userStatusConfig, userRoleConfig } from '../shared';
 
 interface UserTableRowProps {

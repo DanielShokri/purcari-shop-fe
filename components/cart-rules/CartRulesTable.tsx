@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Table, Checkbox, Card } from '@chakra-ui/react';
-import { CartRule } from '../../types';
+import { CartRule } from '@shared/types';
 import { Pagination } from '../shared';
 import CartRuleTableRow from './CartRuleTableRow';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { HStack, Text, Table, Checkbox, IconButton } from '@chakra-ui/react';
-import { Coupon, CouponDiscountType } from '../../types';
+import { Coupon, CouponDiscountType } from '@shared/types';
 import StatusBadge, { couponStatusConfig, couponDiscountTypeConfig } from '../shared/StatusBadge';
 
 interface CouponTableRowProps {
@@ -83,7 +83,7 @@ export default function CouponTableRow({
         </HStack>
       </Table.Cell>
       <Table.Cell px="6" py="4">
-        <Text fontSize="sm" color="fg" noOfLines={1}>
+        <Text fontSize="sm" color="fg">
           {coupon.description || '-'}
         </Text>
       </Table.Cell>

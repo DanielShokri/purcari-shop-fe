@@ -13,7 +13,7 @@ import {
   Portal,
   createListCollection,
 } from '@chakra-ui/react';
-import { StockStatus } from '../../types';
+import { StockStatus } from '@shared/types';
 
 interface InventoryCardProps {
   sku: string;

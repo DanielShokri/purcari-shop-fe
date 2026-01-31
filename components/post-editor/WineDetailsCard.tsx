@@ -12,7 +12,7 @@ import {
   Portal,
   createListCollection,
 } from '@chakra-ui/react';
-import { WineType } from '../../types';
+import { WineType } from '@shared/types';
 
 interface WineDetailsCardProps {
   wineType: WineType | undefined;

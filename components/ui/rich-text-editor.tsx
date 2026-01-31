@@ -238,7 +238,7 @@ export const RichTextEditorFooter = React.forwardRef<
 })
 
 export interface RichTextEditorContentProps
-  extends Omit<React.ComponentProps<typeof EditorContent>, "editor"> {}
+  extends React.HTMLAttributes<HTMLDivElement> {}
 
 export const RichTextEditorContent = React.forwardRef<
   HTMLDivElement,
@@ -246,7 +246,7 @@ export const RichTextEditorContent = React.forwardRef<
 >(function RichTextEditorContent(props, ref) {
   const { editor } = useRichTextEditorContext()
   if (!editor) return null
-  return <EditorContent editor={editor} {...props} innerRef={ref} />
+  return (EditorContent as any)({ editor, ...props, innerRef: ref })
 })
 
 export interface RichTextEditorControlGroupProps extends StackProps {}

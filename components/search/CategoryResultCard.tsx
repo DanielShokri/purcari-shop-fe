@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Flex, HStack, Text } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import { Category } from '../../types';
+import { Category } from '@shared/types';
 import { StatusBadge, categoryStatusConfig } from '../shared';
 import HighlightText from './HighlightText';
 

@@ -8,13 +8,13 @@ import {
 import { LoadingState } from '../components/shared';
 import { StatCard } from '../components/dashboard';
 import { ViewsLineChart, PopularProductsChart, RetentionCard } from '../components/analytics';
-import { AnalyticsInterval } from '../types';
+import { AnalyticsInterval } from '@shared/types';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useColorModeValue } from '../components/ui/color-mode';
 
 export default function Analytics() {
-  const [viewsInterval, setViewsInterval] = useState<AnalyticsInterval>('daily');
-  const [usersInterval, setUsersInterval] = useState<AnalyticsInterval>('monthly');
+   const [viewsInterval, setViewsInterval] = useState<AnalyticsInterval>(AnalyticsInterval.DAILY);
+   const [usersInterval, setUsersInterval] = useState<AnalyticsInterval>(AnalyticsInterval.MONTHLY);
 
   const { data: summary, isLoading: summaryLoading } = useGetAnalyticsSummaryQuery();
   const { data: viewsSeries, isLoading: viewsLoading } = useGetViewsSeriesQuery(viewsInterval);

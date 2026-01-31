@@ -16,7 +16,7 @@ import {
   Textarea,
   Field,
 } from '@chakra-ui/react';
-import { Category, CategoryStatus } from '../../types';
+import { Category, CategoryStatus } from '@shared/types';
 
 interface CategoryFormData {
   name: string;

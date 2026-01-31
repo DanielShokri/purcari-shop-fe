@@ -14,7 +14,7 @@ import {
   Portal,
 } from '@chakra-ui/react';
 import { Control, Controller, FieldErrors, UseFormRegister } from 'react-hook-form';
-import { CartRule, CartRuleType, CartRuleStatus } from '../../types';
+import { CartRule, CartRuleType, CartRuleStatus } from '@shared/types';
 
 interface CartRuleBasicInfoCardProps {
   register: UseFormRegister<Partial<CartRule>>;

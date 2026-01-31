@@ -1,7 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGetOrderByIdQuery, useUpdateOrderStatusMutation } from '../services/api';
-import { OrderStatus } from '../types';
+import { OrderStatus } from '@shared/types';
 import {
   Box,
   VStack,
@@ -17,6 +17,7 @@ import {
   Portal,
   createListCollection,
   Separator,
+  Link,
 } from '@chakra-ui/react';
 import { LoadingState, Breadcrumbs, StatusBadge, orderStatusConfig } from '../components/shared';
 
@@ -49,10 +50,10 @@ const formatCurrency = (amount: number) => {
 
 const orderStatusOptions = createListCollection({
   items: [
-    { label: 'ממתין', value: OrderStatus.PENDING },
-    { label: 'בטיפול', value: OrderStatus.PROCESSING },
-    { label: 'הושלם', value: OrderStatus.COMPLETED },
-    { label: 'בוטל', value: OrderStatus.CANCELLED },
+    { label: 'ממתין', value: 'pending' },
+    { label: 'בטיפול', value: 'processing' },
+    { label: 'הושלם', value: 'completed' },
+    { label: 'בוטל', value: 'cancelled' },
   ],
 });
 
@@ -121,16 +122,16 @@ export default function OrderDetails() {
         gap="4"
         py="6"
       >
-        <Box>
-          <Text fontSize="2xl" fontWeight="bold" color="fg" letterSpacing="tight">
-            הזמנה #{order.$id}
-          </Text>
-          <HStack gap="2" fontSize="sm" color="fg.muted" mt="1">
-            <Text>נוצרה ב-{formatDate(order.createdAt)}</Text>
-            <Text>•</Text>
-            <Text dir="ltr">{formatTime(order.createdAt)}</Text>
-          </HStack>
-        </Box>
+         <Box>
+           <Text fontSize="2xl" fontWeight="bold" color="fg" letterSpacing="tight">
+             הזמנה #{order.$id}
+           </Text>
+           <HStack gap="2" fontSize="sm" color="fg.muted" mt="1">
+             <Text>נוצרה ב-{formatDate(order.$createdAt)}</Text>
+             <Text>•</Text>
+             <Text dir="ltr">{formatTime(order.$createdAt)}</Text>
+           </HStack>
+         </Box>
         <Button
           variant="outline"
           size="md"
@@ -155,7 +156,7 @@ export default function OrderDetails() {
               תאריך הזמנה
             </Text>
             <Text fontSize="xl" fontWeight="bold" color="fg" dir="ltr">
-              {formatShortDate(order.createdAt)}
+              {formatShortDate(order.$createdAt)}
             </Text>
           </Card.Body>
         </Card.Root>
@@ -274,8 +275,7 @@ export default function OrderDetails() {
                   <Text as="span" className="material-symbols-outlined" fontSize="20px" color="fg.muted">
                     mail
                   </Text>
-                  <Text
-                    as="a"
+                  <Link
                     href={`mailto:${order.customerEmail}`}
                     color="fg"
                     _hover={{ color: 'blue.500' }}
@@ -283,22 +283,21 @@ export default function OrderDetails() {
                     truncate
                   >
                     {order.customerEmail}
-                  </Text>
+                  </Link>
                 </HStack>
                 {order.customerPhone && (
                   <HStack gap="3" fontSize="sm">
                     <Text as="span" className="material-symbols-outlined" fontSize="20px" color="fg.muted">
                       call
                     </Text>
-                    <Text
-                      as="a"
+                    <Link
                       href={`tel:${order.customerPhone}`}
                       color="fg"
                       _hover={{ color: 'blue.500' }}
                       dir="ltr"
                     >
                       {order.customerPhone}
-                    </Text>
+                    </Link>
                   </HStack>
                 )}
               </VStack>

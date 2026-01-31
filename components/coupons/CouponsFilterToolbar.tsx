@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Flex, HStack, Text, Button, Card, Menu, Portal } from '@chakra-ui/react';
 import { SearchInput } from '../shared';
-import { CouponStatus, CouponDiscountType } from '../../types';
+import { CouponStatus, CouponDiscountType } from '@shared/types';
 
 // Status options
 const statusOptions = [

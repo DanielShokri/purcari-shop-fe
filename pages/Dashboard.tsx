@@ -64,19 +64,19 @@ export default function Dashboard() {
   const { data: recentOrders, isLoading: ordersLoading } = useGetRecentOrdersQuery(5);
   const { data: monthlySales, isLoading: salesLoading } = useGetMonthlySalesQuery();
 
-  // Map API orders to dashboard Order type
-  const dashboardOrders: DashboardOrder[] = useMemo(() => {
-    if (!recentOrders) return [];
-    return recentOrders.map((order) => ({
-      id: `#${order.$id}`,
-      customer: order.customerName,
-      initials: getInitials(order.customerName),
-      color: getAvatarColor(order.customerName),
-      date: formatDate(order.createdAt),
-      amount: formatCurrency(order.total),
-      status: order.status,
-    }));
-  }, [recentOrders]);
+   // Map API orders to dashboard Order type
+   const dashboardOrders: DashboardOrder[] = useMemo(() => {
+     if (!recentOrders) return [];
+     return recentOrders.map((order) => ({
+       id: `#${order.$id}`,
+       customer: order.customerName,
+       initials: getInitials(order.customerName),
+       color: getAvatarColor(order.customerName),
+       date: formatDate(order.$createdAt),
+       amount: formatCurrency(order.total),
+       status: order.status,
+     }));
+   }, [recentOrders]);
 
   // Use chart data from API or fallback to empty
   const chartData = monthlySales || [];

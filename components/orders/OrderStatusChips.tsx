@@ -1,6 +1,6 @@
 import React from 'react';
 import { HStack, Button } from '@chakra-ui/react';
-import { OrderStatus } from '../../types';
+import { OrderStatus } from '@shared/types';
 
 interface StatusChip {
   key: string;
@@ -23,10 +23,10 @@ export default function OrderStatusChips({
 }: OrderStatusChipsProps) {
   const chips: StatusChip[] = [
     { key: 'all', label: 'הכל', count: totalCount },
-    { key: OrderStatus.PROCESSING, label: 'בטיפול', count: statusCounts[OrderStatus.PROCESSING] || 0 },
-    { key: OrderStatus.PENDING, label: 'ממתין לתשלום', count: statusCounts[OrderStatus.PENDING] || 0 },
-    { key: OrderStatus.COMPLETED, label: 'הושלם', count: statusCounts[OrderStatus.COMPLETED] || 0 },
-    { key: OrderStatus.CANCELLED, label: 'בוטל', count: statusCounts[OrderStatus.CANCELLED] || 0 },
+    { key: 'processing', label: 'בטיפול', count: statusCounts['processing'] || 0 },
+    { key: 'pending', label: 'ממתין לתשלום', count: statusCounts['pending'] || 0 },
+    { key: 'completed', label: 'הושלם', count: statusCounts['completed'] || 0 },
+    { key: 'cancelled', label: 'בוטל', count: statusCounts['cancelled'] || 0 },
   ];
 
   return (

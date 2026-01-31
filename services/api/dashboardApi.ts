@@ -1,6 +1,6 @@
-import { api } from './baseApi';
-import { Order, OrderStatus } from '../../types';
-import { databases, usersApi, APPWRITE_CONFIG } from '../appwrite';
+import { api } from '@shared/api';
+import { Order, OrderStatus } from '@shared/types';
+import { databases, usersApi, APPWRITE_CONFIG } from '@shared/services';
 import { Query } from 'appwrite';
 
 interface DashboardStats {
@@ -33,13 +33,13 @@ const dashboardApi = api.injectEndpoints({
           const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
           const startOfYesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
           
-          // Fetch all orders
-          const ordersResponse = await databases.listDocuments({
-            databaseId: APPWRITE_CONFIG.DATABASE_ID,
-            collectionId: APPWRITE_CONFIG.COLLECTION_ORDERS,
-            queries: [Query.limit(1000)]
-          });
-          const allOrders = ordersResponse.documents;
+           // Fetch all orders
+           const ordersResponse = await databases.listDocuments(
+             APPWRITE_CONFIG.DATABASE_ID,
+             APPWRITE_CONFIG.COLLECTION_ORDERS,
+             [Query.limit(1000)]
+           );
+           const allOrders = ordersResponse.documents;
           
           // Calculate total revenue (from completed orders)
           const completedOrders = allOrders.filter((o: any) => o.status === 'completed');
@@ -90,13 +90,13 @@ const dashboardApi = api.injectEndpoints({
             ? ((todayOrders.length - yesterdayOrders.length) / yesterdayOrders.length) * 100 
             : 0;
           
-          // Fetch products count
-          const productsResponse = await databases.listDocuments({
-            databaseId: APPWRITE_CONFIG.DATABASE_ID,
-            collectionId: APPWRITE_CONFIG.COLLECTION_PRODUCTS,
-            queries: [Query.limit(1)]
-          });
-          const totalProducts = productsResponse.total;
+           // Fetch products count
+           const productsResponse = await databases.listDocuments(
+             APPWRITE_CONFIG.DATABASE_ID,
+             APPWRITE_CONFIG.COLLECTION_PRODUCTS,
+             [Query.limit(1)]
+           );
+           const totalProducts = productsResponse.total;
           
           // Calculate conversion rate (orders / users)
           const conversionRate = totalUsers > 0 
@@ -123,32 +123,45 @@ const dashboardApi = api.injectEndpoints({
       },
     }),
 
-    getRecentOrders: builder.query<Order[], number | void>({
-      queryFn: async (limit = 5) => {
-        try {
-          const response = await databases.listDocuments({
-            databaseId: APPWRITE_CONFIG.DATABASE_ID,
-            collectionId: APPWRITE_CONFIG.COLLECTION_ORDERS,
-            queries: [Query.orderDesc('$createdAt'), Query.limit(limit || 5)]
-          });
-          
-          const orders: Order[] = response.documents.map((doc: any) => ({
-            $id: doc.$id,
-            customerName: doc.customerName,
-            customerEmail: doc.customerEmail,
-            customerAvatar: doc.customerAvatar || undefined,
-            total: doc.total,
-            status: doc.status as OrderStatus,
-            createdAt: doc.$createdAt,
-          }));
-          
-          return { data: orders };
-        } catch (error: any) {
-          return { error: error.message || 'שגיאה בטעינת הזמנות אחרונות' };
-        }
-      },
-      providesTags: ['Orders'],
-    }),
+     getRecentOrders: builder.query<Order[], number | void>({
+       queryFn: async (limit = 5) => {
+         try {
+           const response = await databases.listDocuments(
+             APPWRITE_CONFIG.DATABASE_ID,
+             APPWRITE_CONFIG.COLLECTION_ORDERS,
+             [Query.orderDesc('$createdAt'), Query.limit(limit || 5)]
+           );
+           
+           const orders: Order[] = response.documents.map((doc: any) => ({
+             $id: doc.$id,
+             $createdAt: doc.$createdAt,
+             customerName: doc.customerName,
+             customerEmail: doc.customerEmail,
+             customerPhone: doc.customerPhone || '',
+             customerAvatar: doc.customerAvatar || '',
+             total: doc.total,
+             subtotal: doc.subtotal || 0,
+             shippingCost: doc.shippingCost || 0,
+             tax: doc.tax || 0,
+             status: doc.status as OrderStatus,
+             shippingStreet: doc.shippingStreet,
+             shippingApartment: doc.shippingApartment || '',
+             shippingCity: doc.shippingCity,
+             shippingPostalCode: doc.shippingPostalCode,
+             shippingCountry: doc.shippingCountry,
+             paymentMethod: doc.paymentMethod,
+             paymentCardExpiry: doc.paymentCardExpiry || '',
+             paymentTransactionId: doc.paymentTransactionId,
+             paymentChargeDate: doc.paymentChargeDate,
+           }));
+           
+           return { data: orders };
+         } catch (error: any) {
+           return { error: error.message || 'שגיאה בטעינת הזמנות אחרונות' };
+         }
+       },
+       providesTags: ['Orders'],
+     }),
 
     getMonthlySales: builder.query<MonthlySalesData[], void>({
       queryFn: async () => {
@@ -156,15 +169,15 @@ const dashboardApi = api.injectEndpoints({
           const now = new Date();
           const startOfYear = new Date(now.getFullYear(), 0, 1);
           
-          // Fetch all orders from current year
-          const response = await databases.listDocuments({
-            databaseId: APPWRITE_CONFIG.DATABASE_ID,
-            collectionId: APPWRITE_CONFIG.COLLECTION_ORDERS,
-            queries: [
-              Query.greaterThanEqual('$createdAt', startOfYear.toISOString()),
-              Query.limit(1000)
-            ]
-          });
+           // Fetch all orders from current year
+           const response = await databases.listDocuments(
+             APPWRITE_CONFIG.DATABASE_ID,
+             APPWRITE_CONFIG.COLLECTION_ORDERS,
+             [
+               Query.greaterThanEqual('$createdAt', startOfYear.toISOString()),
+               Query.limit(1000)
+             ]
+           );
           
           // Hebrew month names
           const monthNames = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];

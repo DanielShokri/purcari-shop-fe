@@ -9,7 +9,7 @@ import {
   SimpleGrid,
 } from '@chakra-ui/react';
 import { FieldErrors, UseFormRegister } from 'react-hook-form';
-import { CartRule, CartRuleType } from '../../types';
+import { CartRule, CartRuleType } from '@shared/types';
 
 interface CartRuleConfigCardProps {
   register: UseFormRegister<Partial<CartRule>>;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Flex, HStack, Text } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import { Product } from '../../types';
+import { Product } from '@shared/types';
 import HighlightText from './HighlightText';
 
 // Category labels in Hebrew

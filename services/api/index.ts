@@ -1,5 +1,5 @@
 // Base API - must be imported first
-export { api } from './baseApi';
+export { api } from '@shared/api';
 
 // Domain-specific API slices (inject endpoints into base API)
 export * from './authApi';

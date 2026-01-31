@@ -1,6 +1,6 @@
 import React from 'react';
 import { HStack, Text, Table, Checkbox, IconButton, Box } from '@chakra-ui/react';
-import { CartRule, CartRuleType } from '../../types';
+import { CartRule, CartRuleType } from '@shared/types';
 import StatusBadge, { cartRuleStatusConfig } from '../shared/StatusBadge';
 
 interface CartRuleTableRowProps {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Table, Checkbox, HStack, VStack, Box, Text, Flex, IconButton } from '@chakra-ui/react';
-import { Order } from '../../types';
+import { Order } from '@shared/types';
 import { StatusBadge, orderStatusConfig } from '../shared';
 
 interface OrderTableRowProps {
@@ -107,11 +107,11 @@ export default function OrderTableRow({
         </HStack>
       </Table.Cell>
 
-      <Table.Cell px="6" py="4" color="fg.muted" display={{ base: 'none', md: 'table-cell' }}>
-        <Text dir="ltr" textAlign="right">
-          {new Date(order.createdAt).toLocaleDateString('he-IL')}
-        </Text>
-      </Table.Cell>
+       <Table.Cell px="6" py="4" color="fg.muted" display={{ base: 'none', md: 'table-cell' }}>
+         <Text dir="ltr" textAlign="right">
+           {new Date(order.$createdAt).toLocaleDateString('he-IL')}
+         </Text>
+       </Table.Cell>
 
       <Table.Cell px="6" py="4">
         <Text fontWeight="medium" color="fg" dir="ltr" textAlign="right">

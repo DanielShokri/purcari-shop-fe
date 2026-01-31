@@ -11,7 +11,7 @@ import {
 } from '../services/api';
 import { useGetCategoriesQuery } from '../services/api';
 import { useGetProductsQuery } from '../services/api';
-import { Coupon, CouponStatus, CouponDiscountType } from '../types';
+import { Coupon, CouponStatus, CouponDiscountType } from '@shared/types';
 import {
   Box,
   Flex,

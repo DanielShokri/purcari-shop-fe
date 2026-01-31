@@ -334,8 +334,8 @@ export const FontFamily = createSelectControl({
     editor.getAttributes("textStyle")?.fontFamily || "default",
   command: (editor, value) =>
     value === "default"
-      ? editor.chain().focus().unsetFontFamily().run()
-      : editor.chain().focus().setFontFamily(value).run(),
+      ? (editor.chain().focus() as any).unsetFontFamily().run()
+      : (editor.chain().focus() as any).setFontFamily(value).run(),
 })
 
 export const FontSize = createSelectControl({
@@ -390,14 +390,14 @@ export const Code = createBooleanControl({
 export const Subscript = createBooleanControl({
   label: "Subscript",
   icon: LuSubscript,
-  command: (editor) => editor.chain().focus().toggleSubscript().run(),
+  command: (editor) => (editor.chain().focus() as any).toggleSubscript().run(),
   getVariant: (editor) => (editor.isActive("subscript") ? "subtle" : "ghost"),
 })
 
 export const Superscript = createBooleanControl({
   label: "Superscript",
   icon: LuSuperscript,
-  command: (editor) => editor.chain().focus().toggleSuperscript().run(),
+  command: (editor) => (editor.chain().focus() as any).toggleSuperscript().run(),
   getVariant: (editor) => (editor.isActive("superscript") ? "subtle" : "ghost"),
 })
 
@@ -578,10 +578,10 @@ export const Highlight = createSwatchControl({
     variant: editor.getAttributes("highlight")?.color ? "subtle" : "ghost",
   }),
   command: (editor, color) =>
-    editor.chain().focus().toggleHighlight({ color }).run(),
+    (editor.chain().focus() as any).toggleHighlight({ color }).run(),
   icon: LuHighlighter,
   showRemove: true,
-  onRemove: (editor) => editor.chain().focus().unsetHighlight().run(),
+  onRemove: (editor) => (editor.chain().focus() as any).unsetHighlight().run(),
 })
 
 const TEXT_STYLE_OPTIONS = [

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGetOrdersQuery, useDeleteOrderMutation } from '../services/api';
-import { OrderStatus } from '../types';
+import { OrderStatus } from '@shared/types';
 import { VStack, HStack, Button, Text } from '@chakra-ui/react';
 import { LoadingState, PageHeader, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { OrdersFilterToolbar, OrderStatusChips, OrdersTable } from '../components/orders';
@@ -73,8 +73,8 @@ export default function Orders() {
     // Status chip filter
     const matchesChip = activeChip === 'all' || order.status === activeChip;
     
-    // Date filter
-    const matchesDate = isWithinDateRange(order.createdAt, dateFilter);
+     // Date filter
+     const matchesDate = isWithinDateRange(order.$createdAt, dateFilter);
     
     return matchesSearch && matchesStatusFilter && matchesChip && matchesDate;
   }) || [];

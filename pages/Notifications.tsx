@@ -15,7 +15,7 @@ import {
   useMarkAllAsReadMutation,
 } from '../services/api';
 import { NotificationItem } from '../components/notifications';
-import { Notification } from '../types';
+import { Notification } from '@shared/types';
 
 type FilterTab = 'all' | 'unread' | 'archived';
 

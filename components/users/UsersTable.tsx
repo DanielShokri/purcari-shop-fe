@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Table, Checkbox, Card } from '@chakra-ui/react';
-import { User } from '../../types';
+import { User } from '@shared/types';
 import { Pagination } from '../shared';
 import UserTableRow from './UserTableRow';
 

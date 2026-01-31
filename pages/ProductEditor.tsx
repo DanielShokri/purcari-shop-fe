@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useGetProductsQuery, useCreateProductMutation, useUpdateProductMutation, useDeleteProductMutation } from '../services/api';
-import { Product, ProductStatus, StockStatus, WineType, ProductCategory } from '../types';
+import { Product, ProductStatus, StockStatus, WineType, ProductCategory } from '@shared/types';
 import {
   Box,
   Flex,
   VStack,
+  HStack,
   Heading,
   Text,
   Input,
@@ -36,12 +37,12 @@ import { RichTextEditor, Control } from '../components/ui/rich-text-editor';
 
 // Categories matching Appwrite enum values
 const categories = [
-  { id: ProductCategory.RED_WINE, name: 'יינות אדומים' },
-  { id: ProductCategory.WHITE_WINE, name: 'יינות לבנים' },
-  { id: ProductCategory.ROSE_WINE, name: 'יינות רוזה' },
-  { id: ProductCategory.SPARKLING_WINE, name: 'יינות מבעבעים' },
-  { id: ProductCategory.DESSERT_WINE, name: 'יינות קינוח' },
-  { id: ProductCategory.GIFT_SETS, name: 'מארזי מתנה' },
+  { id: 'red_wine', name: 'יינות אדומים' },
+  { id: 'white_wine', name: 'יינות לבנים' },
+  { id: 'rose_wine', name: 'יינות רוזה' },
+  { id: 'sparkling_wine', name: 'יינות מבעבעים' },
+  { id: 'dessert_wine', name: 'יינות קינוח' },
+  { id: 'gift_sets', name: 'מארזי מתנה' },
 ];
 
 export default function ProductEditor() {
@@ -65,13 +66,19 @@ export default function ProductEditor() {
   });
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    existingProduct?.category ? [existingProduct.category] : [ProductCategory.RED_WINE]
+    existingProduct?.category ? [existingProduct.category] : ['red_wine']
   );
   const [tags, setTags] = useState<string[]>(existingProduct?.tags || []);
   const [tagInput, setTagInput] = useState('');
 
   // Wine-specific state
-  const [wineType, setWineType] = useState<WineType | undefined>(existingProduct?.wineType || WineType.RED);
+  const normalizeWineType = (value: any): WineType => {
+    if (!value) return WineType.RED;
+    const normalized = String(value).toLowerCase();
+    const wineTypeValues = Object.values(WineType);
+    return (wineTypeValues.includes(normalized as WineType) ? normalized : WineType.RED) as WineType;
+  };
+  const [wineType, setWineType] = useState<WineType>(normalizeWineType(existingProduct?.wineType));
   const [volume, setVolume] = useState<string>(existingProduct?.volume || '750 מ"ל');
   const [grapeVariety, setGrapeVariety] = useState<string>(existingProduct?.grapeVariety || '');
   const [vintage, setVintage] = useState<number>(existingProduct?.vintage || new Date().getFullYear());
@@ -145,7 +152,7 @@ export default function ProductEditor() {
         status: existingProduct.status || ProductStatus.DRAFT,
       });
       
-      setSelectedCategories(existingProduct.category ? [existingProduct.category] : [ProductCategory.RED_WINE]);
+      setSelectedCategories(existingProduct.category ? [existingProduct.category] : ['red_wine']);
       setTags(existingProduct.tags || []);
       setShortDescription(existingProduct.shortDescription || '');
       setPrice(existingProduct.price || 0);
@@ -157,8 +164,8 @@ export default function ProductEditor() {
       setFeaturedImage(existingProduct.featuredImage || '');
       setRelatedProductIds(existingProduct.relatedProducts || []);
       
-      // Update wine specific fields
-      setWineType(existingProduct.wineType || WineType.RED);
+       // Update wine specific fields
+       setWineType(normalizeWineType(existingProduct.wineType));
       setVolume(existingProduct.volume || '750 מ"ל');
       setGrapeVariety(existingProduct.grapeVariety || '');
       setVintage(existingProduct.vintage || new Date().getFullYear());

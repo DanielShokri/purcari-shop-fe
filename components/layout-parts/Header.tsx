@@ -11,7 +11,7 @@ import {
 import { ColorModeButton } from '@/components/ui/color-mode';
 import { NotificationDropdown } from '@/components/notifications';
 import UserProfile from './UserProfile';
-import { AuthUser } from '@/types';
+import { AuthUser } from '@shared/types';
 
 interface HeaderProps {
   currentPageLabel: string;

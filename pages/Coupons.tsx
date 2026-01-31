@@ -4,7 +4,7 @@ import { useGetCouponsQuery, useDeleteCouponMutation } from '../services/api';
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { CouponsFilterToolbar, CouponsTable } from '../components/coupons';
-import { CouponStatus, CouponDiscountType } from '../types';
+import { CouponStatus, CouponDiscountType } from '@shared/types';
 
 export default function Coupons() {
   const navigate = useNavigate();

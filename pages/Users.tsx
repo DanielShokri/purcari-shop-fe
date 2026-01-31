@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGetUsersQuery, useDeleteUserMutation, useCreateUserMutation, useUpdateUserMutation } from '../services/api';
-import { UserRole } from '../types';
+import { UserRole } from '@shared/types';
 import { 
   VStack, 
   Dialog, 

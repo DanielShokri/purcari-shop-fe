@@ -2,7 +2,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { setupListeners } from '@reduxjs/toolkit/query';
 import { api } from './services/api/index';
 import { authMiddleware } from './services/api/authMiddleware';
-import { AuthUser } from './types';
+import { AuthUser } from '@shared/types';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 // Safe LocalStorage Wrapper (silently fails if localStorage is unavailable)

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, HStack, VStack, Text, Table, Checkbox, IconButton, Badge } from '@chakra-ui/react';
-import { Product } from '../../types';
+import { Product } from '@shared/types';
 
 interface ProductTableRowProps {
   product: Product;

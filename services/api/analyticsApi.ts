@@ -1,6 +1,6 @@
-import { api } from './baseApi';
-import { AnalyticsSummary, TimeSeriesDataPoint, AnalyticsInterval, AnalyticsEvent, Product } from '../../types';
-import { databases, usersApi, APPWRITE_CONFIG } from '../appwrite';
+import { api } from '@shared/api';
+import { AnalyticsSummary, TimeSeriesDataPoint, AnalyticsInterval, AnalyticsEvent, Product } from '@shared/types';
+import { databases, usersApi, APPWRITE_CONFIG } from '@shared/services';
 import { Query } from 'appwrite';
 
 const analyticsApi = api.injectEndpoints({
@@ -15,19 +15,19 @@ const analyticsApi = api.injectEndpoints({
           startOfWeek.setHours(0, 0, 0, 0);
           const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
           
-          // Fetch analytics events, products, and users in parallel
-          const [eventsResponse, productsResponse, usersResponse] = await Promise.allSettled([
-            databases.listDocuments({
-              databaseId: APPWRITE_CONFIG.DATABASE_ID,
-              collectionId: APPWRITE_CONFIG.COLLECTION_ANALYTICS_EVENTS,
-              queries: [Query.limit(10000)] // Adjust limit as needed
-            }),
-            databases.listDocuments({
-              databaseId: APPWRITE_CONFIG.DATABASE_ID,
-              collectionId: APPWRITE_CONFIG.COLLECTION_PRODUCTS,
-              queries: [Query.limit(1000)]
-            }),
-            usersApi.list().catch(() => ({ users: [] }))
+           // Fetch analytics events, products, and users in parallel
+           const [eventsResponse, productsResponse, usersResponse] = await Promise.allSettled([
+             databases.listDocuments(
+               APPWRITE_CONFIG.DATABASE_ID,
+               APPWRITE_CONFIG.COLLECTION_ANALYTICS_EVENTS,
+               [Query.limit(10000)]
+             ),
+             databases.listDocuments(
+               APPWRITE_CONFIG.DATABASE_ID,
+               APPWRITE_CONFIG.COLLECTION_PRODUCTS,
+               [Query.limit(1000)]
+             ),
+             usersApi.list().catch(() => ({ users: [] }))
           ]);
 
           // Extract results with fallbacks
@@ -127,18 +127,54 @@ const analyticsApi = api.injectEndpoints({
             retention.week30 = Math.round((week30Count / recentUsers.length) * 100);
           }
 
-          return {
-            data: {
-              viewsToday,
-              viewsThisWeek,
-              viewsThisMonth,
-              dau,
-              wau,
-              mau,
-              topProducts,
-              retention,
-            }
-          };
+           // Calculate total views and visitors
+           const totalViews = events.filter((e: any) => e.type === 'page_view' || e.type === 'product_view').length;
+           const totalVisitors = new Set(events.map((e: any) => e.userId).filter(Boolean)).size;
+           
+           // Calculate average session duration (in seconds) - estimate based on time between events per user
+           let totalSessionDuration = 0;
+           let sessionCount = 0;
+           Object.values(userEvents).forEach((userEventsList: any) => {
+             if (userEventsList.length > 1) {
+               const sortedEvents = userEventsList.sort((a: any, b: any) => 
+                 new Date(a.$createdAt).getTime() - new Date(b.$createdAt).getTime()
+               );
+               for (let i = 0; i < sortedEvents.length - 1; i++) {
+                 const duration = (new Date(sortedEvents[i + 1].$createdAt).getTime() - new Date(sortedEvents[i].$createdAt).getTime()) / 1000; // Convert to seconds
+                 if (duration < 3600) { // Only count if less than 1 hour (realistic)
+                   totalSessionDuration += duration;
+                 }
+               }
+               sessionCount++;
+             }
+           });
+           const averageSessionDuration = sessionCount > 0 ? Math.round(totalSessionDuration / sessionCount) : 0;
+           
+           // Calculate bounce rate (percentage of users with only 1 event)
+           const usersWithOneEvent = Object.values(userEvents).filter((events: any) => events.length === 1).length;
+           const bounceRate = totalVisitors > 0 ? Math.round((usersWithOneEvent / totalVisitors) * 100) : 0;
+           
+           // Calculate conversion rate (add_to_cart or checkout events as percentage of views)
+           const conversionEvents = events.filter((e: any) => e.type === 'add_to_cart' || e.type === 'checkout').length;
+           const conversionRate = totalViews > 0 ? Math.round((conversionEvents / totalViews) * 100) : 0;
+
+           return {
+             data: {
+               totalViews,
+               totalVisitors,
+               averageSessionDuration,
+               bounceRate,
+               conversionRate,
+               viewsToday,
+               viewsThisWeek,
+               viewsThisMonth,
+               dau,
+               wau,
+               mau,
+               topProducts,
+               retention,
+             }
+           };
         } catch (error: any) {
           return { error: error.message || 'שגיאה בטעינת נתוני אנליטיקות' };
         }
@@ -173,16 +209,16 @@ const analyticsApi = api.injectEndpoints({
               const monthNames = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];
               return monthNames[date.getMonth()];
             };
-          }
+           }
 
-          const response = await databases.listDocuments({
-            databaseId: APPWRITE_CONFIG.DATABASE_ID,
-            collectionId: APPWRITE_CONFIG.COLLECTION_ANALYTICS_EVENTS,
-            queries: [
-              Query.greaterThanEqual('$createdAt', startDate.toISOString()),
-              Query.limit(10000)
-            ]
-          });
+           const response = await databases.listDocuments(
+             APPWRITE_CONFIG.DATABASE_ID,
+             APPWRITE_CONFIG.COLLECTION_ANALYTICS_EVENTS,
+             [
+               Query.greaterThanEqual('$createdAt', startDate.toISOString()),
+               Query.limit(10000)
+             ]
+           );
 
           const events = response.documents.filter((e: any) => 
             e.type === 'page_view' || e.type === 'product_view'
@@ -210,13 +246,17 @@ const analyticsApi = api.injectEndpoints({
             aggregated[key] = (aggregated[key] || 0) + 1;
           });
 
-          // Convert to array and sort
-          const chartData: TimeSeriesDataPoint[] = Object.entries(aggregated)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => {
-              // Simple sort - in production, parse dates properly
-              return a.name.localeCompare(b.name, 'he');
-            });
+           // Convert to array and sort
+           const chartData: TimeSeriesDataPoint[] = Object.entries(aggregated)
+             .map(([name, value]) => ({ 
+               timestamp: name,
+               name, 
+               value 
+             }))
+             .sort((a, b) => {
+               // Simple sort - in production, parse dates properly
+               return (a.name || a.timestamp).localeCompare(b.name || b.timestamp, 'he');
+             });
 
           return { data: chartData };
         } catch (error: any) {
@@ -286,10 +326,14 @@ const analyticsApi = api.injectEndpoints({
             aggregated[key] = (aggregated[key] || 0) + 1;
           });
 
-          // Convert to array and sort
-          const chartData: TimeSeriesDataPoint[] = Object.entries(aggregated)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => a.name.localeCompare(b.name, 'he'));
+           // Convert to array and sort
+           const chartData: TimeSeriesDataPoint[] = Object.entries(aggregated)
+             .map(([name, value]) => ({ 
+               timestamp: name,
+               name, 
+               value 
+             }))
+             .sort((a, b) => (a.name || a.timestamp).localeCompare(b.name || b.timestamp, 'he'));
 
           return { data: chartData };
         } catch (error: any) {

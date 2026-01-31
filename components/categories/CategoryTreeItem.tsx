@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Flex, HStack, Text, IconButton, Badge } from '@chakra-ui/react';
-import { Category, CategoryStatus } from '../../types';
+import { Category, CategoryStatus } from '@shared/types';
 
 interface CategoryTreeItemProps {
   category: Category & { children?: Category[] };
@@ -208,7 +208,7 @@ export default function CategoryTreeItem({
         </Text>
 
         {category.status === CategoryStatus.ACTIVE && !isSelected && (
-          <Box>{getStatusBadge(category.status)}</Box>
+          <Box>{getStatusBadge(category.status as CategoryStatus)}</Box>
         )}
 
         {isSelected && (

@@ -14,7 +14,7 @@ import {
   Portal,
   createListCollection,
 } from '@chakra-ui/react';
-import { Product, ProductStatus } from '../../types';
+import { Product, ProductStatus } from '@shared/types';
 
 interface PublishCardProps {
   control: Control<Partial<Product>>;
@@ -27,9 +27,9 @@ interface PublishCardProps {
 
 const statusOptions = createListCollection({
   items: [
-    { label: 'פורסם', value: ProductStatus.PUBLISHED },
+    { label: 'פורסם', value: ProductStatus.ACTIVE },
     { label: 'טיוטה', value: ProductStatus.DRAFT },
-    { label: 'ממתין לאישור', value: ProductStatus.ARCHIVED },
+    { label: 'ממתין לאישור', value: ProductStatus.HIDDEN },
   ],
 });
 
