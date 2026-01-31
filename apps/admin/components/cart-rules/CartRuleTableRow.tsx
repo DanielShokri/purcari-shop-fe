@@ -1,0 +1,135 @@
+import React from 'react';
+import { HStack, Text, Table, Checkbox, IconButton, Box } from '@chakra-ui/react';
+import { CartRule, CartRuleType } from '@shared/types';
+import StatusBadge, { cartRuleStatusConfig } from '../shared/StatusBadge';
+
+interface CartRuleTableRowProps {
+  cartRule: CartRule;
+  isSelected: boolean;
+  onSelect: (checked: boolean) => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+// Icon and color mapping for cart rule types
+const typeConfig: Record<CartRuleType, { icon: string; color: string; label: string }> = {
+  [CartRuleType.SHIPPING]: { icon: 'local_shipping', color: 'purple.500', label: 'משלוח' },
+  [CartRuleType.DISCOUNT]: { icon: 'percent', color: 'orange.500', label: 'הנחה' },
+  [CartRuleType.RESTRICTION]: { icon: 'block', color: 'red.500', label: 'הגבלות' },
+  [CartRuleType.BENEFIT]: { icon: 'card_giftcard', color: 'blue.500', label: 'הטבה' },
+};
+
+export default function CartRuleTableRow({
+  cartRule,
+  isSelected,
+  onSelect,
+  onEdit,
+  onDelete
+}: CartRuleTableRowProps) {
+  const typeInfo = typeConfig[cartRule.type] || typeConfig[CartRuleType.SHIPPING];
+
+  const formatPriority = (priority: number): string => {
+    return priority.toString().padStart(2, '0');
+  };
+
+  return (
+    <Table.Row
+      _hover={{ bg: 'bg.subtle' }}
+      transition="colors"
+      css={{
+        '& .action-buttons': { opacity: 0 },
+        '&:hover .action-buttons': { opacity: 1 },
+      }}
+    >
+      <Table.Cell px="6" py="4">
+        <Checkbox.Root
+          size="sm"
+          checked={isSelected}
+          onCheckedChange={(e) => onSelect(!!e.checked)}
+        >
+          <Checkbox.HiddenInput />
+          <Checkbox.Control />
+        </Checkbox.Root>
+      </Table.Cell>
+      <Table.Cell px="6" py="4">
+        <Box>
+          <Text
+            fontSize="sm"
+            fontWeight="medium"
+            color="fg"
+            _hover={{ color: 'blue.500' }}
+            cursor="pointer"
+            transition="colors"
+            onClick={onEdit}
+          >
+            {cartRule.name}
+          </Text>
+          {cartRule.description && (
+            <Text fontSize="xs" color="fg.muted" mt="0.5">
+              {cartRule.description}
+            </Text>
+          )}
+        </Box>
+      </Table.Cell>
+      <Table.Cell px="6" py="4">
+        <HStack gap="2">
+          <Text as="span" className="material-symbols-outlined" fontSize="18px" color={typeInfo.color}>
+            {typeInfo.icon}
+          </Text>
+          <Text fontSize="sm" color="fg.muted">
+            {typeInfo.label}
+          </Text>
+        </HStack>
+      </Table.Cell>
+      <Table.Cell px="6" py="4">
+        <Text
+          fontSize="sm"
+          fontFamily="mono"
+          color="fg.muted"
+          bg="bg.subtle"
+          px="2"
+          py="0.5"
+          rounded="md"
+          display="inline-block"
+        >
+          {formatPriority(cartRule.priority)}
+        </Text>
+      </Table.Cell>
+      <Table.Cell px="6" py="4">
+        <StatusBadge 
+          status={cartRule.status} 
+          config={cartRuleStatusConfig}
+          variant="dot"
+        />
+      </Table.Cell>
+      <Table.Cell px="6" py="4">
+        <HStack gap="1" className="action-buttons" transition="opacity" justify="flex-end">
+          <IconButton
+            variant="ghost"
+            size="sm"
+            color="fg.muted"
+            _hover={{ bg: 'gray.100', color: 'blue.500' }}
+            aria-label="ערוך"
+            onClick={onEdit}
+          >
+            <Text as="span" className="material-symbols-outlined" fontSize="20px">
+              edit
+            </Text>
+          </IconButton>
+          <IconButton
+            variant="ghost"
+            size="sm"
+            color="fg.muted"
+            _hover={{ bg: 'gray.100', color: 'red.500' }}
+            aria-label="מחק"
+            onClick={onDelete}
+          >
+            <Text as="span" className="material-symbols-outlined" fontSize="20px">
+              delete
+            </Text>
+          </IconButton>
+        </HStack>
+      </Table.Cell>
+    </Table.Row>
+  );
+}

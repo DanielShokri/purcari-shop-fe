@@ -1,0 +1,56 @@
+---
+description: "React Hook Form patterns with Chakra UI Field components"
+globs: ["pages/**/*.tsx", "components/**/*.tsx"]
+alwaysApply: false
+---
+
+# React Hook Form Rules
+
+## Basic Setup
+
+```typescript
+const { register, handleSubmit, formState: { errors } } = useForm<FormData>();
+```
+
+## With Chakra UI Field
+
+```typescript
+<Field.Root invalid={!!errors.email}>
+  <Field.Label>אימייל</Field.Label>
+  <Input
+    {...register('email', { required: 'שדה חובה' })}
+    type="email"
+    dir="ltr"
+  />
+  {errors.email && (
+    <Field.ErrorText>{errors.email.message}</Field.ErrorText>
+  )}
+</Field.Root>
+```
+
+## Form Submission
+
+```typescript
+const onSubmit = async (data: FormData) => {
+  try {
+    await mutation(data).unwrap();
+    // Success handling
+  } catch (err) {
+    console.error('Error:', err);
+  }
+};
+
+<form onSubmit={handleSubmit(onSubmit)}>
+```
+
+## Loading States
+
+```typescript
+<Button
+  type="submit"
+  loading={isLoading}
+  loadingText="שומר..."
+>
+  שמור
+</Button>
+```

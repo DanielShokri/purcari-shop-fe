@@ -1,0 +1,109 @@
+import React from 'react';
+import { Box, Table, Checkbox, Card } from '@chakra-ui/react';
+import { Product } from '@shared/types';
+import { Pagination } from '../shared';
+import ProductTableRow from './ProductTableRow';
+
+interface ProductsTableProps {
+  products: Product[];
+  selectedProducts: string[];
+  onSelectAll: (checked: boolean) => void;
+  onSelectProduct: (productId: string, checked: boolean) => void;
+  onEdit: (productId: string) => void;
+  onDelete: (productId: string) => void;
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  getCategoryLabel: (category: string) => string;
+  getRandomImage: (index: number) => string;
+}
+
+export default function ProductsTable({
+  products,
+  selectedProducts,
+  onSelectAll,
+  onSelectProduct,
+  onEdit,
+  onDelete,
+  currentPage,
+  totalPages,
+  totalItems,
+  itemsPerPage,
+  onPageChange,
+  getCategoryLabel,
+  getRandomImage
+}: ProductsTableProps) {
+  return (
+    <Box flex="1" minH="0">
+      <Card.Root overflow="hidden" h="full" display="flex" flexDirection="column">
+        <Table.ScrollArea flex="1">
+          <Table.Root size="sm">
+            <Table.Header>
+              <Table.Row bg="bg.subtle">
+                <Table.ColumnHeader px="6" py="4" w="12">
+                  <Checkbox.Root
+                    size="sm"
+                    checked={selectedProducts.length === products.length && products.length > 0}
+                    onCheckedChange={(e) => onSelectAll(!!e.checked)}
+                  >
+                    <Checkbox.HiddenInput />
+                    <Checkbox.Control />
+                  </Checkbox.Root>
+                </Table.ColumnHeader>
+                <Table.ColumnHeader px="6" py="4" w="1/3" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
+                  שם מוצר
+                </Table.ColumnHeader>
+                <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
+                  קטגוריה
+                </Table.ColumnHeader>
+                <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
+                  מחיר
+                </Table.ColumnHeader>
+                <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
+                  מלאי
+                </Table.ColumnHeader>
+                <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted" textAlign="start">
+                  פעולות
+                </Table.ColumnHeader>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {products.length === 0 ? (
+                <Table.Row>
+                  <Table.Cell colSpan={6} px="6" py="8" textAlign="center" color="fg.subtle">
+                    לא נמצאו מוצרים
+                  </Table.Cell>
+                </Table.Row>
+              ) : (
+                products.map((product, index) => (
+                  <ProductTableRow
+                    key={product.$id}
+                    product={product}
+                    index={index}
+                    isSelected={selectedProducts.includes(product.$id)}
+                    onSelect={(checked) => onSelectProduct(product.$id, checked)}
+                    onEdit={() => onEdit(product.$id)}
+                    onDelete={() => onDelete(product.$id)}
+                    getCategoryLabel={getCategoryLabel}
+                    getRandomImage={getRandomImage}
+                  />
+                ))
+              )}
+            </Table.Body>
+          </Table.Root>
+        </Table.ScrollArea>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={itemsPerPage}
+          onPageChange={onPageChange}
+          itemLabel="מוצרים"
+        />
+      </Card.Root>
+    </Box>
+  );
+}
