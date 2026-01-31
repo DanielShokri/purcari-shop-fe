@@ -10,8 +10,10 @@
 
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
+import type * as cartRules from "../cartRules.js";
 import type * as categories from "../categories.js";
 import type * as coupons from "../coupons.js";
+import type * as notifications from "../notifications.js";
 import type * as orderItems from "../orderItems.js";
 import type * as orders from "../orders.js";
 import type * as products from "../products.js";
@@ -27,8 +29,10 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   auth: typeof auth;
+  cartRules: typeof cartRules;
   categories: typeof categories;
   coupons: typeof coupons;
+  notifications: typeof notifications;
   orderItems: typeof orderItems;
   orders: typeof orders;
   products: typeof products;

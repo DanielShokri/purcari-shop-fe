@@ -64,6 +64,167 @@ export const getStats = query({
   },
 });
 
+export const getAnalyticsSummary = query({
+  args: {},
+  handler: async (ctx) => {
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - now.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    const startOfWeekStr = startOfWeek.toISOString();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    
+    const events = await ctx.db.query("analyticsEvents").collect();
+    const products = await ctx.db.query("products").collect();
+
+    // Filter events by date ranges
+    const todayEvents = events.filter((e) => e.timestamp >= startOfToday);
+    const weekEvents = events.filter((e) => e.timestamp >= startOfWeekStr);
+    const monthEvents = events.filter((e) => e.timestamp >= startOfMonth);
+
+    // Count views
+    const viewsToday = todayEvents.filter((e) => e.event === 'page_view' || e.event === 'product_view').length;
+    const viewsThisWeek = weekEvents.filter((e) => e.event === 'page_view' || e.event === 'product_view').length;
+    const viewsThisMonth = monthEvents.filter((e) => e.event === 'page_view' || e.event === 'product_view').length;
+
+    // Calculate DAU/WAU/MAU (unique users/anonymous)
+    const getUniques = (eventList: any[]) => {
+      const ids = new Set();
+      eventList.forEach(e => {
+        if (e.userId) ids.add(e.userId);
+        else if (e.anonymousId) ids.add(e.anonymousId);
+      });
+      return ids.size;
+    };
+
+    const dau = getUniques(todayEvents);
+    const wau = getUniques(weekEvents);
+    const mau = getUniques(monthEvents);
+
+    // Top products
+    const productViewCounts: Record<string, number> = {};
+    events.forEach((e) => {
+      if (e.event === 'product_view' && e.properties?.productId) {
+        const pid = e.properties.productId;
+        productViewCounts[pid] = (productViewCounts[pid] || 0) + 1;
+      }
+    });
+
+    const productsMap = new Map(products.map((p) => [p._id, p.productNameHe || p.productName]));
+    
+    const topProducts = Object.entries(productViewCounts)
+      .map(([productId, views]) => ({
+        productId,
+        productName: productsMap.get(productId as any) || 'מוצר לא ידוע',
+        views,
+      }))
+      .sort((a, b) => b.views - a.views)
+      .slice(0, 10);
+
+    return {
+      viewsToday,
+      viewsThisWeek,
+      viewsThisMonth,
+      dau,
+      wau,
+      mau,
+      topProducts,
+      retention: {
+        week1: 45, // Mocked for now
+        week7: 12,
+        week30: 5,
+      }
+    };
+  },
+});
+
+export const getViewsSeries = query({
+  args: { interval: v.string() }, // 'daily', 'weekly', 'monthly'
+  handler: async (ctx, args) => {
+    const now = new Date();
+    let startDate: Date;
+    
+    if (args.interval === 'daily') {
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 30);
+    } else if (args.interval === 'weekly') {
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 84); // 12 weeks
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    }
+
+    const events = await ctx.db
+      .query("analyticsEvents")
+      .withIndex("by_event", (q) => q.eq("event", "page_view")) // Simplification: just page views
+      .collect();
+    
+    const filteredEvents = events.filter(e => e.timestamp >= startDate.toISOString());
+
+    const monthNames = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];
+    const aggregated: Record<string, number> = {};
+
+    filteredEvents.forEach(e => {
+      const date = new Date(e.timestamp);
+      let key = "";
+      if (args.interval === 'daily') {
+        key = `${date.getDate()}/${date.getMonth() + 1}`;
+      } else if (args.interval === 'weekly') {
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        key = `W${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+      } else {
+        key = monthNames[date.getMonth()];
+      }
+      aggregated[key] = (aggregated[key] || 0) + 1;
+    });
+
+    return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
+  }
+});
+
+export const getNewUsersSeries = query({
+  args: { interval: v.string() },
+  handler: async (ctx, args) => {
+    const now = new Date();
+    let startDate: Date;
+    
+    if (args.interval === 'daily') {
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 30);
+    } else if (args.interval === 'weekly') {
+      startDate = new Date(now);
+      startDate.setDate(now.getDate() - 84);
+    } else {
+      startDate = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+    }
+
+    const users = await ctx.db.query("users").collect();
+    const filteredUsers = users.filter(u => u.createdAt >= startDate.toISOString());
+
+    const monthNames = ['ינו', 'פבר', 'מרץ', 'אפר', 'מאי', 'יוני', 'יולי', 'אוג', 'ספט', 'אוק', 'נוב', 'דצמ'];
+    const aggregated: Record<string, number> = {};
+
+    filteredUsers.forEach(u => {
+      const date = new Date(u.createdAt);
+      let key = "";
+      if (args.interval === 'daily') {
+        key = `${date.getDate()}/${date.getMonth() + 1}`;
+      } else if (args.interval === 'weekly') {
+        const weekStart = new Date(date);
+        weekStart.setDate(date.getDate() - date.getDay());
+        key = `W${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+      } else {
+        key = monthNames[date.getMonth()];
+      }
+      aggregated[key] = (aggregated[key] || 0) + 1;
+    });
+
+    return Object.entries(aggregated).map(([name, value]) => ({ name, value }));
+  }
+});
+
 export const getMonthlySales = query({
   args: {},
   handler: async (ctx) => {
