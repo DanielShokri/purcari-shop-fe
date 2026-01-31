@@ -2,28 +2,18 @@
 
 ## Current Status
 - **Phase:** Phase 2: Core Functions & Data
-- **Overall Progress:** 20%
+- **Overall Progress:** 25%
 - **Current Sprint:** Sprint 2: Convex Functions
 - **Last Updated:** Sat Jan 31 2026
 
-## Project Summary
-Migrating the Purcari Israel monorepo (Storefront + Admin) from Appwrite to Convex. This is a "clean slate" migration as the project is not yet live.
-
-## Technical Context
-- **Backend:** Moving from Appwrite to Convex.
-- **Frontend:** React + Redux (RTK Query).
-- **Architecture:** Monorepo with `apps/storefront`, `apps/admin`, and several `packages/`.
-- **Primary Goal:** Replace Appwrite SDK calls (via RTK Query `fakeBaseQuery`) with Convex queries, mutations, and actions.
-
-## Key Metrics
-- **Tables to Migrate:** 9
-- **RTK Query Slices to Replace:** 18
-- **Files Affected (Estimated):** 50+
+## Progress
+Progress: [██▌░░░░░░░] 25%
 
 ## Recent Achievements
 - [x] Initialized `.planning` directory.
 - [x] Analyzed `CONVEX_MIGRATION_TECHNICAL_BRIEF.md`.
 - [x] Phase 1 Completed: Infrastructure and Schema initialized.
+- [x] Phase 2 Plan 01 Completed: User and Address functions implemented.
 
 ## Progress
 Progress: [██░░░░░░░░] 20%
