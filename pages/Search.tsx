@@ -10,7 +10,8 @@ import {
   Spinner,
   Grid,
 } from '@chakra-ui/react';
-import { useGlobalSearchQuery } from '../services/api/index';
+import { useQuery } from 'convex/react';
+import { api } from "../../convex/_generated/api";
 import { Breadcrumbs } from '../components/shared';
 import {
   SearchResultsSection,
@@ -29,9 +30,11 @@ export default function Search() {
   const [searchInput, setSearchInput] = useState(queryParam);
   const [activeTab, setActiveTab] = useState<TabType>('all');
 
-  const { data: results, isLoading, isFetching } = useGlobalSearchQuery(queryParam, {
-    skip: !queryParam || queryParam.trim().length < 2,
+  const results = useQuery(api.admin.globalSearch, { 
+    searchTerm: queryParam 
   });
+  const isLoading = results === undefined;
+  const isFetching = false; // Convex handles this automatically
 
   // Sync search input with URL param
   useEffect(() => {
@@ -283,8 +286,8 @@ export default function Search() {
                 >
                   {results.orders.slice(0, activeTab === 'all' ? 3 : undefined).map((order) => (
                     <OrderResultCard
-                      key={order.$id}
-                      order={order}
+                      key={order._id}
+                      order={{ ...order, $id: order._id }}
                       searchTerm={queryParam}
                     />
                   ))}
@@ -307,8 +310,8 @@ export default function Search() {
                 >
                   {results.users.slice(0, activeTab === 'all' ? 4 : undefined).map((user) => (
                     <UserResultCard
-                      key={user.$id}
-                      user={user}
+                      key={user._id}
+                      user={{ ...user, $id: user._id }}
                       searchTerm={queryParam}
                     />
                   ))}
@@ -328,8 +331,8 @@ export default function Search() {
                 <VStack gap="3" align="stretch">
                   {results.products.slice(0, activeTab === 'all' ? 3 : undefined).map((product) => (
                     <ProductResultCard
-                      key={product.$id}
-                      product={product}
+                      key={product._id}
+                      product={{ ...product, $id: product._id }}
                       searchTerm={queryParam}
                     />
                   ))}
@@ -352,8 +355,8 @@ export default function Search() {
                 >
                   {results.categories.slice(0, activeTab === 'all' ? 4 : undefined).map((category) => (
                     <CategoryResultCard
-                      key={category.$id}
-                      category={category}
+                      key={category._id}
+                      category={{ ...category, $id: category._id }}
                       searchTerm={queryParam}
                     />
                   ))}
