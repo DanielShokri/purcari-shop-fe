@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useGetUsersQuery, useDeleteUserMutation, useCreateUserMutation, useUpdateUserMutation } from '../services/api';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { UserRole } from '@shared/types';
 import { 
   VStack, 
@@ -15,19 +16,25 @@ import {
 } from '@chakra-ui/react';
 import { LoadingState, PageHeader, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { UsersFilterToolbar, UsersTable } from '../components/users';
+import { toaster } from '../components/ui/toaster';
 
 const roleOptions = createListCollection({
   items: [
-    { label: 'צופה', value: UserRole.VIEWER },
-    { label: 'עורך', value: UserRole.EDITOR },
-    { label: 'מנהל', value: UserRole.ADMIN },
+    { label: 'צופה', value: 'viewer' },
+    { label: 'עורך', value: 'editor' },
+    { label: 'מנהל', value: 'admin' },
   ],
 });
 
 export default function Users() {
-  const { data: users, isLoading } = useGetUsersQuery(undefined);
-  const [deleteUser] = useDeleteUserMutation();
-  const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
+  const users = useQuery(api.users.listAll);
+  const isLoading = users === undefined;
+  
+  const deleteUserMutation = useMutation(api.users.remove);
+  // Note: For now, we don't have a direct "create" in api.users since it's usually handled by Auth
+  // But for Admin UI we might want to add one. For now we skip implementing the 'create' part if it requires auth complexity
+  // However, update is definitely needed.
+  const updateUserMutation = useMutation(api.users.update);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -37,12 +44,12 @@ export default function Users() {
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
 
-  // Create User Dialog State
+  // Create User Dialog State (Disabled functionality for now as Convex Auth handles creation)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState<UserRole>(UserRole.VIEWER);
+  const [newUserRole, setNewUserRole] = useState<string>('viewer');
   const [createError, setCreateError] = useState<string | null>(null);
 
   // Edit User Dialog State
@@ -52,57 +59,40 @@ export default function Users() {
   const [editUserEmail, setEditUserEmail] = useState('');
   const [editUserPhone, setEditUserPhone] = useState('');
   const [editUserAddress, setEditUserAddress] = useState('');
-  const [editUserRole, setEditUserRole] = useState<UserRole>(UserRole.VIEWER);
+  const [editUserRole, setEditUserRole] = useState<string>('viewer');
   const [editError, setEditError] = useState<string | null>(null);
-  const [updateUser, { isLoading: isUpdating }] = useUpdateUserMutation();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const resetCreateForm = () => {
     setNewUserName('');
     setNewUserEmail('');
     setNewUserPassword('');
-    setNewUserRole(UserRole.VIEWER);
+    setNewUserRole('viewer');
     setCreateError(null);
   };
 
   const handleCreateUser = async () => {
-    if (!newUserName || !newUserEmail || !newUserPassword) {
-      setCreateError('נא למלא את כל השדות');
-      return;
-    }
-    
-    if (newUserPassword.length < 8) {
-      setCreateError('הסיסמה חייבת להכיל לפחות 8 תווים');
-      return;
-    }
-
-    try {
-      await createUser({
-        name: newUserName,
-        email: newUserEmail,
-        password: newUserPassword,
-        role: newUserRole
-      }).unwrap();
-      
-      setIsCreateDialogOpen(false);
-      resetCreateForm();
-    } catch (error: any) {
-      setCreateError(error || 'שגיאה ביצירת משתמש');
-    }
+    toaster.create({
+      title: "יצירת משתמש מוגבלת בשלב זה",
+      description: "יש להשתמש במערכת ההרשמה של האתר",
+      type: "info",
+    });
   };
 
   if (isLoading) {
     return <LoadingState message="טוען משתמשים..." />;
   }
 
-  const getRoleLabel = (role: UserRole): string => {
+  const getRoleLabel = (role: string): string => {
     switch (role) {
-      case UserRole.ADMIN:
+      case 'admin':
         return 'מנהל';
-      case UserRole.EDITOR:
+      case 'editor':
         return 'עורך';
       default:
         return 'צופה';
@@ -113,7 +103,7 @@ export default function Users() {
     const matchesSearch = 
       user.name.includes(searchTerm) || 
       user.email.includes(searchTerm) ||
-      getRoleLabel(user.role).includes(searchTerm);
+      getRoleLabel(user.role || '').includes(searchTerm);
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
     return matchesSearch && matchesRole && matchesStatus;
@@ -132,15 +122,29 @@ export default function Users() {
 
   const handleConfirmDelete = async () => {
     if (userToDelete) {
-      await deleteUser(userToDelete);
-      setDeleteDialogOpen(false);
-      setUserToDelete(null);
+      setIsDeleting(true);
+      try {
+        await deleteUserMutation({ userId: userToDelete as any });
+        toaster.create({
+          title: "משתמש נמחק בהצלחה",
+          type: "success",
+        });
+      } catch (error) {
+        toaster.create({
+          title: "שגיאה במחיקת משתמש",
+          type: "error",
+        });
+      } finally {
+        setIsDeleting(false);
+        setDeleteDialogOpen(false);
+        setUserToDelete(null);
+      }
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedUsers(paginatedUsers.map(u => u.$id));
+      setSelectedUsers(paginatedUsers.map(u => u._id));
     } else {
       setSelectedUsers([]);
     }
@@ -155,14 +159,14 @@ export default function Users() {
   };
 
   const handleEdit = (userId: string) => {
-    const user = users?.find(u => u.$id === userId);
+    const user = users?.find(u => u._id === userId);
     if (user) {
       setEditingUser(userId);
       setEditUserName(user.name);
       setEditUserEmail(user.email);
       setEditUserPhone(user.phone || '');
-      setEditUserAddress(user.address || '');
-      setEditUserRole(user.role);
+      setEditUserAddress(''); // Address is in a separate table in Convex
+      setEditUserRole(user.role || 'viewer');
       setEditError(null);
       setIsEditDialogOpen(true);
     }
@@ -174,20 +178,26 @@ export default function Users() {
       return;
     }
 
+    setIsUpdating(true);
     try {
-      await updateUser({
-        id: editingUser,
+      await updateUserMutation({
+        userId: editingUser as any,
         name: editUserName,
         email: editUserEmail,
         phone: editUserPhone,
-        address: editUserAddress,
-        role: editUserRole,
-      }).unwrap();
+        role: editUserRole as any,
+      });
       
+      toaster.create({
+        title: "משתמש עודכן בהצלחה",
+        type: "success",
+      });
       setIsEditDialogOpen(false);
       setEditingUser(null);
     } catch (error: any) {
-      setEditError(error || 'שגיאה בעדכון משתמש');
+      setEditError('שגיאה בעדכון משתמש');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -288,13 +298,14 @@ export default function Users() {
                 <Dialog.ActionTrigger asChild>
                   <Button variant="outline">ביטול</Button>
                 </Dialog.ActionTrigger>
-                <Button 
-                  colorPalette="blue" 
-                  onClick={handleCreateUser}
-                  loading={isCreating}
-                >
-                  צור משתמש
-                </Button>
+                  <Button 
+                    colorPalette="blue" 
+                    onClick={handleCreateUser}
+                    loading={false}
+                  >
+                    צור משתמש
+                  </Button>
+
               </Dialog.Footer>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" />
