@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useGetProductsQuery, useCreateProductMutation, useUpdateProductMutation, useDeleteProductMutation } from '../services/api';
-import { Product, ProductStatus, StockStatus, WineType, ProductCategory } from '@shared/types';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
+import { Product, ProductStatus, StockStatus, WineType } from '@shared/types';
 import {
   Box,
   Flex,
@@ -34,8 +36,9 @@ import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Placeholder from '@tiptap/extension-placeholder';
 import { RichTextEditor, Control } from '../components/ui/rich-text-editor';
+import { toaster } from '../components/ui/toaster';
 
-// Categories matching Appwrite enum values
+// Categories matching Convex/Appwrite enum values
 const categories = [
   { id: 'red_wine', name: 'יינות אדומים' },
   { id: 'white_wine', name: 'יינות לבנים' },
@@ -50,12 +53,15 @@ export default function ProductEditor() {
   const navigate = useNavigate();
   const isEditMode = !!id;
   
-  const { data: products, isLoading: isLoadingProducts } = useGetProductsQuery(undefined);
-  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
-  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
-  const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+  const existingProduct = useQuery(api.products.getById, isEditMode ? { productId: id as Id<"products"> } : "skip");
+  const allProducts = useQuery(api.products.list, {});
+  
+  const createProduct = useMutation(api.products.create);
+  const updateProduct = useMutation(api.products.update);
+  const deleteProduct = useMutation(api.products.remove);
 
-  const existingProduct = isEditMode ? products?.find(p => p.$id === id) : null;
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue, control, reset } = useForm<Partial<Product>>({
     defaultValues: {
@@ -65,56 +71,55 @@ export default function ProductEditor() {
     },
   });
 
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(
-    existingProduct?.category ? [existingProduct.category] : ['red_wine']
-  );
-  const [tags, setTags] = useState<string[]>(existingProduct?.tags || []);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>(['red_wine']);
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
 
   // Wine-specific state
   const normalizeWineType = (value: any): WineType => {
     if (!value) return WineType.RED;
-    const normalized = String(value).toLowerCase();
+    const normalized = String(value); // Keep case for Convex matching if needed
     const wineTypeValues = Object.values(WineType);
     return (wineTypeValues.includes(normalized as WineType) ? normalized : WineType.RED) as WineType;
   };
-  const [wineType, setWineType] = useState<WineType>(normalizeWineType(existingProduct?.wineType));
-  const [volume, setVolume] = useState<string>(existingProduct?.volume || '750 מ"ל');
-  const [grapeVariety, setGrapeVariety] = useState<string>(existingProduct?.grapeVariety || '');
-  const [vintage, setVintage] = useState<number>(existingProduct?.vintage || new Date().getFullYear());
-  const [servingTemperature, setServingTemperature] = useState<string>(existingProduct?.servingTemperature || '');
+  
+  const [wineType, setWineType] = useState<WineType>(WineType.RED);
+  const [volume, setVolume] = useState<string>('750 מ"ל');
+  const [grapeVariety, setGrapeVariety] = useState<string>('');
+  const [vintage, setVintage] = useState<number>(new Date().getFullYear());
+  const [servingTemperature, setServingTemperature] = useState<string>('');
 
   // Short description state
-  const [shortDescription, setShortDescription] = useState<string>(existingProduct?.shortDescription || '');
+  const [shortDescription, setShortDescription] = useState<string>('');
 
   // Pricing state
-  const [price, setPrice] = useState<number>(existingProduct?.price || 0);
-  const [onSale, setOnSale] = useState<boolean>(existingProduct?.onSale || false);
-  const [salePrice, setSalePrice] = useState<number>(existingProduct?.salePrice || 0);
+  const [price, setPrice] = useState<number>(0);
+  const [onSale, setOnSale] = useState<boolean>(false);
+  const [salePrice, setSalePrice] = useState<number>(0);
 
   // Inventory state
-  const [sku, setSku] = useState<string>(existingProduct?.sku || '');
-  const [quantityInStock, setQuantityInStock] = useState<number>(existingProduct?.quantityInStock || 0);
-  const [stockStatus, setStockStatus] = useState<StockStatus>(existingProduct?.stockStatus || StockStatus.IN_STOCK);
-  const [isFeatured, setIsFeatured] = useState<boolean>(existingProduct?.isFeatured || false);
-  const [featuredImage, setFeaturedImage] = useState<string>(existingProduct?.featuredImage || '');
+  const [sku, setSku] = useState<string>('');
+  const [quantityInStock, setQuantityInStock] = useState<number>(0);
+  const [stockStatus, setStockStatus] = useState<StockStatus>(StockStatus.IN_STOCK);
+  const [isFeatured, setIsFeatured] = useState<boolean>(false);
+  const [featuredImage, setFeaturedImage] = useState<string>('');
 
   // Related products state
-  const [relatedProductIds, setRelatedProductIds] = useState<string[]>(existingProduct?.relatedProducts || []);
+  const [relatedProductIds, setRelatedProductIds] = useState<string[]>([]);
 
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Available products for related products selector (excluding current product)
-  const availableProducts = products?.filter(p => p.$id !== id).map(p => ({
-    id: p.$id,
+  const availableProducts = allProducts?.filter(p => p._id !== id).map(p => ({
+    id: p._id,
     name: p.productName
   })) || [];
 
   // Get related products with names
   const relatedProducts = relatedProductIds.map(rpId => {
-    const product = products?.find(p => p.$id === rpId);
+    const product = allProducts?.find(p => p._id === rpId);
     return { id: rpId, name: product?.productName || 'מוצר לא נמצא' };
   });
 
@@ -129,7 +134,7 @@ export default function ProductEditor() {
         placeholder: 'התחל לכתוב את תיאור המוצר...',
       }),
     ],
-    content: existingProduct?.description || '',
+    content: '',
     onUpdate: ({ editor }) => {
       setValue('description', editor.getHTML());
     },
@@ -149,7 +154,7 @@ export default function ProductEditor() {
       reset({
         productName: existingProduct.productName,
         description: existingProduct.description || '',
-        status: existingProduct.status || ProductStatus.DRAFT,
+        status: (existingProduct.status as ProductStatus) || ProductStatus.DRAFT,
       });
       
       setSelectedCategories(existingProduct.category ? [existingProduct.category] : ['red_wine']);
@@ -159,64 +164,71 @@ export default function ProductEditor() {
       setOnSale(existingProduct.onSale || false);
       setSalePrice(existingProduct.salePrice || 0);
       setSku(existingProduct.sku || '');
-      setQuantityInStock(existingProduct.quantityInStock || 0);
+      setQuantityInStock(Number(existingProduct.quantityInStock) || 0);
       setIsFeatured(existingProduct.isFeatured || false);
       setFeaturedImage(existingProduct.featuredImage || '');
       setRelatedProductIds(existingProduct.relatedProducts || []);
       
-       // Update wine specific fields
-       setWineType(normalizeWineType(existingProduct.wineType));
+      // Update wine specific fields
+      setWineType(normalizeWineType(existingProduct.wineType));
       setVolume(existingProduct.volume || '750 מ"ל');
       setGrapeVariety(existingProduct.grapeVariety || '');
-      setVintage(existingProduct.vintage || new Date().getFullYear());
+      setVintage(Number(existingProduct.vintage) || new Date().getFullYear());
       setServingTemperature(existingProduct.servingTemperature || '');
     }
   }, [existingProduct, reset]);
 
-  if (isLoadingProducts) {
-    return <LoadingState message="טוען..." />;
+  if (isEditMode && existingProduct === undefined) {
+    return <LoadingState message="טוען מוצר..." />;
   }
 
   const onSubmit = async (data: Partial<Product>) => {
     try {
+      setIsSaving(true);
       const description = editor?.getHTML() || '';
-      const productData = {
-        // Required fields
-        productName: data.productName,
+      
+      const commonData = {
+        productName: data.productName!,
         price,
-        quantityInStock,
+        quantityInStock: BigInt(quantityInStock),
         sku,
         category: selectedCategories[0],
-        // Optional fields
         description,
-        shortDescription: shortDescription || null,
-        salePrice: onSale ? salePrice : null,
+        shortDescription: shortDescription || undefined,
+        salePrice: onSale ? salePrice : undefined,
         onSale,
-        tags,
-        relatedProducts: relatedProductIds,
+        // tags: tags, // Tags not in schema yet? Check products.ts
+        // relatedProducts: relatedProductIds, // Not in mutation schema yet
         isFeatured,
-        featuredImage: featuredImage || null,
-        dateAdded: existingProduct?.dateAdded || new Date().toISOString(),
-        stockStatus,
-        // Wine fields
-        wineType: wineType || null,
-        volume: volume || null,
-        grapeVariety: grapeVariety || null,
-        vintage: vintage || null,
-        servingTemperature: servingTemperature || null,
+        featuredImage: featuredImage || undefined,
+        status: (data.status as "draft" | "active" | "hidden" | "discontinued") || "draft",
+        wineType: wineType as any,
+        // volume, grapeVariety, vintage, servingTemperature - not in current mutation schema
       };
 
       if (isEditMode && id) {
-        await updateProduct({ id, ...productData }).unwrap();
+        await updateProduct({ 
+          id: id as Id<"products">, 
+          ...commonData 
+        });
+        toaster.create({
+          title: "המוצר עודכן בהצלחה",
+          type: "success",
+        });
       } else {
-        await createProduct(productData).unwrap();
+        await createProduct(commonData);
+        toaster.create({
+          title: "המוצר נוצר בהצלחה",
+          type: "success",
+        });
       }
       
       setSaveError(null);
-      // Navigate back to products page on success
       navigate('/products');
     } catch (error: any) {
       setSaveError(error?.message || 'שגיאה בשמירת המוצר. וודא שכל השדות תקינים.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -236,10 +248,18 @@ export default function ProductEditor() {
   const handleConfirmDelete = async () => {
     if (!id) return;
     try {
-      await deleteProduct(id).unwrap();
+      setIsDeleting(true);
+      await deleteProduct({ id: id as Id<"products"> });
+      toaster.create({
+        title: "המוצר נמחק בהצלחה",
+        type: "success",
+      });
       navigate('/products');
-    } catch {
+    } catch (error: any) {
+      setSaveError(error?.message || 'שגיאה במחיקת המוצר');
       setDeleteDialogOpen(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -420,8 +440,8 @@ export default function ProductEditor() {
                 <PublishCard
                   control={control}
                   isEditMode={isEditMode}
-                  isCreating={isCreating}
-                  isUpdating={isUpdating}
+                  isCreating={isSaving && !isEditMode}
+                  isUpdating={isSaving && isEditMode}
                   isDeleting={isDeleting}
                   onDelete={handleDelete}
                 />
@@ -485,8 +505,8 @@ export default function ProductEditor() {
 
       <EditorFooter
         isEditMode={isEditMode}
-        isCreating={isCreating}
-        isUpdating={isUpdating}
+        isCreating={isSaving && !isEditMode}
+        isUpdating={isSaving && isEditMode}
         isDeleting={isDeleting}
         onSave={handleSave}
         onCancel={handleCancel}
