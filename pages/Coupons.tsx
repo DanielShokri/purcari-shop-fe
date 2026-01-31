@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetCouponsQuery, useDeleteCouponMutation } from '../services/api';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@convex/api';
+import { Id } from '@convex/dataModel';
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { CouponsFilterToolbar, CouponsTable } from '../components/coupons';
-import { CouponStatus, CouponDiscountType } from '@shared/types';
+import { CouponStatus, CouponDiscountType, Coupon } from '@shared/types';
 
 export default function Coupons() {
   const navigate = useNavigate();
-  const { data: coupons, isLoading } = useGetCouponsQuery(undefined);
-  const [deleteCoupon] = useDeleteCouponMutation();
+  const coupons = useQuery(api.coupons.list);
+  const deleteMutation = useMutation(api.coupons.remove);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,11 +25,18 @@ export default function Coupons() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
 
-  if (isLoading) {
+  const mappedCoupons = useMemo(() => {
+    return coupons?.map(coupon => ({
+      ...coupon,
+      $id: coupon._id,
+    })) as unknown as Coupon[];
+  }, [coupons]);
+
+  if (coupons === undefined) {
     return <LoadingState message="טוען קופונים..." />;
   }
 
-  const filteredCoupons = coupons?.filter(coupon => {
+  const filteredCoupons = mappedCoupons?.filter(coupon => {
     const matchesSearch = coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
     const matchesStatus = statusFilter === 'all' || coupon.status === statusFilter;
@@ -48,7 +57,7 @@ export default function Coupons() {
 
   const handleConfirmDelete = async () => {
     if (couponToDelete) {
-      await deleteCoupon(couponToDelete);
+      await deleteMutation({ id: couponToDelete as Id<"coupons"> });
       setDeleteDialogOpen(false);
       setCouponToDelete(null);
     }

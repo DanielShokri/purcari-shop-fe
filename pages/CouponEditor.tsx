@@ -1,16 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { 
-  useGetCouponsQuery, 
-  useGetCouponByIdQuery,
-  useCreateCouponMutation, 
-  useUpdateCouponMutation, 
-  useDeleteCouponMutation,
-  useLazyGenerateCouponCodeQuery
-} from '../services/api';
-import { useGetCategoriesQuery } from '../services/api';
-import { useGetProductsQuery } from '../services/api';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '@convex/api';
+import { Id } from '@convex/dataModel';
 import { Coupon, CouponStatus, CouponDiscountType } from '@shared/types';
 import {
   Box,
@@ -57,16 +50,34 @@ export default function CouponEditor() {
   const navigate = useNavigate();
   const isEditMode = !!id;
   
-  const { data: coupons, isLoading: isLoadingCoupons } = useGetCouponsQuery(undefined);
-  const { data: coupon, isLoading: isLoadingCoupon } = useGetCouponByIdQuery(id || '', { skip: !id });
-  const { data: categories } = useGetCategoriesQuery(undefined);
-  const { data: products } = useGetProductsQuery(undefined);
-  const [createCoupon, { isLoading: isCreating }] = useCreateCouponMutation();
-  const [updateCoupon, { isLoading: isUpdating }] = useUpdateCouponMutation();
-  const [deleteCoupon, { isLoading: isDeleting }] = useDeleteCouponMutation();
-  const [generateCode] = useLazyGenerateCouponCodeQuery();
+  const couponsData = useQuery(api.coupons.list);
+  const couponData = useQuery(api.coupons.get, id ? { id: id as Id<"coupons"> } : "skip");
+  const categoriesList = useQuery(api.categories.list, { includeInactive: true });
+  const productsList = useQuery(api.products.list, {});
+  
+  const createMutation = useMutation(api.coupons.create);
+  const updateMutation = useMutation(api.coupons.update);
+  const deleteMutation = useMutation(api.coupons.remove);
 
-  const existingCoupon = isEditMode ? coupon : null;
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const existingCoupon = useMemo(() => {
+    if (!isEditMode || !couponData) return null;
+    return {
+      ...couponData,
+      $id: couponData._id,
+      discountValue: Number(couponData.discountValue),
+      usageCount: Number(couponData.usageCount),
+      buyQuantity: couponData.buyQuantity ? Number(couponData.buyQuantity) : undefined,
+      getQuantity: couponData.getQuantity ? Number(couponData.getQuantity) : undefined,
+      usageLimit: couponData.usageLimit ? Number(couponData.usageLimit) : undefined,
+      usageLimitPerUser: couponData.usageLimitPerUser ? Number(couponData.usageLimitPerUser) : undefined,
+      minimumOrder: couponData.minimumOrder ? Number(couponData.minimumOrder) : undefined,
+      maximumDiscount: couponData.maximumDiscount ? Number(couponData.maximumDiscount) : undefined,
+    } as unknown as Coupon;
+  }, [isEditMode, couponData]);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch, control } = useForm<Partial<Coupon>>({
     defaultValues: existingCoupon || {
@@ -83,8 +94,18 @@ export default function CouponEditor() {
   });
 
   const discountType = watch('discountType');
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>(existingCoupon?.categoryIds || []);
-  const [selectedProductIds, setSelectedProductIds] = useState<string[]>(existingCoupon?.productIds || []);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
+  const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (existingCoupon?.categoryIds) {
+      setSelectedCategoryIds(existingCoupon.categoryIds);
+    }
+    if (existingCoupon?.productIds) {
+      setSelectedProductIds(existingCoupon.productIds);
+    }
+  }, [existingCoupon]);
+
   const [categoryInput, setCategoryInput] = useState('');
   const [productInput, setProductInput] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -107,47 +128,49 @@ export default function CouponEditor() {
       setValue('status', existingCoupon.status);
       setValue('firstPurchaseOnly', existingCoupon.firstPurchaseOnly || false);
       setValue('excludeOtherCoupons', existingCoupon.excludeOtherCoupons || false);
-      setSelectedCategoryIds(existingCoupon.categoryIds || []);
-      setSelectedProductIds(existingCoupon.productIds || []);
     }
   }, [existingCoupon, setValue]);
 
-  if (isLoadingCoupons || (isEditMode && isLoadingCoupon)) {
+  if (couponsData === undefined || (isEditMode && couponData === undefined)) {
     return <LoadingState message="טוען..." />;
   }
 
   const onSubmit = async (data: Partial<Coupon>) => {
     try {
-      const couponData = {
+      if (isEditMode) setIsUpdating(true);
+      else setIsCreating(true);
+
+      const payload = {
         code: data.code || '',
-        description: data.description || null,
+        description: data.description || undefined,
         discountType: data.discountType || CouponDiscountType.PERCENTAGE,
-        discountValue: data.discountValue || 0,
-        buyQuantity: data.buyQuantity || null,
-        getQuantity: data.getQuantity || null,
+        discountValue: Number(data.discountValue) || 0,
+        buyQuantity: data.buyQuantity ? BigInt(data.buyQuantity) : undefined,
+        getQuantity: data.getQuantity ? BigInt(data.getQuantity) : undefined,
         startDate: data.startDate ? new Date(data.startDate).toISOString() : new Date().toISOString(),
-        endDate: data.endDate ? new Date(data.endDate).toISOString() : null,
-        minimumOrder: data.minimumOrder || null,
-        maximumDiscount: data.maximumDiscount || null,
-        usageLimit: data.usageLimit || null,
-        usageLimitPerUser: data.usageLimitPerUser || null,
-        usageCount: existingCoupon?.usageCount || 0,
+        endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
+        minimumOrder: data.minimumOrder ? Number(data.minimumOrder) : undefined,
+        maximumDiscount: data.maximumDiscount ? Number(data.maximumDiscount) : undefined,
+        usageLimit: data.usageLimit ? BigInt(data.usageLimit) : undefined,
+        usageLimitPerUser: data.usageLimitPerUser ? BigInt(data.usageLimitPerUser) : undefined,
         categoryIds: selectedCategoryIds,
         productIds: selectedProductIds,
-        userIds: existingCoupon?.userIds || [],
         firstPurchaseOnly: data.firstPurchaseOnly || false,
         excludeOtherCoupons: data.excludeOtherCoupons || false,
-        status: data.status || CouponStatus.ACTIVE,
+        status: (data.status as "active" | "paused" | "expired" | "scheduled") || "active",
       };
       
       if (isEditMode && id) {
-        await updateCoupon({ id, ...couponData }).unwrap();
+        await updateMutation({ id: id as Id<"coupons">, ...payload });
       } else {
-        await createCoupon(couponData).unwrap();
+        await createMutation(payload);
       }
       navigate('/coupons');
-    } catch {
-      // Error handled by RTK Query
+    } catch (error) {
+      console.error("Failed to save coupon:", error);
+    } finally {
+      setIsCreating(false);
+      setIsUpdating(false);
     }
   };
 
@@ -167,22 +190,24 @@ export default function CouponEditor() {
   const handleConfirmDelete = async () => {
     if (!id) return;
     try {
-      await deleteCoupon(id).unwrap();
+      setIsDeleting(true);
+      await deleteMutation({ id: id as Id<"coupons"> });
       navigate('/coupons');
     } catch {
       setDeleteDialogOpen(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   const handleGenerateCode = async () => {
-    try {
-      const { data: code } = await generateCode();
-      if (code) {
-        setValue('code', code);
-      }
-    } catch {
-      // Silent fail - user can manually enter code
+    // Generate a random 8-character code
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
+    setValue('code', code);
   };
 
   const handleAddCategory = () => {
@@ -606,7 +631,7 @@ export default function CouponEditor() {
                         alignItems="center"
                       >
                         {selectedCategoryIds.map((catId) => {
-                          const category = categories?.find(c => c.$id === catId);
+                          const category = categoriesList?.find(c => c._id === catId);
                           return (
                             <Box
                               key={catId}
@@ -637,7 +662,7 @@ export default function CouponEditor() {
                           );
                         })}
                         {selectedProductIds.map((prodId) => {
-                          const product = products?.find(p => p.$id === prodId);
+                          const product = productsList?.find(p => p._id === prodId);
                           return (
                             <Box
                               key={prodId}
