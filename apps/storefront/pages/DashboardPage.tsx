@@ -8,8 +8,6 @@ import { useQuery, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "../../convex/_generated/api";
 
-import { useGetMyOrdersQuery } from '../services/api/ordersApi';
-
 import { Address } from '@shared/types';
 import { 
   profileSchema, 
@@ -40,9 +38,8 @@ const DashboardPage: React.FC = () => {
   const user = useQuery(api.users.get);
   const isUserLoading = user === undefined;
 
-  const { data: orders, isLoading: isOrdersLoading } = useGetMyOrdersQuery(undefined, {
-    skip: !user
-  });
+  const orders = useQuery(api.orders.listByCustomer, user ? { email: user.email } : "skip");
+  const isOrdersLoading = orders === undefined;
   
   const addresses = useQuery(api.userAddresses.list, user ? { userId: user._id } : "skip");
   const isPrefsLoading = addresses === undefined;
