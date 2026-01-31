@@ -27,15 +27,15 @@ const OrderStatusBadge: React.FC<{ status: Order['status'] }> = ({ status }) => 
   );
 };
 
-const OrderCard: React.FC<{ order: Order }> = ({ order }) => (
+const OrderCard: React.FC<{ order: any }> = ({ order }) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4 hover:shadow-md transition-shadow">
     <div className="flex items-center gap-4">
       <div className="bg-gray-50 p-3 rounded-xl text-gray-400">
         <Clock size={24} />
       </div>
       <div className="text-right">
-        <p className="font-bold text-gray-900">הזמנה #{order.$id.slice(-6).toUpperCase()}</p>
-        <p className="text-sm text-gray-500">{new Date(order.$createdAt).toLocaleDateString('he-IL')}</p>
+        <p className="font-bold text-gray-900">הזמנה #{order._id.slice(-6).toUpperCase()}</p>
+        <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleDateString('he-IL')}</p>
       </div>
     </div>
     
@@ -49,7 +49,7 @@ const OrderCard: React.FC<{ order: Order }> = ({ order }) => (
         <OrderStatusBadge status={order.status} />
       </div>
       <Link 
-        to={`/order-confirmation/${order.$id}`} 
+        to={`/order-confirmation/${order._id}`} 
         className="p-2 bg-gray-50 rounded-full text-gray-400 hover:text-secondary hover:bg-red-50 transition-all"
       >
         <ChevronLeft size={20} />
@@ -88,8 +88,8 @@ const OrdersTab: React.FC<OrdersTabProps> = ({ orders, isLoading }) => {
         <LoadingSkeleton />
       ) : orders && orders.length > 0 ? (
         <div className="space-y-4">
-          {orders.map((order) => (
-            <OrderCard key={order.$id} order={order} />
+          {orders.map((order: any) => (
+            <OrderCard key={order._id} order={order} />
           ))}
         </div>
       ) : (
