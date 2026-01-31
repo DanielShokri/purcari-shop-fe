@@ -2,6 +2,35 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
+  // Convex Auth tables
+  authAccounts: defineTable({
+    userId: v.id("users"),
+    provider: v.string(),
+    providerAccountId: v.string(),
+    accessToken: v.optional(v.string()),
+    refreshToken: v.optional(v.string()),
+    idToken: v.optional(v.string()),
+    accessTokenExpiresAt: v.optional(v.int64()),
+    refreshTokenExpiresAt: v.optional(v.int64()),
+    password: v.optional(v.string()),
+    scope: v.optional(v.string()),
+    type: v.string(),
+  }).index("by_providerAndAccountId", ["provider", "providerAccountId"])
+    .index("by_userId", ["userId"]),
+
+  authSessions: defineTable({
+    userId: v.id("users"),
+    token: v.string(),
+    expiresAt: v.int64(),
+  }).index("by_token", ["token"])
+    .index("by_userId", ["userId"]),
+
+  authVerificationTokens: defineTable({
+    identifier: v.string(),
+    token: v.string(),
+    expiresAt: v.int64(),
+  }).index("by_identifierAndToken", ["identifier", "token"]),
+
   users: defineTable({
     tokenIdentifier: v.string(), // From Convex Auth
     name: v.string(),

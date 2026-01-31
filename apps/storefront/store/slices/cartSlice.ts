@@ -6,6 +6,7 @@ import { calculateCartTotals } from '../../utils/cartCalculation';
 import { cartRulesApi, useGetCartRulesQuery } from '../../services/api/cartRulesApi';
 import { useLazyValidateCouponQuery } from '../../services/api/couponsApi';
 import { syncCartToConvex, fetchCartFromConvex } from './convexCartBridge';
+import { useAppDispatch } from '../hooks';
 
 // Constants
 const FREE_SHIPPING_THRESHOLD = 300; // ILS
@@ -359,6 +360,63 @@ export const selectCartIsSyncing = (state: RootState) => state.cart.isSyncing;
 export const useCartSummaryWithRules = () => {
   useGetCartRulesQuery();
   return useSelector(selectCartSummary);
+};
+
+// Hook for coupon validation and application flow
+export const useCouponFlow = () => {
+  const dispatch = useAppDispatch();
+  const appliedCoupon = useSelector(selectAppliedCoupon);
+  const validationState = useSelector(selectCouponValidationState);
+  const validationError = useSelector(selectCouponValidationError);
+  const cartItems = useSelector(selectCartItems);
+  const subtotal = useSelector(selectCartSubtotal);
+  
+  const [validateCoupon, { isLoading: isValidating }] = useLazyValidateCouponQuery();
+
+  const handleValidateCoupon = async (code: string) => {
+    dispatch(setCouponValidationState('validating'));
+    dispatch(setCouponValidationError(undefined));
+    
+    try {
+      const result = await validateCoupon({ code, cartItems, subtotal });
+      if (result.isSuccess && result.data?.valid) {
+        dispatch(setCouponValidationState('valid'));
+        dispatch(setLastValidatedCode(code));
+        return { valid: true, data: result.data };
+      } else {
+        dispatch(setCouponValidationState('invalid'));
+        dispatch(setCouponValidationError(result.data?.error || 'קוד לא תקין'));
+        return { valid: false, message: result.data?.error || 'קוד לא תקין' };
+      }
+    } catch (error) {
+      dispatch(setCouponValidationState('invalid'));
+      dispatch(setCouponValidationError('שגיאה באימות הקופון'));
+      return { valid: false, message: 'שגיאה באימות הקופון' };
+    }
+  };
+
+  const handleApplyCoupon = (coupon: AppliedCoupon) => {
+    dispatch(applyCoupon(coupon));
+    dispatch(setCouponValidationState('idle'));
+    dispatch(setCouponValidationError(undefined));
+  };
+
+  const handleRemoveCoupon = () => {
+    dispatch(removeCoupon());
+    dispatch(setCouponValidationState('idle'));
+    dispatch(setCouponValidationError(undefined));
+    dispatch(setLastValidatedCode(undefined));
+  };
+
+  return {
+    validationState,
+    validationError,
+    appliedCoupon,
+    isValidating,
+    handleValidateCoupon,
+    handleApplyCoupon,
+    handleRemoveCoupon,
+  };
 };
 
 export default cartSlice.reducer;

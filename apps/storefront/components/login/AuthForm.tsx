@@ -6,26 +6,27 @@ import { api } from "../../../../convex/_generated/api";
 import { useToast, useAppDispatch } from '../../store/hooks';
 import { syncCartOnLogin } from '../../store/slices/cartSlice';
 import { useConvex } from "convex/react";
-import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone } from 'lucide-react';
+import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone, Check, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loginSchema, registerSchema, LoginInput, RegisterInput } from '../../schemas/validationSchemas';
 
 const AuthForm: React.FC = () => {
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const [searchParams] = useSearchParams();
-  const redirect = searchParams.get('redirect');
-  const toast = useToast();
-  const [isLogin, setIsLogin] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loginSuccess, setLoginSuccess] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+   const navigate = useNavigate();
+   const dispatch = useAppDispatch();
+   const [searchParams] = useSearchParams();
+   const redirect = searchParams.get('redirect');
+   const toast = useToast();
+   const [isLogin, setIsLogin] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+   const [loginSuccess, setLoginSuccess] = useState(false);
+   const [isLoading, setIsLoading] = useState(false);
+   const [passwordValue, setPasswordValue] = useState('');
 
-  const { signIn } = useAuthActions();
-  const convex = useConvex();
-  const user = useQuery(api.users.get);
+   const { signIn } = useAuthActions();
+   const convex = useConvex();
+   const user = useQuery(api.users.get);
 
   // Redirect when user is confirmed logged in
   useEffect(() => {
@@ -58,37 +59,58 @@ const AuthForm: React.FC = () => {
     setError(null);
   }, [isLogin, reset]);
 
-  const onSubmit: SubmitHandler<FormData> = async (data) => {
-    setError(null);
-    setIsLoading(true);
-    try {
-      if (isLogin) {
-        const loginData = data as LoginInput;
-        await signIn("password", { email: loginData.email, password: loginData.password, flow: "signIn" });
-        toast.success('התחברת בהצלחה');
-      } else {
-        const registerData = data as RegisterInput;
-        await signIn("password", { 
-          email: registerData.email, 
-          password: registerData.password, 
-          name: registerData.name, 
-          phone: registerData.phone,
-          flow: "signUp" 
-        });
-        toast.success('ברוכים הבאים! החשבון נוצר בהצלחה');
-      }
-      // Sync cart with cloud after login/register
-      dispatch(syncCartOnLogin(convex));
-      // Set login success flag - the useEffect will handle navigation after user state is confirmed
-      setLoginSuccess(true);
-    } catch (err: any) {
-      console.error('Auth error:', err);
-      setError('פרטי התחברות שגויים או שגיאה במערכת');
-      toast.error(isLogin ? 'שגיאה בהתחברות' : 'שגיאה בהרשמה');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+   const onSubmit: SubmitHandler<FormData> = async (data) => {
+     setError(null);
+     setIsLoading(true);
+     try {
+       if (isLogin) {
+         const loginData = data as LoginInput;
+         await signIn("password", { email: loginData.email, password: loginData.password, flow: "signIn" });
+         toast.success('התחברת בהצלחה');
+       } else {
+         const registerData = data as RegisterInput;
+         await signIn("password", { 
+           email: registerData.email, 
+           password: registerData.password, 
+           name: registerData.name, 
+           phone: registerData.phone,
+           flow: "signUp" 
+         });
+         toast.success('ברוכים הבאים! החשבון נוצר בהצלחה');
+       }
+       // Sync cart with cloud after login/register
+       dispatch(syncCartOnLogin(convex));
+       // Set login success flag - the useEffect will handle navigation after user state is confirmed
+       setLoginSuccess(true);
+     } catch (err: any) {
+       console.error('Auth error:', err);
+       
+       // Parse specific error messages from Convex auth
+       const errorMessage = err?.message || '';
+       let userFriendlyError = '';
+       
+       if (errorMessage.includes('Invalid password')) {
+         userFriendlyError = 'הסיסמה לא עומדת בדרישות. הסיסמה חייבת להכיל לפחות 4 תווים.';
+       } else if (errorMessage.includes('User does not exist')) {
+         userFriendlyError = 'לא קיים משתמש עם כתובת אימייל זו. אנא הרשמו או בדקו את האימייל.';
+       } else if (errorMessage.includes('Incorrect password')) {
+         userFriendlyError = 'הסיסמה שהוזנה אינה נכונה. אנא נסו שוב.';
+       } else if (errorMessage.includes('already exists')) {
+         userFriendlyError = 'כתובת אימייל זו כבר רשומה במערכת. אנא התחברו או אפסו את הסיסמה.';
+       } else if (errorMessage.includes('Invalid email')) {
+         userFriendlyError = 'כתובת אימייל לא תקינה. אנא בדקו את הפורמט.';
+       } else {
+         userFriendlyError = isLogin 
+           ? 'שגיאה בהתחברות. אנא בדקו את הפרטים ונסו שוב.'
+           : 'שגיאה בהרשמה. אנא נסו שוב מאוחר יותר.';
+       }
+       
+       setError(userFriendlyError);
+       toast.error(userFriendlyError);
+     } finally {
+       setIsLoading(false);
+     }
+   };
 
   return (
     <motion.div 
@@ -163,19 +185,43 @@ const AuthForm: React.FC = () => {
           {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה <span className="text-red-500">*</span></label>
-          <div className="relative">
-            <span className="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400">
-              <Lock size={18} />
-            </span>
-            <input 
-              type="password" 
-              {...register('password')}
-              className={`w-full border-gray-300 rounded-xl p-3 ps-10 border focus:ring-secondary focus:border-secondary ${errors.password ? 'border-red-500' : ''}`} 
-            />
-          </div>
-          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
-        </div>
+           <label className="block text-sm font-medium text-gray-700 mb-1">סיסמה <span className="text-red-500">*</span></label>
+           <div className="relative">
+             <span className="absolute inset-y-0 start-0 flex items-center ps-3 text-gray-400">
+               <Lock size={18} />
+             </span>
+             <input 
+               type="password" 
+               {...register('password')}
+               onChange={(e) => {
+                 register('password').onChange?.(e);
+                 setPasswordValue(e.target.value);
+               }}
+               className={`w-full border-gray-300 rounded-xl p-3 ps-10 border focus:ring-secondary focus:border-secondary ${errors.password ? 'border-red-500' : ''}`} 
+               placeholder="לפחות 4 תווים"
+             />
+           </div>
+           {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+           
+           {/* Password Requirements - Show only in registration mode and when field has focus/value */}
+           {!isLogin && passwordValue && (
+             <div className="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs space-y-2">
+               <p className="font-semibold text-blue-900">דרישות הסיסמה:</p>
+               <div className="space-y-1">
+                 <div className="flex items-center gap-2">
+                   {passwordValue.length >= 4 ? (
+                     <Check size={14} className="text-green-600" />
+                   ) : (
+                     <X size={14} className="text-gray-400" />
+                   )}
+                   <span className={passwordValue.length >= 4 ? 'text-green-700' : 'text-gray-600'}>
+                     לפחות 4 תווים ({passwordValue.length}/4)
+                   </span>
+                 </div>
+               </div>
+             </div>
+           )}
+         </div>
 
         <button 
           type="submit" 

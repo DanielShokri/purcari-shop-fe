@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react';
-import { useTrackEventMutation } from '../services/api/analyticsApi';
+import React from 'react';
 import SEO from '../components/SEO';
 import Hero from '../components/home/Hero';
 import FeaturesBar from '../components/home/FeaturesBar';
@@ -11,11 +10,6 @@ import Newsletter from '../components/home/Newsletter';
 import theme from '../theme/styles';
 
 const HomePage: React.FC = () => {
-  const [trackEvent] = useTrackEventMutation();
-
-  useEffect(() => {
-    trackEvent({ type: 'page_view' });
-  }, [trackEvent]);
 
   const organizationSchema = {
     "@context": "https://schema.org",
