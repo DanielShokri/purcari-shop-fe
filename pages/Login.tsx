@@ -1,22 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useLoginMutation } from '../services/api';
-import { useDispatch } from 'react-redux';
-import { setCredentials } from '../store';
+import { useAuthActions } from "@convex-dev/auth/react";
 import { useNavigate } from 'react-router-dom';
-import {
-  Box,
-  Flex,
-  VStack,
-  Heading,
-  Text,
-  Input,
-  Button,
-  Card,
-  Field,
-  Alert,
-} from '@chakra-ui/react';
-import { ColorModeButton } from '../components/ui/color-mode';
 
 interface LoginFormData {
   email: string;
@@ -25,17 +10,22 @@ interface LoginFormData {
 
 export default function Login() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
-  const [login, { isLoading, error }] = useLoginMutation();
-  const dispatch = useDispatch();
+  const { signIn } = useAuthActions();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const onSubmit = async (data: LoginFormData) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const result = await login(data).unwrap();
-      dispatch(setCredentials({ user: result }));
+      await signIn("password", { email: data.email, password: data.password, flow: "signIn" });
       navigate('/');
-    } catch {
-      // Error is handled by RTK Query
+    } catch (err: any) {
+      setError('שם משתמש או סיסמה שגויים');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 

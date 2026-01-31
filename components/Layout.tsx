@@ -1,17 +1,16 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, logoutUser } from '../store';
-import { useLogoutMutation } from '../services/api';
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useQuery } from 'convex/react';
+import { api } from "../../convex/_generated/api";
 import { Box, Flex } from '@chakra-ui/react';
 import { Sidebar, Header, getPageLabel } from './layout-parts';
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const user = useSelector((state: RootState) => state.auth.user);
-  const dispatch = useDispatch();
-  const [apiLogout] = useLogoutMutation();
+  const { signOut } = useAuthActions();
+  const user = useQuery(api.users.get);
   const navigate = useNavigate();
   
   // Search state - initialize from URL if on search page
@@ -22,8 +21,7 @@ export default function Layout({ children }: { children?: React.ReactNode }) {
   const currentPageLabel = getPageLabel(location.pathname);
 
   const handleLogout = async () => {
-    await apiLogout();
-    dispatch(logoutUser());
+    await signOut();
     navigate('/login');
   };
 
