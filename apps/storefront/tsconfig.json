@@ -11,6 +11,12 @@
       ],
       "@shared/*": [
         "../../packages/shared-*/src"
+      ],
+      "@convex/api": [
+        "../../convex/_generated/api"
+      ],
+      "@convex/dataModel": [
+        "../../convex/_generated/dataModel"
       ]
     }
   },

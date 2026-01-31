@@ -21,6 +21,8 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          '@convex/api': path.resolve(__dirname, '../../convex/_generated/api'),
+          '@convex/dataModel': path.resolve(__dirname, '../../convex/_generated/dataModel'),
         }
       }
     };
