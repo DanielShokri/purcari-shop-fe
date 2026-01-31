@@ -15,6 +15,13 @@ export default defineSchema({
     ),
     createdAt: v.string(),
     updatedAt: v.string(),
+    cart: v.optional(
+      v.object({
+        items: v.array(v.any()),
+        appliedCoupon: v.optional(v.any()),
+        updatedAt: v.string(),
+      })
+    ),
   })
     .index("by_email", ["email"])
     .index("by_tokenIdentifier", ["tokenIdentifier"]),

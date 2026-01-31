@@ -101,3 +101,66 @@ export const updateProfile = mutation({
     return user._id;
   },
 });
+
+/**
+ * Get current user's cart.
+ */
+export const getCart = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_tokenIdentifier", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+
+    if (!user) {
+      return null;
+    }
+
+    return user.cart ?? null;
+  },
+});
+
+/**
+ * Update current user's cart.
+ */
+export const updateCart = mutation({
+  args: {
+    cart: v.object({
+      items: v.array(v.any()),
+      appliedCoupon: v.optional(v.any()),
+      updatedAt: v.string(),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_tokenIdentifier", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    await ctx.db.patch(user._id, {
+      cart: args.cart,
+      updatedAt: new Date().toISOString(),
+    });
+
+    return user._id;
+  },
+});
