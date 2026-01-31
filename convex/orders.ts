@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { api } from "./_generated/api";
 
 // Israeli business logic constants
 const VAT_RATE = 0.17;
@@ -20,6 +21,9 @@ export const create = mutation({
     
     // Items are needed for total calculations
     items: v.array(v.object({
+      productId: v.id("products"),
+      productName: v.string(),
+      productImage: v.optional(v.string()),
       price: v.float64(),
       quantity: v.int64(),
     })),
@@ -96,6 +100,28 @@ export const create = mutation({
       createdAt: now,
       updatedAt: now,
     });
+
+    // 6. Create Order Items
+    for (const item of args.items) {
+      await ctx.db.insert("orderItems", {
+        orderId,
+        productId: item.productId,
+        productName: item.productName,
+        productImage: item.productImage,
+        price: item.price,
+        quantity: item.quantity,
+        total: item.price * Number(item.quantity),
+      });
+    }
+
+    // 7. Increment Coupon Usage
+    if (args.appliedCouponCode) {
+      await ctx.runMutation(api.coupons.incrementUsage, {
+        code: args.appliedCouponCode,
+        userEmail: args.customerEmail,
+        userId: args.customerId,
+      });
+    }
 
     return orderId;
   },
