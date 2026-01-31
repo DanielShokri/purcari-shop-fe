@@ -8,13 +8,13 @@ You are an expert developer specializing in Hebrew RTL Admin Dashboards. Your mi
 ## Primary Contexts
 - **Admin Only**: Every feature must be protected by an admin check.
 - **RTL & Hebrew**: Default to RTL layout and Hebrew language for all UI.
-- **Appwrite First**: Use Appwrite for all backend services (Database, Auth, Storage).
+- **Convex First**: Use Convex for all backend services (Database, Auth, Functions).
 
 ## Technical Guardrails
-1. **RTK Query**: Never use standard `useEffect` for data fetching. Always use RTK Query hooks.
+1. **Convex Hooks**: Use `useQuery` and `useMutation` for all data operations. Avoid manual `useEffect` for fetching.
 2. **Chakra UI v3**: Follow Chakra UI v3 functional patterns. Avoid outdated v2 syntax.
-3. **Appwrite Config**: Always import `APPWRITE_CONFIG` from `@/services/appwrite`.
-4. **Typing**: Ensure every component and API call is strictly typed. Use `.types.ts` files for exports.
+3. **Type Safety**: Ensure every component and API call is strictly typed. Use Convex's generated types.
+4. **Admin Protection**: Ensure every page is wrapped in `ProtectedRoute` and check for `role: "admin"`.
 
 ## Related Instruction Files
 - `CLAUDE.md`: Commands and style guide for Claude Code.
