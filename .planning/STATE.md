@@ -2,18 +2,19 @@
 
 ## Current Status
 - **Phase:** Phase 2: Core Functions & Data
-- **Overall Progress:** 25%
+- **Overall Progress:** 30%
 - **Current Sprint:** Sprint 2: Convex Functions
 - **Last Updated:** Sat Jan 31 2026
 
 ## Progress
-Progress: [██▌░░░░░░░] 25%
+Progress: [███░░░░░░░] 30%
 
 ## Recent Achievements
 - [x] Initialized `.planning` directory.
 - [x] Analyzed `CONVEX_MIGRATION_TECHNICAL_BRIEF.md`.
 - [x] Phase 1 Completed: Infrastructure and Schema initialized.
 - [x] Phase 2 Plan 01 Completed: User and Address functions implemented.
+- [x] Phase 2 Plan 02 Completed: Category and Product functions (Search + CRUD) implemented.
 
 ## Progress
 Progress: [██░░░░░░░░] 20%
