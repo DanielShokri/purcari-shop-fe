@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetCartRulesQuery, useDeleteCartRuleMutation } from '../services/api';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { CartRulesFilterToolbar, CartRulesTable } from '../components/cart-rules';
 
 export default function CartRules() {
   const navigate = useNavigate();
-  const { data: cartRules, isLoading } = useGetCartRulesQuery(undefined);
-  const [deleteCartRule] = useDeleteCartRuleMutation();
+  const cartRules = useQuery(api.cartRules.get);
+  const deleteCartRule = useMutation(api.cartRules.remove);
+  const isLoading = cartRules === undefined;
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
@@ -20,7 +23,7 @@ export default function CartRules() {
 
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [cartRuleToDelete, setCartRuleToDelete] = useState<string | null>(null);
+  const [cartRuleToDelete, setCartRuleToDelete] = useState<Id<"cartRules"> | null>(null);
 
   if (isLoading) {
     return <LoadingState message="טוען חוקי עגלה..." />;
@@ -29,7 +32,7 @@ export default function CartRules() {
   const filteredCartRules = cartRules?.filter(rule => {
     const matchesSearch = rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (rule.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    const matchesType = typeFilter === 'all' || rule.type === typeFilter;
+    const matchesType = typeFilter === 'all' || rule.ruleType === typeFilter;
     const matchesStatus = statusFilter === 'all' || rule.status === statusFilter;
     return matchesSearch && matchesType && matchesStatus;
   }) || [];
@@ -38,16 +41,16 @@ export default function CartRules() {
   const paginatedCartRules = filteredCartRules.slice(
     (currentPage - 1) * cartRulesPerPage,
     currentPage * cartRulesPerPage
-  );
+  ).map(r => ({ ...r, $id: r._id }));
 
   const handleDelete = (id: string) => {
-    setCartRuleToDelete(id);
+    setCartRuleToDelete(id as Id<"cartRules">);
     setDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (cartRuleToDelete) {
-      await deleteCartRule(cartRuleToDelete);
+      await deleteCartRule({ id: cartRuleToDelete });
       setDeleteDialogOpen(false);
       setCartRuleToDelete(null);
     }
@@ -55,7 +58,7 @@ export default function CartRules() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedCartRules(paginatedCartRules.map(r => r.$id));
+      setSelectedCartRules(paginatedCartRules.map(r => r._id));
     } else {
       setSelectedCartRules([]);
     }
