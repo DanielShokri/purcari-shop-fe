@@ -14,15 +14,17 @@ import AboutPage from './pages/AboutPage';
 import ShippingPage from './pages/ShippingPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import { useConvex } from "convex/react";
 import { useAppDispatch } from './store/hooks';
 import { initializeCart } from './store/slices/cartSlice';
 
 const App: React.FC = () => {
   const dispatch = useAppDispatch();
+  const convex = useConvex();
 
   useEffect(() => {
-    dispatch(initializeCart());
-  }, [dispatch]);
+    dispatch(initializeCart(convex));
+  }, [dispatch, convex]);
 
   return (
     <Router>

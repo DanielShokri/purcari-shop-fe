@@ -4,14 +4,11 @@ import { AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { useQuery, useMutation } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { api } from "../../convex/_generated/api";
+
 import { useGetMyOrdersQuery } from '../services/api/ordersApi';
-import { 
-  useGetCurrentUserQuery, 
-  useLogoutMutation, 
-  useUpdateProfileMutation,
-  useGetUserPrefsQuery,
-  useUpdateUserPrefsMutation 
-} from '../services/api/authApi';
 
 import { Address } from '@shared/types';
 import { 
@@ -40,17 +37,24 @@ const DashboardPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabId>('orders');
   
   // Queries & Mutations
-  const { data: user, isLoading: isUserLoading } = useGetCurrentUserQuery();
+  const user = useQuery(api.users.get);
+  const isUserLoading = user === undefined;
+
   const { data: orders, isLoading: isOrdersLoading } = useGetMyOrdersQuery(undefined, {
     skip: !user
   });
-  const { data: prefs, isLoading: isPrefsLoading } = useGetUserPrefsQuery(undefined, {
-    skip: !user
-  });
   
-  const [logout] = useLogoutMutation();
-  const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
-  const [updatePrefs, { isLoading: isUpdatingPrefs }] = useUpdateUserPrefsMutation();
+  const addresses = useQuery(api.userAddresses.list, user ? { userId: user._id } : "skip");
+  const isPrefsLoading = addresses === undefined;
+  
+  const { signOut } = useAuthActions();
+  const updateProfileMutation = useMutation(api.users.updateProfile);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+
+  const createAddress = useMutation(api.userAddresses.create);
+  const updateAddress = useMutation(api.userAddresses.update);
+  const removeAddress = useMutation(api.userAddresses.remove);
+  const [isUpdatingPrefs, setIsUpdatingPrefs] = useState(false);
 
   const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
@@ -93,62 +97,54 @@ const DashboardPage: React.FC = () => {
 
   // Handlers
   const handleLogout = async () => {
-    await logout().unwrap();
+    await signOut();
     dispatch(handleCartLogout());
     navigate('/login');
   };
 
   const onProfileSubmit = async (data: ProfileInput) => {
     setProfileStatus(null);
+    setIsUpdatingProfile(true);
     try {
-      await updateProfile({ 
+      await updateProfileMutation({ 
         name: data.name,
         phone: data.phone
-      }).unwrap();
+      });
       setProfileStatus({ type: 'success', message: 'הפרופיל עודכן בהצלחה' });
     } catch (err: any) {
       setProfileStatus({ type: 'error', message: err.message || 'שגיאה בעדכון הפרופיל' });
+    } finally {
+      setIsUpdatingProfile(false);
     }
   };
 
   const onAddressSubmit = async (data: AddressFormInput) => {
+    if (!user) return;
+    setIsUpdatingPrefs(true);
     try {
-      const currentAddresses = prefs?.addresses || [];
-      let updatedAddresses: Address[];
-
       if (editingAddressId) {
-        updatedAddresses = currentAddresses.map(addr => 
-          addr.id === editingAddressId ? { ...data, id: editingAddressId } as Address : addr
-        );
+        await updateAddress({
+          addressId: editingAddressId as any,
+          ...data
+        });
       } else {
-        const newAddress: Address = {
-          ...data,
-          id: Math.random().toString(36).substring(7)
-        } as Address;
-        updatedAddresses = [...currentAddresses, newAddress];
+        await createAddress({
+          userId: user._id,
+          ...data
+        });
       }
-
-      // If set as default, unset others
-      if (data.isDefault) {
-        const targetId = editingAddressId || updatedAddresses[updatedAddresses.length-1].id;
-        updatedAddresses = updatedAddresses.map(addr => ({
-          ...addr,
-          isDefault: addr.id === targetId
-        }));
-      }
-
-      await updatePrefs({ ...prefs, addresses: updatedAddresses }).unwrap();
       closeAddressModal();
     } catch (err) {
       console.error('Failed to update addresses:', err);
+    } finally {
+      setIsUpdatingPrefs(false);
     }
   };
 
   const deleteAddress = async (id: string) => {
     if (!confirm('האם אתה בטוח שברצונך למחוק כתובת זו?')) return;
     try {
-      const updatedAddresses = (prefs?.addresses || []).filter(addr => addr.id !== id);
-      await updatePrefs({ ...prefs, addresses: updatedAddresses }).unwrap();
+      await removeAddress({ addressId: id as any });
     } catch (err) {
       console.error('Failed to delete address:', err);
     }
@@ -229,7 +225,7 @@ const DashboardPage: React.FC = () => {
 
             {activeTab === 'addresses' && (
               <AddressesTab
-                addresses={prefs?.addresses}
+                addresses={addresses}
                 isLoading={isPrefsLoading}
                 onAddNew={openNewAddress}
                 onEdit={openEditAddress}

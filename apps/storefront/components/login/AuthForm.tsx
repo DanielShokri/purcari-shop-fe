@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useLoginMutation, useRegisterMutation, useGetCurrentUserQuery } from '../../services/api/authApi';
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useQuery } from "convex/react";
+import { api } from "../../../../convex/_generated/api";
 import { useToast, useAppDispatch } from '../../store/hooks';
 import { syncCartOnLogin } from '../../store/slices/cartSlice';
+import { useConvex } from "convex/react";
 import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -18,24 +21,25 @@ const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loginSuccess, setLoginSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [login, { isLoading: isLoggingIn }] = useLoginMutation();
-  const [registerUser, { isLoading: isRegistering }] = useRegisterMutation();
-  const { data: user, isLoading: isCheckingUser } = useGetCurrentUserQuery();
+  const { signIn } = useAuthActions();
+  const convex = useConvex();
+  const user = useQuery(api.users.get);
 
   // Redirect when user is confirmed logged in
   useEffect(() => {
-    if (loginSuccess && user && !isCheckingUser) {
+    if (loginSuccess && user) {
       navigate(redirect ? `/${redirect}` : '/dashboard');
     }
-  }, [loginSuccess, user, isCheckingUser, navigate, redirect]);
+  }, [loginSuccess, user, navigate, redirect]);
 
   // Also redirect if user is already logged in when visiting the page
   useEffect(() => {
-    if (user && !isCheckingUser && !loginSuccess) {
+    if (user && !loginSuccess) {
       navigate(redirect ? `/${redirect}` : '/dashboard');
     }
-  }, [user, isCheckingUser, loginSuccess, navigate, redirect]);
+  }, [user, loginSuccess, navigate, redirect]);
 
   // Use union type to handle both login and register form types
   type FormData = LoginInput | RegisterInput;
@@ -56,23 +60,33 @@ const AuthForm: React.FC = () => {
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     setError(null);
+    setIsLoading(true);
     try {
       if (isLogin) {
         const loginData = data as LoginInput;
-        await login({ email: loginData.email, password: loginData.password }).unwrap();
+        await signIn("password", { email: loginData.email, password: loginData.password, flow: "signIn" });
         toast.success('התחברת בהצלחה');
       } else {
         const registerData = data as RegisterInput;
-        await registerUser({ email: registerData.email, password: registerData.password, name: registerData.name, phone: registerData.phone }).unwrap();
+        await signIn("password", { 
+          email: registerData.email, 
+          password: registerData.password, 
+          name: registerData.name, 
+          phone: registerData.phone,
+          flow: "signUp" 
+        });
         toast.success('ברוכים הבאים! החשבון נוצר בהצלחה');
       }
       // Sync cart with cloud after login/register
-      dispatch(syncCartOnLogin());
+      dispatch(syncCartOnLogin(convex));
       // Set login success flag - the useEffect will handle navigation after user state is confirmed
       setLoginSuccess(true);
     } catch (err: any) {
-      setError(err || 'משהו השתבש, נסה שוב מאוחר יותר');
+      console.error('Auth error:', err);
+      setError('פרטי התחברות שגויים או שגיאה במערכת');
       toast.error(isLogin ? 'שגיאה בהתחברות' : 'שגיאה בהרשמה');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -165,11 +179,11 @@ const AuthForm: React.FC = () => {
 
         <button 
           type="submit" 
-          disabled={isLoggingIn || isRegistering || loginSuccess}
+          disabled={isLoading || loginSuccess}
           className="w-full bg-secondary text-white py-4 rounded-xl font-bold text-lg hover:bg-red-900 transition-colors flex items-center justify-center gap-2 mt-4 shadow-lg cursor-pointer disabled:opacity-70"
         >
           {isLogin ? <LogIn size={20} /> : <UserPlus size={20} />}
-          {isLoggingIn || isRegistering ? 'מעבד...' : loginSuccess ? 'מעביר לחשבון...' : (isLogin ? 'התחברות' : 'הרשמה')}
+          {isLoading ? 'מעבד...' : loginSuccess ? 'מעביר לחשבון...' : (isLogin ? 'התחברות' : 'הרשמה')}
         </button>
       </form>
 

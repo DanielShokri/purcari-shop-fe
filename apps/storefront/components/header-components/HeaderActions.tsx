@@ -4,7 +4,7 @@ import { ShoppingCart, Search, User, LogOut, ChevronDown } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import { toggleCartModal, openSearchModal } from '../../store/slices/uiSlice';
 import { selectCartItemCount, handleLogout as handleCartLogout } from '../../store/slices/cartSlice';
-import { useLogoutMutation } from '../../services/api/authApi';
+import { useAuthActions } from "@convex-dev/auth/react";
 
 interface HeaderActionsProps {
   user: any;
@@ -15,7 +15,8 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
   const navigate = useNavigate();
   const cartCount = useAppSelector(selectCartItemCount);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { signOut } = useAuthActions();
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -32,12 +33,15 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
 
   const handleLogout = async () => {
     try {
-      await logout().unwrap();
+      setIsLoggingOut(true);
+      await signOut();
       dispatch(handleCartLogout());
       setIsUserMenuOpen(false);
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 

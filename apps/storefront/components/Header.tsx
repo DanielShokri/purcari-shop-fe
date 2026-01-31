@@ -3,13 +3,14 @@ import { Menu } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleMobileMenu, selectIsMobileMenuOpen } from '../store/slices/uiSlice';
-import { useGetCurrentUserQuery } from '../services/api/authApi';
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { Logo, DesktopNav, MobileMenu, HeaderActions } from './header-components';
 
 const Header: React.FC = () => {
   const dispatch = useAppDispatch();
   const isMobileMenuOpen = useAppSelector(selectIsMobileMenuOpen);
-  const { data: user } = useGetCurrentUserQuery();
+  const user = useQuery(api.users.get);
 
   return (
     <header className="fixed top-0 w-full bg-white/90 backdrop-blur-md shadow-sm z-40 border-b border-gray-100">
