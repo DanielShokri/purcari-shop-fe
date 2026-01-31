@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetProductsQuery, useDeleteProductMutation } from '../services/api';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { ProductsFilterToolbar, ProductsTable } from '../components/products';
@@ -27,9 +28,7 @@ const categoryLabels: Record<string, string> = {
 
 export default function Products() {
   const navigate = useNavigate();
-  const { data: products, isLoading } = useGetProductsQuery(undefined);
-  const [deleteProduct] = useDeleteProductMutation();
-
+  
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -37,18 +36,23 @@ export default function Products() {
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 10;
 
+  const products = useQuery(api.products.list, {
+    category: statusFilter === 'all' ? undefined : statusFilter
+  });
+  
+  const deleteProductMutation = useMutation(api.products.remove);
+
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [productToDelete, setProductToDelete] = useState<any | null>(null);
 
-  if (isLoading) {
+  if (products === undefined) {
     return <LoadingState message="טוען מוצרים..." />;
   }
 
   const filteredProducts = products?.filter(product => {
     const matchesSearch = product.productName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = statusFilter === 'all' || product.category === statusFilter;
-    return matchesSearch && matchesCategory;
+    return matchesSearch;
   }) || [];
 
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
@@ -64,7 +68,7 @@ export default function Products() {
 
   const handleConfirmDelete = async () => {
     if (productToDelete) {
-      await deleteProduct(productToDelete);
+      await deleteProductMutation({ id: productToDelete });
       setDeleteDialogOpen(false);
       setProductToDelete(null);
     }
@@ -72,7 +76,7 @@ export default function Products() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedProducts(paginatedProducts.map(p => p.$id));
+      setSelectedProducts(paginatedProducts.map(p => p._id));
     } else {
       setSelectedProducts([]);
     }
@@ -88,6 +92,13 @@ export default function Products() {
 
   const getCategoryLabel = (category: string): string => categoryLabels[category] || category;
   const getRandomImage = (index: number): string => productImages[index % productImages.length];
+
+  // Map Convex products to table compatible format
+  const tableProducts = paginatedProducts.map(p => ({
+    ...p,
+    $id: p._id,
+    $createdAt: p.createdAt,
+  }));
 
   return (
     <VStack gap="0" align="stretch" h="full">
@@ -107,7 +118,7 @@ export default function Products() {
       />
 
       <ProductsTable
-        products={paginatedProducts}
+        products={tableProducts}
         selectedProducts={selectedProducts}
         onSelectAll={handleSelectAll}
         onSelectProduct={handleSelectProduct}
@@ -135,3 +146,4 @@ export default function Products() {
     </VStack>
   );
 }
+

@@ -246,7 +246,12 @@ export const RichTextEditorContent = React.forwardRef<
 >(function RichTextEditorContent(props, ref) {
   const { editor } = useRichTextEditorContext()
   if (!editor) return null
-  return (EditorContent as any)({ editor, ...props, innerRef: ref })
+  const { className, ...rest } = props
+  return (
+    <div ref={ref} className={className}>
+      {React.createElement(EditorContent as any, { editor, ...rest })}
+    </div>
+  )
 })
 
 export interface RichTextEditorControlGroupProps extends StackProps {}

@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetStatsQuery, useGetRecentOrdersQuery, useGetMonthlySalesQuery } from '../services/api';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import {
   Box,
   Flex,
@@ -60,19 +61,21 @@ const formatDate = (dateStr: string): string => {
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { data: stats, isLoading: statsLoading } = useGetStatsQuery();
-  const { data: recentOrders, isLoading: ordersLoading } = useGetRecentOrdersQuery(5);
-  const { data: monthlySales, isLoading: salesLoading } = useGetMonthlySalesQuery();
+  
+  const stats = useQuery(api.admin.getStats);
+  const recentOrders = useQuery(api.orders.listAll, {});
+  const monthlySales = useQuery(api.admin.getMonthlySales);
 
    // Map API orders to dashboard Order type
    const dashboardOrders: DashboardOrder[] = useMemo(() => {
      if (!recentOrders) return [];
-     return recentOrders.map((order) => ({
-       id: `#${order.$id}`,
+     // Take only first 5 for dashboard
+     return recentOrders.slice(0, 5).map((order) => ({
+       id: `#${order._id.substring(0, 8)}`,
        customer: order.customerName,
        initials: getInitials(order.customerName),
        color: getAvatarColor(order.customerName),
-       date: formatDate(order.$createdAt),
+       date: formatDate(order.createdAt),
        amount: formatCurrency(order.total),
        status: order.status,
      }));
@@ -81,7 +84,7 @@ export default function Dashboard() {
   // Use chart data from API or fallback to empty
   const chartData = monthlySales || [];
 
-  const isLoading = statsLoading || ordersLoading || salesLoading;
+  const isLoading = stats === undefined || recentOrders === undefined || monthlySales === undefined;
 
   if (isLoading) {
     return <LoadingState message="טוען נתונים..." />;
@@ -185,3 +188,4 @@ export default function Dashboard() {
     </VStack>
   );
 }
+
