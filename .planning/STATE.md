@@ -1,45 +1,37 @@
 # Project State: Appwrite to Convex Migration
 
 ## Current Status
-- **Phase:** Phase 2: Core Functions & Data
-- **Overall Progress:** 30%
-- **Current Sprint:** Sprint 2: Convex Functions
+- **Phase:** Phase 3: Frontend Integration
+- **Overall Progress:** 72%
+- **Current Sprint:** Sprint 3: Storefront Migration
 - **Last Updated:** Sat Jan 31 2026
 
 ## Progress
-Progress: [██████░░░░] 60%
+Progress: [███████░░░] 72%
 
 ## Recent Achievements
 - [x] Initialized `.planning` directory.
-- [x] Analyzed `CONVEX_MIGRATION_TECHNICAL_BRIEF.md`.
 - [x] Phase 1 Completed: Infrastructure and Schema initialized.
-- [x] Phase 2 Plan 01 Completed: User and Address functions implemented.
-- [x] Phase 2 Plan 02 Completed: Category and Product functions (Search + CRUD) implemented.
-
-## Progress
-Progress: [██████░░░░] 60%
+- [x] Phase 2 Completed: Core Backend Functions (Users, Products, Orders, Coupons).
+- [x] Phase 3 Plan 01 Completed: Storefront Convex Initialization.
+- [x] Phase 3 Plan 02 Completed: Product & Category Integration.
+- [x] Phase 3 Plan 03 Completed: Cart & Auth Integration.
 
 ## Immediate Blockers
 - None identified.
 
 ## Risk Assessment
-- **Hebrew Search:** Ensuring Convex search indexes correctly replace the current client-side Hebrew filtering.
-- **Auth Transition:** Seamlessly moving from Appwrite Auth to Convex native Auth.
-- **Complex Logic:** Accurately porting the 12-step coupon validation sequence to Convex actions.
+- **Checkout Flow Complexity**: Ensuring the 12-step coupon validation and atomic order creation work perfectly in the combined frontend-backend flow.
+- **Admin Migration**: The next phase requires migrating the administrative dashboard, which has more complex CRUD operations.
 
-## Team
-- **Agent:** SuperClaude (Orchestrator + Implementer)
-- **Stakeholder:** Daniel Shmuel Mirshukri
-- Completed Phase 2 Plan 03: Orders and Order Items
-Last session: 2026-01-31T14:34:36Z
-Stopped at: Completed 02-03-PLAN.md
-Resume file: None
-- Completed Phase 2 Plan 04: Coupon Management & Validation
-- **Phase 2 Complete**: All core backend functions (Users, Products, Orders, Coupons) are ready.
-Last session: 2026-01-31T14:40:05Z
-Stopped at: Completed Phase 2
-Resume file: None
-- Completed Phase 3 Plan 01: Storefront Convex Initialization
-Last session: 2026-01-31T14:41:10Z
-Stopped at: Completed 03-01-PLAN.md
-Resume file: None
+## Decisions Made
+- **Cart Persistence**: Store-specific `convexCartBridge` used to allow Redux Thunks to interact with Convex client outside React lifecycle.
+- **Address Schema**: Transitioned from Appwrite `prefs` blob to a first-class `userAddresses` table in Convex for better data integrity.
+- **Auth Flow**: Using `Password` provider with explicit `flow` parameters for robust signIn/signUp.
+
+## Session Continuity
+Last session: 2026-01-31T15:10:00Z
+Stopped at: Completed Phase 3 Plan 03 (Cart & Auth Integration)
+Resume point: Start Phase 3 Plan 04 (Checkout & Orders Integration)
+Progress: 8/11 planned steps completed.
+████████░░░
