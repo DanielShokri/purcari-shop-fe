@@ -1,15 +1,16 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useGetOrderByIdQuery } from '../services/api/ordersApi';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { CheckCircle, Package, Truck, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const OrderConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: orderData, isLoading } = useGetOrderByIdQuery(id || '');
+  const orderData = useQuery(api.orders.get, id ? { orderId: id as any } : "skip");
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">טוען פרטי הזמנה...</div>;
-  if (!orderData) return <div className="min-h-screen flex items-center justify-center">הזמנה לא נמצאה</div>;
+  if (orderData === undefined) return <div className="min-h-screen flex items-center justify-center">טוען פרטי הזמנה...</div>;
+  if (orderData === null) return <div className="min-h-screen flex items-center justify-center">הזמנה לא נמצאה</div>;
 
   const { items } = orderData;
 
@@ -26,16 +27,16 @@ const OrderConfirmationPage: React.FC = () => {
           </div>
           
           <h1 className="text-3xl font-bold mb-2">תודה על הזמנתך!</h1>
-          <p className="text-gray-500 mb-8">מספר הזמנה: #{orderData.$id.slice(-6).toUpperCase()}</p>
+          <p className="text-gray-500 mb-8">מספר הזמנה: #{orderData._id.slice(-6).toUpperCase()}</p>
           
           <div className="bg-gray-50 rounded-2xl p-6 mb-8 text-right">
             <h3 className="font-bold mb-4 border-b pb-2">סיכום הזמנה</h3>
             <div className="space-y-4">
-              {items.map(item => (
-                <div key={item.$id} className="flex justify-between items-center text-sm">
+              {items.map((item: any) => (
+                <div key={item._id} className="flex justify-between items-center text-sm">
                   <div className="flex items-center gap-3">
                     <img src={item.productImage || ''} alt={item.productName} className="w-10 h-14 object-cover rounded" />
-                    <span>{item.productName} x {item.quantity}</span>
+                    <span>{item.productName} x {Number(item.quantity)}</span>
                   </div>
                   <span className="font-bold">₪{item.total}</span>
                 </div>
