@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch, useToast } from '../store/hooks';
 import { selectCartItems, clearCart, useCartSummaryWithRules, useCouponFlow } from '../store/slices/cartSlice';
-import { useCreateOrderMutation } from '../services/api/ordersApi';
-import { useTrackEventMutation } from '../services/api/analyticsApi';
-import { useGetCurrentUserQuery, useGetUserPrefsQuery } from '../services/api/authApi';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { ShoppingBag } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -25,8 +24,8 @@ const CheckoutPage: React.FC = () => {
   const cartSummary = useCartSummaryWithRules();
   const { items: cartItems, subtotal, shipping, validationErrors, appliedBenefits, discount: automaticDiscount } = cartSummary;
   
-  const { data: user } = useGetCurrentUserQuery();
-  const { data: prefs } = useGetUserPrefsQuery(undefined, { skip: !user });
+  const user = useQuery(api.users.get);
+  const addresses = useQuery(api.addresses.listByUserId, user ? { userId: user._id } : "skip");
   
    const [step, setStep] = useState(1);
 
@@ -66,17 +65,19 @@ const CheckoutPage: React.FC = () => {
       if (user.phone) setValue('phone', user.phone);
     }
     
-    if (prefs?.addresses && prefs.addresses.length > 0) {
-      const defaultAddr = prefs.addresses.find(a => a.isDefault) || prefs.addresses[0];
+    if (addresses && addresses.length > 0) {
+      const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
       setValue('street', defaultAddr.street);
       setValue('city', defaultAddr.city);
       setValue('postalCode', defaultAddr.postalCode);
       setValue('country', defaultAddr.country);
     }
-  }, [user, prefs, setValue]);
+  }, [user, addresses, setValue]);
 
-   const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
-   const [trackEvent] = useTrackEventMutation();
+   const createOrder = useMutation(api.orders.create);
+   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+   // TrackEvent replaced by manual call or analytics utility if needed
+   const trackEvent = (payload: any) => console.log('Track event:', payload);
 
    // Calculate total discount (automatic + applied coupon)
    const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
@@ -106,7 +107,9 @@ const CheckoutPage: React.FC = () => {
 
    const onSubmit = async (data: CheckoutInput) => {
      try {
-       const orderResult = await createOrder({
+       setIsCreatingOrder(true);
+       const orderId = await createOrder({
+         customerId: user?._id,
          customerName: data.name,
          customerEmail: data.email,
          customerPhone: data.phone,
@@ -122,28 +125,28 @@ const CheckoutPage: React.FC = () => {
            chargeDate: new Date().toISOString(),
          },
          items: cartItems.map(item => ({
-           productId: item.productId,
+           productId: item.productId as any, // Convex IDs need proper casting if they come from strings
            productName: item.title,
            productImage: item.imgSrc,
-           quantity: item.quantity,
+           quantity: BigInt(item.quantity),
            price: item.price,
-           total: item.price * item.quantity,
          })),
          // Add coupon snapshot if applied
          ...(appliedCoupon && {
            appliedCouponCode: appliedCoupon.code,
            appliedCouponDiscount: appliedCoupon.discountAmount,
-           appliedCouponType: appliedCoupon.discountType,
          }),
-       }).unwrap();
+       });
 
        trackEvent({ type: 'checkout' });
        dispatch(clearCart());
        toast.success('ההזמנה בוצעה בהצלחה!');
-       navigate(`/order-confirmation/${orderResult.$id}`);
+       navigate(`/order-confirmation/${orderId}`);
      } catch (err) {
        console.error('Failed to create order:', err);
        toast.error('שגיאה ביצירת ההזמנה, נסה שוב');
+     } finally {
+       setIsCreatingOrder(false);
      }
    };
 
