@@ -28,11 +28,56 @@ export const get = query({
 /**
  * List all users. (Admin only - logical check)
  */
-export const list = query({
-  args: {},
-  handler: async (ctx) => {
+export const listAll = query({
+  args: {
+    role: v.optional(v.union(v.literal("admin"), v.literal("editor"), v.literal("viewer"))),
+    status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended"))),
+  },
+  handler: async (ctx, args) => {
     // Note: Add proper admin role check here in production
-    return await ctx.db.query("users").collect();
+    let usersQuery = ctx.db.query("users");
+    
+    // Manual filtering for now as we don't have indexes for these yet
+    // In production, add indexes for role and status
+    const users = await usersQuery.collect();
+    
+    return users.filter(user => {
+      if (args.role && user.role !== args.role) return false;
+      if (args.status && user.status !== args.status) return false;
+      return true;
+    });
+  },
+});
+
+/**
+ * Delete a user.
+ */
+export const remove = mutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    await ctx.db.delete(args.userId);
+  },
+});
+
+/**
+ * Update a user (Admin).
+ */
+export const update = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+    phone: v.optional(v.string()),
+    address: v.optional(v.string()),
+    role: v.optional(v.union(v.literal("admin"), v.literal("editor"), v.literal("viewer"))),
+    status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended"))),
+  },
+  handler: async (ctx, args) => {
+    const { userId, ...updates } = args;
+    await ctx.db.patch(userId, {
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    });
   },
 });
 
