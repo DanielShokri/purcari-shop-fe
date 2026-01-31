@@ -5,7 +5,7 @@ import { api } from '@convex/api';
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { ProductsFilterToolbar, ProductsTable } from '../components/products';
-import { ProductCategory, dbProductsToAppwrite } from '@shared/types';
+import { ProductCategory, Product } from '@shared/types';
 
 // Sample product images for display
 const productImages = [
@@ -93,8 +93,8 @@ export default function Products() {
   const getCategoryLabel = (category: string): string => categoryLabels[category] || category;
   const getRandomImage = (index: number): string => productImages[index % productImages.length];
 
-  // Map Convex products to table compatible format using adapter
-  const tableProducts = dbProductsToAppwrite(paginatedProducts);
+  // Use Convex products directly for table
+  const tableProducts = paginatedProducts as Product[];
 
   return (
     <VStack gap="0" align="stretch" h="full">

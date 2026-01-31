@@ -91,7 +91,7 @@ export const categoriesApi = baseApi.injectEndpoints({
               .filter(cat => cat.parentId === parentId)
               .map(cat => ({
                 ...cat,
-                children: buildTree(cat.$id),
+                children: buildTree(cat._id),
               }));
           };
           

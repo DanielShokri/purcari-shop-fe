@@ -80,13 +80,13 @@ export default function OrdersTable({
               ) : (
                 orders.map((order) => (
                   <OrderTableRow
-                    key={order.$id}
+                    key={order._id}
                     order={order}
-                    isSelected={selectedOrders.includes(order.$id)}
-                    onSelect={(checked) => onSelectOrder(order.$id, checked)}
-                    onView={() => onView(order.$id)}
-                    onEdit={() => onEdit(order.$id)}
-                    onDelete={() => onDelete(order.$id)}
+                    isSelected={selectedOrders.includes(order._id)}
+                    onSelect={(checked) => onSelectOrder(order._id, checked)}
+                    onView={() => onView(order._id)}
+                    onEdit={() => onEdit(order._id)}
+                    onDelete={() => onDelete(order._id)}
                   />
                 ))
               )}

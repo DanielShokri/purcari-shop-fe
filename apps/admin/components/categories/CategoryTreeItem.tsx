@@ -112,7 +112,7 @@ export default function CategoryTreeItem({
             bg: isSelected ? 'blue.950' : 'gray.800',
           },
         }}
-        onClick={() => onSelect(category.$id)}
+        onClick={() => onSelect(category._id)}
         position="relative"
         pr={level > 0 ? '12' : '0'}
         css={{
@@ -163,7 +163,7 @@ export default function CategoryTreeItem({
             size="xs"
             onClick={(e) => {
               e.stopPropagation();
-              onToggleExpand(category.$id);
+              onToggleExpand(category._id);
             }}
           >
             <Text
@@ -219,7 +219,7 @@ export default function CategoryTreeItem({
               colorPalette="blue"
               onClick={(e) => {
                 e.stopPropagation();
-                onEdit(category.$id);
+                onEdit(category._id);
               }}
             >
               <Text as="span" className="material-symbols-outlined" fontSize="18px">
@@ -232,7 +232,7 @@ export default function CategoryTreeItem({
               colorPalette="red"
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(category.$id);
+                onDelete(category._id);
               }}
             >
               <Text as="span" className="material-symbols-outlined" fontSize="18px">
@@ -261,7 +261,7 @@ export default function CategoryTreeItem({
               _dark={{ _hover: { bg: 'blue.900/20', color: 'blue.400' } }}
               onClick={(e) => {
                 e.stopPropagation();
-                onSelect(category.$id);
+                onSelect(category._id);
               }}
             >
               <Text as="span" className="material-symbols-outlined" fontSize="18px">
@@ -276,7 +276,7 @@ export default function CategoryTreeItem({
               _dark={{ _hover: { bg: 'red.900/20', color: 'red.400' } }}
               onClick={(e) => {
                 e.stopPropagation();
-                onDelete(category.$id);
+                onDelete(category._id);
               }}
             >
               <Text as="span" className="material-symbols-outlined" fontSize="18px">
@@ -293,11 +293,11 @@ export default function CategoryTreeItem({
             .sort((a, b) => a.displayOrder - b.displayOrder)
             .map(child => (
               <CategoryTreeItem
-                key={child.$id}
+                key={child._id}
                 category={child as Category & { children?: Category[] }}
                 level={level + 1}
-                isExpanded={expandedCategories.has(child.$id)}
-                isSelected={selectedCategoryId === child.$id}
+                isExpanded={expandedCategories.has(child._id)}
+                isSelected={selectedCategoryId === child._id}
                 onToggleExpand={onToggleExpand}
                 onSelect={onSelect}
                 onEdit={onEdit}

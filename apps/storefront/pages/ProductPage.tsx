@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
-import { dbProductToAppwrite, dbProductsToAppwrite } from '@shared/types';
+import { Product } from '@shared/types';
 import SEO from '../components/SEO';
 import { useAppDispatch, useToast } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
@@ -61,9 +61,9 @@ const ProductPage: React.FC = () => {
        .slice(0, 4);
    }, [product, allProducts]);
 
-   // Adapt related products for rendering
+// Use raw related products directly (Convex format)
    const relatedProducts = useMemo(() => {
-     return dbProductsToAppwrite(relatedProductsRaw);
+     return relatedProductsRaw;
    }, [relatedProductsRaw]);
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-900" dir="rtl">טוען...</div>;

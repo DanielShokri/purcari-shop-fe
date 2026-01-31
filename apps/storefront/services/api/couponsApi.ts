@@ -187,7 +187,7 @@ export const couponsApi = baseApi.injectEndpoints({
           if (coupon.userIds && coupon.userIds.length > 0) {
             try {
               const user = await account.get();
-              if (!coupon.userIds.includes(user.$id)) {
+              if (!coupon.userIds.includes(user._id)) {
                 return {
                   data: {
                     valid: false,

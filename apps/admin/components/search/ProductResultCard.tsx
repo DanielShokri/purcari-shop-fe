@@ -22,7 +22,7 @@ export default function ProductResultCard({ product, searchTerm }: ProductResult
   const categoryLabel = categoryLabels[product.category] || product.category;
 
   return (
-    <Link to={`/products/${product.$id}/edit`} style={{ textDecoration: 'none' }}>
+    <Link to={`/products/${product._id}/edit`} style={{ textDecoration: 'none' }}>
       <Flex
         bg="bg.panel"
         p="4"

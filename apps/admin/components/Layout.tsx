@@ -5,14 +5,14 @@ import { useQuery } from 'convex/react';
 import { api } from "@convex/api";
 import { Box, Flex } from '@chakra-ui/react';
 import { Sidebar, Header, getPageLabel } from './layout-parts';
-import { dbUserToAuthUser } from '@shared/types';
+import { AuthUser } from '@shared/types';
 
 export default function Layout({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { signOut } = useAuthActions();
   const convexUser = useQuery(api.users.get);
-  const user = convexUser ? dbUserToAuthUser(convexUser) : null;
+  const user = convexUser as AuthUser | null;
   const navigate = useNavigate();
   
   // Search state - initialize from URL if on search page

@@ -21,7 +21,7 @@ export const cartRulesApi = baseApi.injectEndpoints({
           console.debug('[CartRulesApi] Successfully fetched cart rules:', {
             count: response.documents.length,
             rules: response.documents.map(doc => ({
-              id: doc.$id,
+              id: doc._id,
               name: (doc as any).name,
               type: (doc as any).type,
               priority: (doc as any).priority,

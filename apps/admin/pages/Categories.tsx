@@ -58,7 +58,7 @@ export default function Categories() {
   }, [categories]);
 
   const selectedCategory = useMemo(() => {
-    return mappedCategories?.find(c => c.$id === selectedCategoryId) || null;
+    return mappedCategories?.find(c => c._id === selectedCategoryId) || null;
   }, [mappedCategories, selectedCategoryId]);
 
   // Build tree structure
@@ -68,12 +68,12 @@ export default function Categories() {
 
     // First pass: create map
     cats.forEach(cat => {
-      categoryMap.set(cat.$id, { ...cat, children: [] });
+      categoryMap.set(cat._id, { ...cat, children: [] });
     });
 
     // Second pass: build tree
     cats.forEach(cat => {
-      const category = categoryMap.get(cat.$id)!;
+      const category = categoryMap.get(cat._id)!;
       if (cat.parentId && categoryMap.has(cat.parentId)) {
         const parent = categoryMap.get(cat.parentId)!;
         if (!parent.children) parent.children = [];
@@ -261,11 +261,11 @@ export default function Categories() {
               <VStack gap="1" align="stretch">
                 {categoryTree.map(category => (
                   <CategoryTreeItem
-                    key={category.$id}
+                    key={category._id}
                     category={category}
                     level={0}
-                    isExpanded={expandedCategories.has(category.$id)}
-                    isSelected={selectedCategoryId === category.$id}
+                    isExpanded={expandedCategories.has(category._id)}
+                    isSelected={selectedCategoryId === category._id}
                     onToggleExpand={toggleExpand}
                     onSelect={setSelectedCategoryId}
                     onEdit={setSelectedCategoryId}

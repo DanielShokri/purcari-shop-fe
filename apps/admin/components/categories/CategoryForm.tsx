@@ -60,10 +60,10 @@ export default function CategoryForm({
     const items = [
       { label: 'ללא (קטגוריה ראשית)', value: '' },
       ...(categories
-        ?.filter(c => c.$id !== selectedCategoryId)
+        ?.filter(c => c._id !== selectedCategoryId)
         .map(cat => ({
           label: cat.name,
-          value: cat.$id,
+          value: cat._id,
         })) || []),
     ];
     return createListCollection({ items });
@@ -82,7 +82,7 @@ export default function CategoryForm({
           </Heading>
           {selectedCategory && (
             <Text fontSize="xs" fontFamily="mono" color="fg.muted">
-              ID: {selectedCategory.$id}
+              ID: {selectedCategory._id}
             </Text>
           )}
         </Flex>

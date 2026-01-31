@@ -78,12 +78,12 @@ export default function UsersTable({
               ) : (
                 users.map((user) => (
                   <UserTableRow
-                    key={user.$id}
+                    key={user._id}
                     user={user}
-                    isSelected={selectedUsers.includes(user.$id)}
-                    onSelect={(checked) => onSelectUser(user.$id, checked)}
-                    onEdit={() => onEdit(user.$id)}
-                    onDelete={() => onDelete(user.$id)}
+                    isSelected={selectedUsers.includes(user._id)}
+                    onSelect={(checked) => onSelectUser(user._id, checked)}
+                    onEdit={() => onEdit(user._id)}
+                    onDelete={() => onDelete(user._id)}
                   />
                 ))
               )}

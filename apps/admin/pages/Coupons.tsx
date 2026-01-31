@@ -65,7 +65,7 @@ export default function Coupons() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedCoupons(paginatedCoupons.map(c => c.$id));
+      setSelectedCoupons(paginatedCoupons.map(c => c._id));
     } else {
       setSelectedCoupons([]);
     }

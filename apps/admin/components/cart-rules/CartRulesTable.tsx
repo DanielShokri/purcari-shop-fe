@@ -75,12 +75,12 @@ export default function CartRulesTable({
               ) : (
                 cartRules.map((cartRule) => (
                   <CartRuleTableRow
-                    key={cartRule.$id}
+                    key={cartRule._id}
                     cartRule={cartRule}
-                    isSelected={selectedCartRules.includes(cartRule.$id)}
-                    onSelect={(checked) => onSelectCartRule(cartRule.$id, checked)}
-                    onEdit={() => onEdit(cartRule.$id)}
-                    onDelete={() => onDelete(cartRule.$id)}
+                    isSelected={selectedCartRules.includes(cartRule._id)}
+                    onSelect={(checked) => onSelectCartRule(cartRule._id, checked)}
+                    onEdit={() => onEdit(cartRule._id)}
+                    onDelete={() => onDelete(cartRule._id)}
                   />
                 ))
               )}

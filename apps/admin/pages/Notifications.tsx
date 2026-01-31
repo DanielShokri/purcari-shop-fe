@@ -52,7 +52,7 @@ export default function Notifications() {
 
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.isRead) {
-      markAsRead({ id: (notification._id || notification.$id) as any });
+      markAsRead({ id: (notification._id || notification._id) as any });
     }
   };
 
@@ -175,7 +175,7 @@ export default function Notifications() {
         <VStack gap="3" align="stretch">
           {filteredNotifications.map((notification) => (
             <NotificationItem
-              key={notification._id || notification.$id}
+              key={notification._id || notification._id}
               notification={notification}
               variant="default"
               onClick={handleNotificationClick}

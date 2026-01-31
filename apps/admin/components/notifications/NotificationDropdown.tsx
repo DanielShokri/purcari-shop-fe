@@ -12,7 +12,7 @@ import {
 } from '@chakra-ui/react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@convex/api';
-import { dbNotificationToAppwrite } from '@shared/types';
+import { Notification } from '@shared/types';
 import NotificationItem from './NotificationItem';
 
 export default function NotificationDropdown() {
@@ -142,13 +142,13 @@ export default function NotificationDropdown() {
                ) : notifications && notifications.length > 0 ? (
                  <VStack gap="2" align="stretch">
                    {notifications.map((notification) => (
-                     <NotificationItem
-                       key={notification._id}
-                       notification={dbNotificationToAppwrite(notification)}
-                       variant="compact"
-                       onClick={handleNotificationClick}
-                       onMarkAsRead={(id) => markAsRead({ id: id as any })}
-                     />
+<NotificationItem
+                        key={notification._id}
+                        notification={notification as Notification}
+                        variant="compact"
+                        onClick={handleNotificationClick}
+                        onMarkAsRead={(id) => markAsRead({ id: id as any })}
+                      />
                    ))}
                  </VStack>
               ) : (

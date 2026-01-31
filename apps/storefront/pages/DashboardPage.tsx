@@ -8,7 +8,7 @@ import { useQuery, useMutation } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from '@convex/api';
 
-import { Address, dbUserToAuthUser, dbOrdersToAppwrite, dbUserAddressesToAppwrite } from '@shared/types';
+import { Address, AuthUser, Order } from '@shared/types';
 import { 
   profileSchema, 
   addressFormSchema, 
@@ -36,15 +36,15 @@ const DashboardPage: React.FC = () => {
   
   // Queries & Mutations
   const convexUser = useQuery(api.users.get);
-  const user = convexUser ? dbUserToAuthUser(convexUser) : null;
+  const user = convexUser as AuthUser | null;
   const isUserLoading = convexUser === undefined;
 
   const convexOrders = useQuery(api.orders.listByCustomer, convexUser ? { email: convexUser.email } : "skip");
-  const orders = convexOrders ? dbOrdersToAppwrite(convexOrders) : [];
+  const orders = convexOrders as Order[] || [];
   const isOrdersLoading = convexOrders === undefined;
   
   const convexAddresses = useQuery(api.userAddresses.list, convexUser ? { userId: convexUser._id } : "skip");
-  const addresses = convexAddresses ? dbUserAddressesToAppwrite(convexAddresses) : [];
+  const addresses = convexAddresses as Address[] || [];
   const isPrefsLoading = convexAddresses === undefined;
   
   const { signOut } = useAuthActions();

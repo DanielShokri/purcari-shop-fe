@@ -26,7 +26,7 @@ export const authApi = baseApi.injectEndpoints({
           }
           
           const user = await account.get();
-          return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
+          return { data: { $id: user._id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
         } catch (error: any) {
           return { error: error.message || 'שגיאה בהרשמה' };
         }
@@ -48,7 +48,7 @@ export const authApi = baseApi.injectEndpoints({
            // Now create a new session
            await account.createEmailPasswordSession({ email, password });
           const user = await account.get();
-          return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
+          return { data: { $id: user._id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
         } catch (error: any) {
           return { error: 'אימייל או סיסמה שגויים' };
         }
@@ -61,7 +61,7 @@ export const authApi = baseApi.injectEndpoints({
       queryFn: async () => {
         try {
           const user = await account.get();
-          return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
+          return { data: { $id: user._id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
         } catch {
           return { data: null }; // No active session
         }
@@ -79,7 +79,7 @@ export const authApi = baseApi.injectEndpoints({
             await account.updatePrefs({ ...currentPrefs, phone });
           }
           const user = await account.get();
-          return { data: { $id: user.$id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
+          return { data: { $id: user._id, name: user.name, email: user.email, phone: (user.prefs as any)?.phone || user.phone } };
         } catch (error: any) {
           return { error: error.message || 'שגיאה בעדכון הפרופיל' };
         }

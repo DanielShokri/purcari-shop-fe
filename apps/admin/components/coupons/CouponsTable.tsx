@@ -84,12 +84,12 @@ export default function CouponsTable({
               ) : (
                 coupons.map((coupon) => (
                   <CouponTableRow
-                    key={coupon.$id}
+                    key={coupon._id}
                     coupon={coupon}
-                    isSelected={selectedCoupons.includes(coupon.$id)}
-                    onSelect={(checked) => onSelectCoupon(coupon.$id, checked)}
-                    onEdit={() => onEdit(coupon.$id)}
-                    onDelete={() => onDelete(coupon.$id)}
+                    isSelected={selectedCoupons.includes(coupon._id)}
+                    onSelect={(checked) => onSelectCoupon(coupon._id, checked)}
+                    onEdit={() => onEdit(coupon._id)}
+                    onDelete={() => onDelete(coupon._id)}
                   />
                 ))
               )}

@@ -79,13 +79,13 @@ export default function ProductsTable({
               ) : (
                 products.map((product, index) => (
                   <ProductTableRow
-                    key={product.$id}
+                    key={product._id}
                     product={product}
                     index={index}
-                    isSelected={selectedProducts.includes(product.$id)}
-                    onSelect={(checked) => onSelectProduct(product.$id, checked)}
-                    onEdit={() => onEdit(product.$id)}
-                    onDelete={() => onDelete(product.$id)}
+                    isSelected={selectedProducts.includes(product._id)}
+                    onSelect={(checked) => onSelectProduct(product._id, checked)}
+                    onEdit={() => onEdit(product._id)}
+                    onDelete={() => onDelete(product._id)}
                     getCategoryLabel={getCategoryLabel}
                     getRandomImage={getRandomImage}
                   />

@@ -42,7 +42,7 @@ export default function OrderResultCard({ order, searchTerm }: OrderResultCardPr
         </Flex>
         <Box>
           <Text fontSize="sm" fontWeight="bold" color="fg">
-            הזמנה #{order.$id.slice(-4).toUpperCase()}
+            הזמנה #{order._id.slice(-4).toUpperCase()}
           </Text>
           <Text fontSize="sm" color="fg.muted">
             לקוח: <HighlightText text={order.customerName} searchTerm={searchTerm} />
@@ -59,7 +59,7 @@ export default function OrderResultCard({ order, searchTerm }: OrderResultCardPr
         <Text fontSize="sm" color="fg.muted" fontFeatureSettings="'tnum'">
           ₪{order.total.toLocaleString('he-IL', { minimumFractionDigits: 2 })}
         </Text>
-        <Link to={`/orders/${order.$id}`}>
+        <Link to={`/orders/${order._id}`}>
           <Button
             size="sm"
             variant="outline"

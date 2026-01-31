@@ -108,11 +108,8 @@ export enum NotificationType {
 // ============================================================================
 
 export interface Product {
-  $id: string;
-  _id?: string;
-  $createdAt?: string;
+  _id: string;
   _creationTime?: number;
-  $updatedAt?: string;
   productName: string;
   productNameHe?: string;
   description?: string;
@@ -124,8 +121,8 @@ export interface Product {
   onSale?: boolean;
   quantityInStock: number | bigint;
   sku: string;
-  stockStatus?: StockStatus;
-  status?: ProductStatus;
+  stockStatus?: StockStatus | 'in_stock' | 'out_of_stock' | 'low_stock';
+  status?: ProductStatus | 'active' | 'draft' | 'hidden' | 'discontinued';
   category: string;
   dateAdded?: string;
   tags?: string[];
@@ -135,7 +132,7 @@ export interface Product {
   images?: string[];
   wineType?: WineType | 'Red' | 'White' | 'Rosé' | 'Sparkling';
   region?: string;
-  vintage?: number;
+  vintage?: number | bigint;
   alcoholContent?: number;
   volume?: string;
   grapeVariety?: string;
@@ -144,11 +141,8 @@ export interface Product {
 }
 
 export interface Category {
-  $id: string;
-  _id?: string;
-  $createdAt?: string;
+  _id: string;
   _creationTime?: number;
-  $updatedAt?: string;
   name: string;
   nameHe?: string;
   slug: string;
@@ -211,7 +205,7 @@ export interface PaymentInfo {
 }
 
 export interface OrderItem {
-  $id: string;
+  _id: string;
   orderId: string;
   productId: string;
   productName: string;
@@ -223,9 +217,7 @@ export interface OrderItem {
 }
 
 export interface Order {
-  $id: string;
-  _id?: string;
-  $createdAt: string;
+  _id: string;
   _creationTime?: number;
   customerName: string;
   customerEmail: string;
@@ -278,9 +270,8 @@ export interface CreateOrderPayload {
 // ============================================================================
 
 export interface Coupon {
-  $id: string;
-  $createdAt?: string;
-  $updatedAt?: string;
+  _id: string;
+  _creationTime?: number;
   code: string;
   description?: string;
   discountType: CouponDiscountType;
@@ -317,14 +308,14 @@ export interface AppliedCoupon {
 }
 
 export interface CouponUsageRecord {
-  $id: string;
+  _id: string;
+  _creationTime?: number;
   userId?: string;
   userEmail: string;
   couponId: string;
   couponCode: string;
   usageCount: number;
   lastUsedAt: string;
-  $createdAt: string;
 }
 
 // ============================================================================
@@ -332,14 +323,13 @@ export interface CouponUsageRecord {
 // ============================================================================
 
 export interface CartRule {
-  $id: string;
-  _id?: string;
+  _id: string;
   name: string;
   description?: string;
   type?: CartRuleType;
   ruleType?: 'buy_x_get_y' | 'bulk_discount' | string;
   priority?: number;
-  status: CartRuleStatus | string;
+  status: CartRuleStatus | 'active' | 'paused' | string;
   value?: number;
   config?: any;
 }
@@ -349,8 +339,7 @@ export interface CartRule {
 // ============================================================================
 
 export interface AuthUser {
-  $id: string;
-  _id?: string;
+  _id: string;
   name: string;
   email: string;
   phone?: string;
@@ -358,13 +347,14 @@ export interface AuthUser {
 }
 
 export interface Address {
-  id: string;
+  _id: string;
   name: string;
   street: string;
   city: string;
   postalCode: string;
   country: string;
   isDefault?: boolean;
+  apartment?: string;
 }
 
 export interface UserPreferences {
@@ -378,22 +368,22 @@ export interface UserPreferences {
 // ============================================================================
 
 export interface AnalyticsEvent {
-  $id: string;
+  _id: string;
+  _creationTime?: number;
   type: 'page_view' | 'product_view' | 'add_to_cart' | 'checkout';
   productId?: string;
   userId?: string;
-  $createdAt: string;
 }
 
 export interface Notification {
-  $id: string;
-  _id?: string;
+  _id: string;
+  _creationTime?: number;
   title: string;
   message: string;
   type: NotificationType;
   isRead: boolean;
   icon?: string;
-  createdAt: string;
+  createdAt?: string;
 }
 
 // ============================================================================
@@ -473,46 +463,28 @@ export interface User extends AuthUser {
 }
 
 export interface AppwriteUser {
-  $id: string;
+  _id: string;
   email: string;
   name?: string;
   phone?: string;
   prefs?: Record<string, any>;
-  $createdAt?: string;
+  _creationTime?: number;
   [key: string]: any;
 }
 
 export function mapAppwriteUserToUser(appwriteUser: AppwriteUser): User {
   return {
-    $id: appwriteUser.$id,
+    _id: appwriteUser._id,
     email: appwriteUser.email,
     name: appwriteUser.name || '',
     phone: appwriteUser.phone || '',
     role: appwriteUser.prefs?.role || UserRole.VIEWER,
     status: appwriteUser.prefs?.status || UserStatus.ACTIVE,
-    createdAt: appwriteUser.prefs?.createdAt || appwriteUser.$createdAt || new Date().toISOString(),
+    createdAt: appwriteUser.prefs?.createdAt || appwriteUser._creationTime?.toString() || new Date().toISOString(),
     updatedAt: appwriteUser.prefs?.updatedAt || new Date().toISOString(),
   };
 }
 
 // ============================================================================
-// CONVEX ADAPTERS (Export from adapters.ts)
+// END OF SHARED TYPES
 // ============================================================================
-
-export {
-  dbProductToAppwrite,
-  dbUserToAppwrite,
-  dbUserToAuthUser,
-  dbOrderToAppwrite,
-  dbNotificationToAppwrite,
-  dbCategoryToAppwrite,
-  dbCartRuleToAppwrite,
-  dbCouponToAppwrite,
-  dbCouponUsageToAppwrite,
-  dbUserAddressToAppwrite,
-  dbProductsToAppwrite,
-  dbUsersToAppwrite,
-  dbOrdersToAppwrite,
-  dbCategoriesToAppwrite,
-  dbUserAddressesToAppwrite,
-} from './adapters';

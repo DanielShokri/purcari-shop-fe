@@ -93,7 +93,7 @@ export default function NotificationItem({
       onClick(notification);
     }
     if (!notification.isRead && onMarkAsRead) {
-      onMarkAsRead(notification.$id);
+      onMarkAsRead(notification._id);
     }
   };
 

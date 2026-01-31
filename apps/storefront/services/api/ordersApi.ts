@@ -15,7 +15,7 @@ const mapFlatOrderToDetails = (
   order: any,
   items: OrderItem[]
 ): OrderDetails => ({
-  $id: order.$id,
+  $id: order._id,
   $createdAt: order.$createdAt,
   customerName: order.customerName,
   customerEmail: order.customerEmail,
@@ -78,7 +78,7 @@ export const ordersApi = baseApi.injectEndpoints({
           let userId: string | null = null;
           try {
             const user = await account.get();
-            userId = user.$id;
+            userId = user._id;
           } catch {
             // Guest checkout - no user-specific permissions
           }
@@ -176,7 +176,7 @@ export const ordersApi = baseApi.injectEndpoints({
           
           return {
             data: {
-              $id: orderResponse.$id,
+              $id: orderResponse._id,
               $createdAt: orderResponse.$createdAt,
               customerName: orderResponse.customerName,
               customerEmail: orderResponse.customerEmail,

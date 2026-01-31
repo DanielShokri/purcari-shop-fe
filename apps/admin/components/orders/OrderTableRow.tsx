@@ -61,7 +61,7 @@ export default function OrderTableRow({
 
       <Table.Cell px="6" py="4">
         <Text fontWeight="semibold" color="fg">
-          #{order.$id}
+          #{order._id}
         </Text>
       </Table.Cell>
 
@@ -109,7 +109,7 @@ export default function OrderTableRow({
 
        <Table.Cell px="6" py="4" color="fg.muted" display={{ base: 'none', md: 'table-cell' }}>
          <Text dir="ltr" textAlign="right">
-           {new Date(order.$createdAt).toLocaleDateString('he-IL')}
+           {new Date(order._creationTime || Date.now()).toLocaleDateString('he-IL')}
          </Text>
        </Table.Cell>
 
