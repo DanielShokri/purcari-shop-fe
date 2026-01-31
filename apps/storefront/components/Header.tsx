@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { toggleMobileMenu, selectIsMobileMenuOpen } from '../store/slices/uiSlice';
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
+import { api } from '@convex/api';
 import { Logo, DesktopNav, MobileMenu, HeaderActions } from './header-components';
 
 const Header: React.FC = () => {

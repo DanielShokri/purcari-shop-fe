@@ -116,6 +116,7 @@ export default defineSchema({
     description: v.optional(v.string()),
     parentId: v.optional(v.string()), // For nested categories
     order: v.optional(v.int64()),
+    status: v.optional(v.union(v.literal("active"), v.literal("draft"), v.literal("hidden"))),
     createdAt: v.string(),
     updatedAt: v.string(),
   }).index("by_slug", ["slug"]),

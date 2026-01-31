@@ -52,10 +52,12 @@ export const create = mutation({
     description: v.optional(v.string()),
     parentId: v.optional(v.string()),
     order: v.optional(v.int64()),
+    status: v.optional(v.union(v.literal("active"), v.literal("draft"), v.literal("hidden"))),
   },
   handler: async (ctx, args) => {
     return await ctx.db.insert("categories", {
       ...args,
+      status: args.status ?? "active",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -74,6 +76,7 @@ export const update = mutation({
     description: v.optional(v.string()),
     parentId: v.optional(v.string()),
     order: v.optional(v.int64()),
+    status: v.optional(v.union(v.literal("active"), v.literal("draft"), v.literal("hidden"))),
   },
   handler: async (ctx, args) => {
     const { id, ...fields } = args;
