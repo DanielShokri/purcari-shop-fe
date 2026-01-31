@@ -1,45 +1,16 @@
 import './index.css';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
-import { Provider as ReduxProvider, useDispatch } from 'react-redux';
+import { Provider as ReduxProvider } from 'react-redux';
 import { HashRouter } from 'react-router-dom';
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
+import { ConvexReactClient } from "convex/react";
 import { Provider as ChakraProvider } from './components/ui/provider';
-import { store, setCredentials, setInitialized } from './store';
+import { store } from './store';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
-import { useGetCurrentUserQuery } from './services/api';
-import { Center, Spinner, VStack, Text } from '@chakra-ui/react';
 
-// Component to check for existing Appwrite session on app load
-function AuthInitializer({ children }: { children: React.ReactNode }) {
-  const dispatch = useDispatch();
-  const { data: user, isLoading, isSuccess } = useGetCurrentUserQuery(undefined);
-
-  useEffect(() => {
-    if (isSuccess) {
-      if (user) {
-        // User has an active session
-        dispatch(setCredentials({ user }));
-      } else {
-        // No active session
-        dispatch(setInitialized());
-      }
-    }
-  }, [user, isSuccess, dispatch]);
-
-  if (isLoading) {
-    return (
-      <Center minH="100vh" bg="bg.subtle">
-        <VStack gap="4">
-          <Spinner size="xl" color="blue.500" borderWidth="4px" />
-          <Text color="fg.muted">טוען...</Text>
-        </VStack>
-      </Center>
-    );
-  }
-
-  return <>{children}</>;
-}
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -50,15 +21,15 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <ReduxProvider store={store}>
-        <ChakraProvider>
-          <HashRouter>
-            <AuthInitializer>
+      <ConvexAuthProvider client={convex}>
+        <ReduxProvider store={store}>
+          <ChakraProvider>
+            <HashRouter>
               <App />
-            </AuthInitializer>
-          </HashRouter>
-        </ChakraProvider>
-      </ReduxProvider>
+            </HashRouter>
+          </ChakraProvider>
+        </ReduxProvider>
+      </ConvexAuthProvider>
     </ErrorBoundary>
   </React.StrictMode>
 );
