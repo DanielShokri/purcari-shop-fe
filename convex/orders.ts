@@ -100,3 +100,87 @@ export const create = mutation({
     return orderId;
   },
 });
+
+/**
+ * Get a single order with its items joined.
+ */
+export const get = query({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) return null;
+
+    const items = await ctx.db
+      .query("orderItems")
+      .withIndex("by_orderId", (q) => q.eq("orderId", args.orderId))
+      .collect();
+
+    return {
+      ...order,
+      items,
+    };
+  },
+});
+
+/**
+ * List orders for a specific customer email.
+ * Used for storefront order history.
+ */
+export const listByCustomer = query({
+  args: { email: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("orders")
+      .withIndex("by_customerEmail", (q) => q.eq("customerEmail", args.email))
+      .order("desc")
+      .collect();
+  },
+});
+
+/**
+ * List all orders for admin.
+ * Supports status filtering.
+ */
+export const listAll = query({
+  args: { 
+    status: v.optional(v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("shipped")
+    ))
+  },
+  handler: async (ctx, args) => {
+    let q = ctx.db.query("orders");
+    
+    if (args.status) {
+      q = q.withIndex("by_status", (qi) => qi.eq("status", args.status!));
+    }
+    
+    return await q.order("desc").collect();
+  },
+});
+
+/**
+ * Update order status (Admin only).
+ */
+export const updateStatus = mutation({
+  args: {
+    orderId: v.id("orders"),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("cancelled"),
+      v.literal("shipped")
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = new Date().toISOString();
+    await ctx.db.patch(args.orderId, {
+      status: args.status,
+      updatedAt: now,
+    });
+  },
+});
