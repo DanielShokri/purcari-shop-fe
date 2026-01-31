@@ -4,10 +4,10 @@
 This roadmap outlines the transition from Appwrite to Convex for the Purcari Israel project.
 
 ## Phase 1: Infrastructure & Schema (Days 1-2)
-- [ ] Initialize Convex project (`npx convex dev`)
-- [ ] Implement `convex/schema.ts` with all tables (products, orders, users, etc.)
-- [ ] Configure `convex/auth.ts` with Password provider
-- [ ] Set up environment variables (`VITE_CONVEX_URL`)
+- [x] Initialize Convex project (`npx convex dev`)
+- [x] Implement `convex/schema.ts` with all tables (products, orders, users, etc.)
+- [x] Configure `convex/auth.ts` with Password provider
+- [x] Set up environment variables (`VITE_CONVEX_URL`)
 
 ## Phase 2: Core Functions & Data (Days 3-5)
 **Plans:** 4 plans
