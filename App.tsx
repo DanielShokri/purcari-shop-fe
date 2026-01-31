@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { RootState } from './store';
+import { Authenticated, Unauthenticated, AuthLoading, useQuery } from "convex/react";
+import { api } from "../convex/_generated/api";
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
@@ -19,53 +19,21 @@ import Coupons from './pages/Coupons';
 import CouponEditor from './pages/CouponEditor';
 import CartRules from './pages/CartRules';
 import CartRuleEditor from './pages/CartRuleEditor';
-import { Box, Flex, Text, Spinner, VStack } from '@chakra-ui/react';
+import { Box, Flex, Text, Spinner, VStack, Center } from '@chakra-ui/react';
 import { toaster } from './components/ui/toaster';
 
 // Protected Route Wrapper
 const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
-  const user = useSelector((state: RootState) => state.auth.user);
+  const user = useQuery(api.users.get);
   const location = useLocation();
 
-  if (!user) {
+  if (user === undefined) return null; // Loading handled by AuthLoading
+
+  if (user === null || user.role !== 'admin') {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   return <Layout>{children}</Layout>;
-};
-
-// Session Error Handler Component
-// Detects when user is logged out (e.g., by 401 error from authMiddleware)
-// and shows a toast notification before redirecting to login
-const SessionErrorHandler = ({ children }: { children: React.ReactNode }) => {
-  const user = useSelector((state: RootState) => state.auth.user);
-  const navigate = useNavigate();
-  const previousUserRef = React.useRef<typeof user>(user);
-
-  useEffect(() => {
-    // If user was previously logged in but is now null, they were logged out
-    if (previousUserRef.current && !user) {
-      // Show toast notification
-      toaster.create({
-        title: 'התישנות',
-        description: 'הישיבה שלך פקעה. מעביר אתכם לעמוד ההתחברות...',
-        type: 'error',
-        duration: 2000,
-      });
-
-      // Redirect to login after delay (allows user to see the toast)
-      const timer = setTimeout(() => {
-        navigate('/login', { replace: true });
-      }, 2000);
-
-      return () => clearTimeout(timer);
-    }
-
-    // Update the ref to track the current user state
-    previousUserRef.current = user;
-  }, [user, navigate]);
-
-  return <>{children}</>;
 };
 
 // Placeholder page component
@@ -89,126 +57,142 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 
 export default function App() {
   return (
-    <SessionErrorHandler>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/products" element={
-          <ProtectedRoute>
-            <Products />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/products/new" element={
-          <ProtectedRoute>
-            <ProductEditor />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/products/:id/edit" element={
-          <ProtectedRoute>
-            <ProductEditor />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/orders" element={
-          <ProtectedRoute>
-            <Orders />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/orders/:id" element={
-          <ProtectedRoute>
-            <OrderDetails />
-          </ProtectedRoute>
-        } />
-        
-        {/* Placeholders for other routes */}
-        <Route path="/media" element={
-          <ProtectedRoute>
-            <PlaceholderPage title="עמוד מדיה" />
-          </ProtectedRoute>
-        } />
-        <Route path="/users" element={
-          <ProtectedRoute>
-            <Users />
-          </ProtectedRoute>
-        } />
-        <Route path="/categories" element={
-          <ProtectedRoute>
-            <Categories />
-          </ProtectedRoute>
-        } />
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <PlaceholderPage title="עמוד הגדרות" />
-          </ProtectedRoute>
-        } />
-        <Route path="/search" element={
-          <ProtectedRoute>
-            <Search />
-          </ProtectedRoute>
-        } />
-        <Route path="/analytics" element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        } />
-        <Route path="/notifications" element={
-          <ProtectedRoute>
-            <Notifications />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/coupons" element={
-          <ProtectedRoute>
-            <Coupons />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/coupons/new" element={
-          <ProtectedRoute>
-            <CouponEditor />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/coupons/:id/edit" element={
-          <ProtectedRoute>
-            <CouponEditor />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/cart-rules" element={
-          <ProtectedRoute>
-            <CartRules />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/cart-rules/new" element={
-          <ProtectedRoute>
-            <CartRuleEditor />
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/cart-rules/:id/edit" element={
-          <ProtectedRoute>
-            <CartRuleEditor />
-          </ProtectedRoute>
-        } />
-        
-        {/* 404 Not Found - catch all unmatched routes */}
-        <Route path="*" element={
-          <ProtectedRoute>
-            <NotFound />
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </SessionErrorHandler>
+    <>
+      <AuthLoading>
+        <Center minH="100vh" bg="bg.subtle">
+          <VStack gap="4">
+            <Spinner size="xl" color="blue.500" borderWidth="4px" />
+            <Text color="fg.muted">טוען...</Text>
+          </VStack>
+        </Center>
+      </AuthLoading>
+      <Unauthenticated>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Unauthenticated>
+      <Authenticated>
+        <Routes>
+          <Route path="/login" element={<Navigate to="/" replace />} />
+          
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/products" element={
+            <ProtectedRoute>
+              <Products />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/products/new" element={
+            <ProtectedRoute>
+              <ProductEditor />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/products/:id/edit" element={
+            <ProtectedRoute>
+              <ProductEditor />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/orders" element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/orders/:id" element={
+            <ProtectedRoute>
+              <OrderDetails />
+            </ProtectedRoute>
+          } />
+          
+          {/* Placeholders for other routes */}
+          <Route path="/media" element={
+            <ProtectedRoute>
+              <PlaceholderPage title="עמוד מדיה" />
+            </ProtectedRoute>
+          } />
+          <Route path="/users" element={
+            <ProtectedRoute>
+              <Users />
+            </ProtectedRoute>
+          } />
+          <Route path="/categories" element={
+            <ProtectedRoute>
+              <Categories />
+            </ProtectedRoute>
+          } />
+          <Route path="/settings" element={
+            <ProtectedRoute>
+              <PlaceholderPage title="עמוד הגדרות" />
+            </ProtectedRoute>
+          } />
+          <Route path="/search" element={
+            <ProtectedRoute>
+              <Search />
+            </ProtectedRoute>
+          } />
+          <Route path="/analytics" element={
+            <ProtectedRoute>
+              <Analytics />
+            </ProtectedRoute>
+          } />
+          <Route path="/notifications" element={
+            <ProtectedRoute>
+              <Notifications />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/coupons" element={
+            <ProtectedRoute>
+              <Coupons />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/coupons/new" element={
+            <ProtectedRoute>
+              <CouponEditor />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/coupons/:id/edit" element={
+            <ProtectedRoute>
+              <CouponEditor />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/cart-rules" element={
+            <ProtectedRoute>
+              <CartRules />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/cart-rules/new" element={
+            <ProtectedRoute>
+              <CartRuleEditor />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/cart-rules/:id/edit" element={
+            <ProtectedRoute>
+              <CartRuleEditor />
+            </ProtectedRoute>
+          } />
+          
+          {/* 404 Not Found - catch all unmatched routes */}
+          <Route path="*" element={
+            <ProtectedRoute>
+              <NotFound />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </Authenticated>
+    </>
   );
 }
