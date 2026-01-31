@@ -10,11 +10,11 @@ This roadmap outlines the transition from Appwrite to Convex for the Purcari Isr
 - [ ] Set up environment variables (`VITE_CONVEX_URL`)
 
 ## Phase 2: Core Functions & Data (Days 3-5)
-- [ ] Implement CRUD functions for Users and Addresses
-- [ ] Implement CRUD and Search functions for Products
-- [ ] Implement CRUD functions for Categories
-- [ ] Implement CRUD functions for Orders and Order Items
-- [ ] Implement initial Coupon management functions
+**Plans:** 4 plans
+- [ ] 02-01-PLAN.md — Implement Users and Addresses CRUD
+- [ ] 02-02-PLAN.md — Implement Categories and Products (Search + CRUD)
+- [ ] 02-03-PLAN.md — Implement Orders and Order Items processing
+- [ ] 02-04-PLAN.md — Implement Coupon management and validation logic
 
 ## Phase 3: Frontend Integration (Days 6-10)
 - [ ] **Storefront Migration:**
