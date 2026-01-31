@@ -24,6 +24,7 @@ export const list = query({
         v.literal("low_stock")
       )
     ),
+    relatedProducts: v.optional(v.array(v.string())), // Product IDs
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
@@ -56,6 +57,23 @@ export const list = query({
     }
 
     return filtered;
+  },
+});
+
+/**
+ * Track an analytics event.
+ */
+export const trackEvent = mutation({
+  args: {
+    event: v.string(),
+    properties: v.any(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("analyticsEvents", {
+      event: args.event,
+      properties: args.properties,
+      timestamp: new Date().toISOString(),
+    });
   },
 });
 

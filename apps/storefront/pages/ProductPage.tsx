@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useGetProductByIdQuery, useGetProductsQuery } from '../services/api/productsApi';
-import { useTrackEventMutation } from '../services/api/analyticsApi';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
 import SEO from '../components/SEO';
 import { useAppDispatch, useToast } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
@@ -12,16 +13,24 @@ import { getWineTypeLabel } from '../utils/wineHelpers';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { data: product, isLoading } = useGetProductByIdQuery(id || '');
-  const { data: allProducts } = useGetProductsQuery(undefined);
-  const [trackEvent] = useTrackEventMutation();
+  
+  const product = useQuery(api.products.getById, { 
+    productId: id as Id<"products"> 
+  });
+  
+  const allProducts = useQuery(api.products.list, {});
+  
+  const trackEvent = useMutation(api.products.trackEvent);
+  
   const dispatch = useAppDispatch();
   const toast = useToast();
   const [quantity, setQuantity] = useState(1);
 
+  const isLoading = product === undefined;
+
   useEffect(() => {
     if (product) {
-      trackEvent({ type: 'product_view', productId: product.$id });
+      trackEvent({ event: 'product_view', properties: { productId: product._id } });
     }
   }, [product, trackEvent]);
 
@@ -37,25 +46,25 @@ const ProductPage: React.FC = () => {
     // If product has explicit related products, use those
     if (product.relatedProducts && product.relatedProducts.length > 0) {
       return allProducts
-        .filter(p => product.relatedProducts?.includes(p.$id) && p.$id !== product.$id)
+        .filter(p => product.relatedProducts?.includes(p._id) && p._id !== product._id)
         .slice(0, 4);
     }
     
     // Fallback: find products with same wineType or category
     return allProducts
       .filter(p => 
-        p.$id !== product.$id && 
+        p._id !== product._id && 
         (p.wineType === product.wineType || p.category === product.category)
       )
       .slice(0, 4);
   }, [product, allProducts]);
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
-  if (!product) return <div className="min-h-screen flex items-center justify-center">המוצר לא נמצא</div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center text-gray-900" dir="rtl">טוען...</div>;
+  if (!product) return <div className="min-h-screen flex items-center justify-center text-gray-900" dir="rtl">המוצר לא נמצא</div>;
 
   // Stock status helpers
-  const isOutOfStock = product.quantityInStock <= 0;
-  const isLowStock = product.quantityInStock > 0 && product.quantityInStock <= 5;
+  const isOutOfStock = Number(product.quantityInStock) <= 0;
+  const isLowStock = Number(product.quantityInStock) > 0 && Number(product.quantityInStock) <= 5;
 
   // Calculate discount percentage
   const getDiscountPercent = (originalPrice: number, salePrice?: number) => {
@@ -79,10 +88,10 @@ const ProductPage: React.FC = () => {
     },
     "offers": {
       "@type": "Offer",
-      "url": `https://purcari.co.il/product/${product.$id}`,
+      "url": `https://purcari.co.il/product/${product._id}`,
       "priceCurrency": "ILS",
       "price": currentPrice,
-      "availability": product.quantityInStock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "availability": Number(product.quantityInStock) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       "itemCondition": "https://schema.org/NewCondition"
     }
   };
@@ -107,7 +116,7 @@ const ProductPage: React.FC = () => {
         "@type": "ListItem",
         "position": 3,
         "name": product.productNameHe || product.productName,
-        "item": `https://purcari.co.il/product/${product.$id}`
+        "item": `https://purcari.co.il/product/${product._id}`
       }
     ]
   };
@@ -115,17 +124,17 @@ const ProductPage: React.FC = () => {
   const handleAddToCart = () => {
     if (isOutOfStock) return;
     dispatch(addToCart({
-      id: product.$id,
-      productId: product.$id,
+      id: product._id,
+      productId: product._id,
       title: product.productNameHe || product.productName,
       price: currentPrice,
       salePrice: product.onSale && product.salePrice ? product.salePrice : undefined,
       originalPrice: product.onSale ? product.price : undefined,
       quantity,
-      maxQuantity: product.quantityInStock || 99,
+      maxQuantity: Number(Number(product.quantityInStock)) || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
-    trackEvent({ type: 'add_to_cart', productId: product.$id });
+    trackEvent({ event: 'add_to_cart', properties: { productId: product._id } });
     toast.success(quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל');
   };
 
@@ -136,7 +145,7 @@ const ProductPage: React.FC = () => {
         description={product.descriptionHe || product.description}
         ogImage={product.featuredImage || product.images?.[0] || ''}
         ogType="product"
-        canonical={`/product/${product.$id}`}
+        canonical={`/product/${product._id}`}
         schemaData={[productSchema, breadcrumbSchema]}
       />
       <div className="container mx-auto px-4 py-10">
@@ -187,7 +196,7 @@ const ProductPage: React.FC = () => {
               ) : isLowStock ? (
                 <div className="inline-flex items-center gap-2 bg-amber-50 text-amber-700 px-4 py-2 rounded-full text-sm font-medium">
                   <AlertTriangle size={16} />
-                  <span>נותרו {product.quantityInStock} בלבד - הזמינו עכשיו!</span>
+                  <span>נותרו {Number(product.quantityInStock)} בלבד - הזמינו עכשיו!</span>
                 </div>
               ) : (
                 <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
@@ -246,9 +255,9 @@ const ProductPage: React.FC = () => {
                 </button>
                 <span className="px-4 font-bold text-lg w-12 text-center">{quantity}</span>
                 <button 
-                  onClick={() => setQuantity(q => Math.min(product.quantityInStock, q + 1))}
-                  disabled={isOutOfStock || quantity >= product.quantityInStock}
-                  className={`px-4 py-3 text-gray-600 ${isOutOfStock || quantity >= product.quantityInStock ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-100 cursor-pointer'}`}
+                  onClick={() => setQuantity(q => Math.min(Number(product.quantityInStock), q + 1))}
+                  disabled={isOutOfStock || quantity >= Number(product.quantityInStock)}
+                  className={`px-4 py-3 text-gray-600 ${isOutOfStock || quantity >= Number(product.quantityInStock) ? 'cursor-not-allowed opacity-50' : 'hover:bg-gray-100 cursor-pointer'}`}
                 >
                   <Plus size={16} />
                 </button>
@@ -299,13 +308,14 @@ const ProductPage: React.FC = () => {
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
               יינות שאולי יעניינו אותך
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map(relatedProduct => (
-                <ProductCard key={relatedProduct.$id} product={relatedProduct} />
-              ))}
-            </div>
-          </div>
-        )}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {relatedProducts.map(relatedProduct => (
+            <ProductCard key={relatedProduct._id} product={relatedProduct} />
+          ))}
+        </div>
+      </div>
+    )}
+
       </div>
     </div>
   );

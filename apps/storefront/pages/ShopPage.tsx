@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useGetProductsQuery } from '../services/api/productsApi';
-import { useGetCategoriesQuery } from '../services/api/categoriesApi';
-import { useTrackEventMutation } from '../services/api/analyticsApi';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import SEO from '../components/SEO';
 import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/common/Breadcrumbs';
@@ -39,14 +38,18 @@ const ShopPage: React.FC = () => {
     setSearchParams(searchParams);
   };
   
-  const { data: products, isLoading } = useGetProductsQuery(
-    activeCategory !== 'all' ? { category: activeCategory } : undefined
+  const productsResult = useQuery(api.products.list, 
+    activeCategory !== 'all' ? { category: activeCategory } : {}
   );
-  const { data: categoriesData } = useGetCategoriesQuery();
-  const [trackEvent] = useTrackEventMutation();
+  
+  const categoriesResult = useQuery(api.products.list, {}); // Use product categories if we don't have a separate categories query yet
+  const trackEvent = useMutation(api.products.trackEvent);
+
+  const isLoading = productsResult === undefined;
+  const products = productsResult || [];
 
   useEffect(() => {
-    trackEvent({ type: 'page_view' });
+    trackEvent({ event: 'page_view', properties: { page: 'shop' } });
   }, [trackEvent]);
 
   // Sort products based on selected option
@@ -75,7 +78,7 @@ const ShopPage: React.FC = () => {
       case 'newest':
       default:
         return sorted.sort((a, b) => 
-          new Date(b.dateAdded || '').getTime() - new Date(a.dateAdded || '').getTime()
+          new Date((b as any).dateAdded || b.createdAt || '').getTime() - new Date((a as any).dateAdded || a.createdAt || '').getTime()
         );
     }
   }, [products, sortBy]);
@@ -84,7 +87,8 @@ const ShopPage: React.FC = () => {
 
   const categories = [
     { id: 'all', label: 'הכל' },
-    ...(categoriesData?.map(cat => ({ id: cat.slug, label: (cat as any).nameHe || cat.name })) || [])
+    // If we have categories data from Convex, we would use it here
+    // For now, we use displayCategories fallback
   ];
 
   // If we have no categories from DB, use fallback wine categories
@@ -223,11 +227,12 @@ const ShopPage: React.FC = () => {
                     </div>
                  </div>
                  
-                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {sortedProducts.map(product => (
-                      <ProductCard key={product.$id} product={product} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {sortedProducts.map((product: any) => (
+                      <ProductCard key={product._id} product={product} />
                     ))}
-                 </div>
+                  </div>
+
 
                  {sortedProducts.length === 0 && (
                    <div className="text-center py-20">

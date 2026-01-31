@@ -59,8 +59,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const discountPercent = getDiscountPercent(product.price, product.salePrice);
   
   // Stock status helpers
-  const isOutOfStock = product.quantityInStock <= 0;
-  const isLowStock = product.quantityInStock > 0 && product.quantityInStock <= 5;
+  const isOutOfStock = Number(product.quantityInStock) <= 0;
+  const isLowStock = Number(product.quantityInStock) > 0 && Number(product.quantityInStock) <= 5;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -70,14 +70,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     const currentPrice = product.onSale && product.salePrice ? product.salePrice : product.price;
     
     dispatch(addToCart({
-      id: product.$id, // Keeping id for internal React key if needed, but the slice uses productId
-      productId: product.$id,
+      id: (product as any)._id,
+      productId: (product as any)._id,
       title: product.productNameHe || product.productName,
       price: currentPrice,
       salePrice: product.onSale && product.salePrice ? product.salePrice : undefined,
       originalPrice: product.onSale ? product.price : undefined,
       quantity: 1,
-      maxQuantity: product.quantityInStock || 99,
+      maxQuantity: Number(product.quantityInStock) || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
     
@@ -90,7 +90,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   return (
     <div className={`group relative ${theme.CARD} ${theme.CARD_HOVER} flex flex-col h-full border-transparent hover:border-gray-100`}>
       <div className="relative aspect-[2/3] overflow-hidden bg-amber-50">
-        <Link to={`/product/${product.$id}`} className="block w-full h-full p-4 flex items-center justify-center">
+        <Link to={`/product/${(product as any)._id}`} className="block w-full h-full p-4 flex items-center justify-center">
           <img
             src={product.featuredImage || product.images?.[0] || ''}
             alt={product.productNameHe || product.productName}
@@ -117,7 +117,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {isLowStock && !isOutOfStock && (
           <span className="absolute top-3 start-3 bg-amber-500 text-white text-xs font-bold px-3 py-1.5 rounded-full pointer-events-none flex items-center gap-1">
             <AlertTriangle size={12} />
-            נותרו {product.quantityInStock} בלבד
+            נותרו {Number(product.quantityInStock)} בלבד
           </span>
         )}
 
@@ -136,7 +136,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         {/* Overlay Actions */}
         <div className={`absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none ${isOutOfStock ? 'hidden' : ''}`}>
           <Link
-            to={`/product/${product.$id}`}
+            to={`/product/${(product as any)._id}`}
             className="bg-white text-gray-900 p-3 rounded-full hover:bg-secondary hover:text-white transition-colors shadow-lg transform translate-y-4 group-hover:translate-y-0 duration-300 pointer-events-auto flex items-center justify-center"
           >
             <Eye size={20} />
@@ -165,7 +165,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </>
           )}
         </div>
-        <Link to={`/product/${product.$id}`}>
+        <Link to={`/product/${(product as any)._id}`}>
           <h3 className="font-bold text-gray-800 hover:text-secondary transition-colors mb-2 line-clamp-1">{product.productNameHe || product.productName}</h3>
         </Link>
         <div className="flex items-center justify-center gap-2 text-sm">

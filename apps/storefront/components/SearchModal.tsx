@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, Loader2, Wine, ArrowLeft } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { closeSearchModal, selectIsSearchModalOpen } from '../store/slices/uiSlice';
-import { useGetProductsQuery } from '../services/api/productsApi';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { Product } from '@shared/types';
 import { getWineTypeLabel } from '../utils/wineHelpers';
 
@@ -31,28 +32,12 @@ const SearchModal: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebounce(searchTerm, 300);
 
-  // Fetch all products and filter client-side for better UX
-  const { data: allProducts = [], isLoading } = useGetProductsQuery(undefined);
+  // Fetch products from Convex using search query
+  const searchResults = useQuery(api.products.search, 
+    debouncedSearch.length >= 2 ? { query: debouncedSearch, language: 'he' } : "skip"
+  ) || [];
 
-  // Filter products based on search term
-  const filteredProducts = useCallback(() => {
-    if (!debouncedSearch.trim()) return [];
-    
-    const term = debouncedSearch.toLowerCase();
-    return allProducts.filter((product: Product) => {
-      const nameMatch = product.productNameHe?.toLowerCase().includes(term) ||
-                       product.productName?.toLowerCase().includes(term);
-      const descMatch = product.descriptionHe?.toLowerCase().includes(term) ||
-                       product.description?.toLowerCase().includes(term);
-      const typeMatch = product.category?.toLowerCase().includes(term) ||
-                       getWineTypeLabel(product.category).includes(term);
-      const regionMatch = product.region?.toLowerCase().includes(term);
-      
-      return nameMatch || descMatch || typeMatch || regionMatch;
-    }).slice(0, 8); // Limit to 8 results
-  }, [debouncedSearch, allProducts]);
-
-  const searchResults = filteredProducts();
+  const isLoading = searchResults === undefined && searchTerm.length >= 2;
 
   // Focus input when modal opens
   useEffect(() => {
@@ -177,13 +162,13 @@ const SearchModal: React.FC = () => {
                       {searchResults.length} תוצאות
                     </p>
                     <div className="divide-y divide-gray-50">
-                      {searchResults.map((product: Product) => (
-                        <Link
-                          key={product.$id}
-                          to={`/product/${product.$id}`}
-                          onClick={handleProductClick}
-                          className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors group"
-                        >
+                        {searchResults.map((product: any) => (
+                          <Link
+                            key={product._id}
+                            to={`/product/${product._id}`}
+                            onClick={handleProductClick}
+                            className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors group"
+                          >
                           {/* Product Image */}
                           <div className="w-16 h-20 flex-shrink-0 bg-amber-50 rounded-lg overflow-hidden">
                             <img

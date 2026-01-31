@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useGetFeaturedProductsQuery } from '../../services/api/productsApi';
+import { useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import ProductCard from '../ProductCard';
 import theme from '../../theme/styles';
 
@@ -13,7 +14,8 @@ const fadeInUp = {
 };
 
 const FeaturedProducts: React.FC = () => {
-  const { data: featuredProducts, isLoading } = useGetFeaturedProductsQuery(undefined);
+  const featuredProducts = useQuery(api.products.list, { isFeatured: true, limit: 4 });
+  const isLoading = featuredProducts === undefined;
 
   return (
     <section className={`${theme.SECTION_PY} bg-gray-50`}>
@@ -35,8 +37,8 @@ const FeaturedProducts: React.FC = () => {
           </div>
         ) : (
           <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 ${theme.GAP_COMPONENT}`}>
-            {featuredProducts?.map((product) => (
-              <ProductCard key={product.$id} product={product} />
+            {featuredProducts?.map((product: any) => (
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         )}
