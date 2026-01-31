@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import {
-  useGetCartRuleByIdQuery,
-  useCreateCartRuleMutation,
-  useUpdateCartRuleMutation,
-  useDeleteCartRuleMutation,
-} from '../services/api';
-import { CartRule, CartRuleStatus, CartRuleType } from '@shared/types';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
+import { Id } from '../../../convex/_generated/dataModel';
+
+interface CartRuleForm {
+  name: string;
+  description: string;
+  status: 'active' | 'inactive';
+  ruleType: 'buy_x_get_y' | 'bulk_discount';
+  config: any;
+}
 
 interface UseCartRuleEditorProps {
   id?: string;
@@ -18,22 +22,27 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
   const isEditMode = !!id;
 
   // API queries and mutations
-  const { data: cartRule, isLoading: isLoadingCartRule } = useGetCartRuleByIdQuery(id || '', { skip: !id });
-  const [createCartRule, { isLoading: isCreating }] = useCreateCartRuleMutation();
-  const [updateCartRule, { isLoading: isUpdating }] = useUpdateCartRuleMutation();
-  const [deleteCartRule, { isLoading: isDeleting }] = useDeleteCartRuleMutation();
+  const cartRule = useQuery(api.cartRules.getById, id ? { id: id as Id<'cartRules'> } : 'skip');
+  const isLoadingCartRule = id ? cartRule === undefined : false;
+  
+  const createCartRule = useMutation(api.cartRules.create);
+  const updateCartRule = useMutation(api.cartRules.update);
+  const deleteCartRuleMutation = useMutation(api.cartRules.remove);
+
+  const [isCreating, setIsCreating] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const existingCartRule = isEditMode ? cartRule : null;
 
   // Form setup
-  const form = useForm<Partial<CartRule>>({
+  const form = useForm<CartRuleForm>({
     defaultValues: {
       name: '',
       description: '',
-      type: CartRuleType.SHIPPING,
-      priority: 10,
-      status: CartRuleStatus.ACTIVE,
-      value: undefined,
+      status: 'active',
+      ruleType: 'buy_x_get_y',
+      config: {},
     },
   });
 
@@ -49,39 +58,43 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
       reset({
         name: existingCartRule.name,
         description: existingCartRule.description || '',
-        type: existingCartRule.type,
-        priority: existingCartRule.priority,
         status: existingCartRule.status,
-        value: existingCartRule.value ?? undefined,
+        ruleType: existingCartRule.ruleType,
+        config: existingCartRule.config || {},
       });
       setHasLoadedData(true);
     }
   }, [existingCartRule, hasLoadedData, reset]);
 
   // Submit handler
-  const onSubmit = async (data: Partial<CartRule>) => {
+  const onSubmit = async (data: CartRuleForm) => {
     try {
-      // Handle NaN values from valueAsNumber
-      const priority = typeof data.priority === 'number' && !isNaN(data.priority) ? data.priority : 10;
-      const value = typeof data.value === 'number' && !isNaN(data.value) ? data.value : null;
-
-      const cartRuleData = {
-        name: data.name || '',
-        description: data.description || null,
-        type: data.type || CartRuleType.SHIPPING,
-        priority,
-        status: data.status || CartRuleStatus.ACTIVE,
-        value,
-      };
-
       if (isEditMode && id) {
-        await updateCartRule({ id, ...cartRuleData }).unwrap();
+        setIsUpdating(true);
+        await updateCartRule({
+          id: id as Id<'cartRules'>,
+          name: data.name,
+          description: data.description,
+          status: data.status,
+          ruleType: data.ruleType,
+          config: data.config,
+        });
       } else {
-        await createCartRule(cartRuleData).unwrap();
+        setIsCreating(true);
+        await createCartRule({
+          name: data.name,
+          description: data.description,
+          status: data.status,
+          ruleType: data.ruleType,
+          config: data.config,
+        });
       }
       navigate('/cart-rules');
-    } catch {
-      // Error handled by RTK Query
+    } catch (err) {
+      console.error('Error saving cart rule:', err);
+    } finally {
+      setIsUpdating(false);
+      setIsCreating(false);
     }
   };
 
@@ -102,10 +115,14 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
   const handleConfirmDelete = async () => {
     if (!id) return;
     try {
-      await deleteCartRule(id).unwrap();
+      setIsDeleting(true);
+      await deleteCartRuleMutation({ id: id as Id<'cartRules'> });
       navigate('/cart-rules');
-    } catch {
+    } catch (err) {
+      console.error('Error deleting cart rule:', err);
       setDeleteDialogOpen(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -129,3 +146,4 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
     },
   };
 }
+
