@@ -1,7 +1,23 @@
 import { api } from '@shared/api';
-import { Product, ProductCategory } from '@shared/types';
+import { Product, ProductCategory, WineType } from '@shared/types';
 import { databases, APPWRITE_CONFIG } from '@shared/services';
 import { ID, Query } from 'appwrite';
+
+// Transform wine type from lowercase enum to capitalized format for Appwrite
+const transformWineType = (wineType: any): string | null => {
+  if (!wineType) return null;
+  
+  const normalized = String(wineType).toLowerCase().trim();
+  
+  const typeMap: Record<string, string> = {
+    'red': 'Red',
+    'white': 'White',
+    'rose': 'Rosé',
+    'sparkling': 'Sparkling',
+  };
+  
+  return typeMap[normalized] || null;
+};
 
 const productsApi = api.injectEndpoints({
   endpoints: (builder) => ({
@@ -47,7 +63,7 @@ const productsApi = api.injectEndpoints({
               dateAdded: newProduct.dateAdded || new Date().toISOString(),
               stockStatus: newProduct.stockStatus || 'in_stock',
               // Wine fields
-              wineType: newProduct.wineType || null,
+              wineType: transformWineType(newProduct.wineType),
               volume: newProduct.volume || null,
               grapeVariety: newProduct.grapeVariety || null,
               vintage: newProduct.vintage || null,
@@ -67,6 +83,12 @@ const productsApi = api.injectEndpoints({
         try {
           // Remove $id and status (UI-only) from updates
           const { $id, status, ...cleanUpdates } = updates as any;
+          
+          // Transform wineType if present
+          if (cleanUpdates.wineType) {
+            cleanUpdates.wineType = transformWineType(cleanUpdates.wineType);
+          }
+          
           const response = await databases.updateDocument(
             APPWRITE_CONFIG.DATABASE_ID,
             APPWRITE_CONFIG.COLLECTION_PRODUCTS,

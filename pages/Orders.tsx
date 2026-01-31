@@ -1,28 +1,35 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useGetOrdersQuery, useDeleteOrderMutation } from '../services/api';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { OrderStatus } from '@shared/types';
 import { VStack, HStack, Button, Text } from '@chakra-ui/react';
 import { LoadingState, PageHeader, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { OrdersFilterToolbar, OrderStatusChips, OrdersTable } from '../components/orders';
+import { toaster } from '../components/ui/toaster';
 
 export default function Orders() {
   const navigate = useNavigate();
-  const { data: orders, isLoading } = useGetOrdersQuery(undefined);
-  const [deleteOrder] = useDeleteOrderMutation();
+  const [activeChip, setActiveChip] = useState<string>('all');
+  
+  const orders = useQuery(api.orders.listAll, { 
+    status: activeChip !== 'all' ? (activeChip as any) : undefined 
+  });
+  const isLoading = orders === undefined;
+  const updateOrderStatus = useMutation(api.orders.updateStatus);
 
   // Filter States
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFilter, setDateFilter] = useState<string>('all');
-  const [activeChip, setActiveChip] = useState<string>('all');
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const ordersPerPage = 10;
 
   // Delete Dialog State
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [orderToDelete, setOrderToDelete] = useState<any>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
 
   // Calculate status counts for chips
   const statusCounts = useMemo(() => {
@@ -63,7 +70,7 @@ export default function Orders() {
   const filteredOrders = orders?.filter(order => {
     // Search filter
     const matchesSearch = 
-      order.$id.includes(searchTerm) || 
+      order._id.includes(searchTerm) || 
       order.customerName.includes(searchTerm) ||
       order.customerEmail.includes(searchTerm);
     
@@ -74,7 +81,7 @@ export default function Orders() {
     const matchesChip = activeChip === 'all' || order.status === activeChip;
     
      // Date filter
-     const matchesDate = isWithinDateRange(order.$createdAt, dateFilter);
+     const matchesDate = isWithinDateRange(order.createdAt, dateFilter);
     
     return matchesSearch && matchesStatusFilter && matchesChip && matchesDate;
   }) || [];
@@ -85,22 +92,36 @@ export default function Orders() {
     currentPage * ordersPerPage
   );
 
-  const handleDelete = (id: string) => {
-    setOrderToDelete(id);
+  const handleDelete = (order: any) => {
+    setOrderToDelete(order);
     setDeleteDialogOpen(true);
   };
 
   const handleConfirmDelete = async () => {
     if (orderToDelete) {
-      await deleteOrder(orderToDelete);
-      setDeleteDialogOpen(false);
-      setOrderToDelete(null);
+      setIsCancelling(true);
+      try {
+        await updateOrderStatus({ orderId: orderToDelete._id, status: 'cancelled' });
+        toaster.create({
+          title: "הזמנה בוטלה",
+          type: "success",
+        });
+      } catch (error) {
+        toaster.create({
+          title: "שגיאה בביטול הזמנה",
+          type: "error",
+        });
+      } finally {
+        setIsCancelling(false);
+        setDeleteDialogOpen(false);
+        setOrderToDelete(null);
+      }
     }
   };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedOrders(paginatedOrders.map(o => o.$id));
+      setSelectedOrders(paginatedOrders.map(o => o._id));
     } else {
       setSelectedOrders([]);
     }
@@ -216,8 +237,9 @@ export default function Orders() {
           setOrderToDelete(null);
         }}
         onConfirm={handleConfirmDelete}
-        title="מחיקת הזמנה"
-        message="האם אתה בטוח שברצונך למחוק הזמנה זו? פעולה זו לא ניתנת לביטול."
+        title="ביטול הזמנה"
+        message="האם אתה בטוח שברצונך לבטל הזמנה זו?"
+        isDeleting={isCancelling}
       />
     </VStack>
   );

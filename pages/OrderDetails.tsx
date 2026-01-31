@@ -1,6 +1,7 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGetOrderByIdQuery, useUpdateOrderStatusMutation } from '../services/api';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { OrderStatus } from '@shared/types';
 import {
   Box,
@@ -20,6 +21,7 @@ import {
   Link,
 } from '@chakra-ui/react';
 import { LoadingState, Breadcrumbs, StatusBadge, orderStatusConfig } from '../components/shared';
+import { toaster } from '../components/ui/toaster';
 
 // Helper to format date in Hebrew locale
 const formatDate = (dateStr: string) => {
@@ -52,6 +54,7 @@ const orderStatusOptions = createListCollection({
   items: [
     { label: 'ממתין', value: 'pending' },
     { label: 'בטיפול', value: 'processing' },
+    { label: 'נשלח', value: 'shipped' },
     { label: 'הושלם', value: 'completed' },
     { label: 'בוטל', value: 'cancelled' },
   ],
@@ -60,14 +63,17 @@ const orderStatusOptions = createListCollection({
 export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: order, isLoading, error } = useGetOrderByIdQuery(id || '');
-  const [updateStatus, { isLoading: isUpdating }] = useUpdateOrderStatusMutation();
+  
+  const order = useQuery(api.orders.get, { orderId: id as any });
+  const isLoading = order === undefined;
+  const updateStatus = useMutation(api.orders.updateStatus);
+  const [isUpdating, setIsUpdating] = React.useState(false);
 
   if (isLoading) {
     return <LoadingState message="טוען פרטי הזמנה..." />;
   }
 
-  if (error || !order) {
+  if (!order) {
     return (
       <VStack gap="4" py="20" align="center">
         <Text as="span" className="material-symbols-outlined" fontSize="48px" color="fg.subtle">
@@ -84,10 +90,20 @@ export default function OrderDetails() {
   }
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
+    setIsUpdating(true);
     try {
-      await updateStatus({ id: order.$id, status: newStatus }).unwrap();
-    } catch {
-      // Error handled by RTK Query
+      await updateStatus({ orderId: order._id as any, status: newStatus as any });
+      toaster.create({
+        title: "סטטוס עודכן",
+        type: "success",
+      });
+    } catch (error) {
+      toaster.create({
+        title: "שגיאה בעדכון סטטוס",
+        type: "error",
+      });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -123,15 +139,15 @@ export default function OrderDetails() {
         py="6"
       >
          <Box>
-           <Text fontSize="2xl" fontWeight="bold" color="fg" letterSpacing="tight">
-             הזמנה #{order.$id}
-           </Text>
-           <HStack gap="2" fontSize="sm" color="fg.muted" mt="1">
-             <Text>נוצרה ב-{formatDate(order.$createdAt)}</Text>
-             <Text>•</Text>
-             <Text dir="ltr">{formatTime(order.$createdAt)}</Text>
-           </HStack>
-         </Box>
+            <Text fontSize="2xl" fontWeight="bold" color="fg" letterSpacing="tight">
+              הזמנה #{order._id}
+            </Text>
+            <HStack gap="2" fontSize="sm" color="fg.muted" mt="1">
+              <Text>נוצרה ב-{formatDate(order.createdAt)}</Text>
+              <Text>•</Text>
+              <Text dir="ltr">{formatTime(order.createdAt)}</Text>
+            </HStack>
+          </Box>
         <Button
           variant="outline"
           size="md"
@@ -156,7 +172,7 @@ export default function OrderDetails() {
               תאריך הזמנה
             </Text>
             <Text fontSize="xl" fontWeight="bold" color="fg" dir="ltr">
-              {formatShortDate(order.$createdAt)}
+              {formatShortDate(order.createdAt)}
             </Text>
           </Card.Body>
         </Card.Root>
@@ -328,14 +344,14 @@ export default function OrderDetails() {
                 location_on
               </Text>
               <Box fontSize="sm" color="fg" lineHeight="relaxed">
-                <Text>{order.shippingAddress.street}</Text>
-                {order.shippingAddress.apartment && (
-                  <Text>{order.shippingAddress.apartment}</Text>
+                <Text>{order.shippingStreet}</Text>
+                {order.shippingApartment && (
+                  <Text>{order.shippingApartment}</Text>
                 )}
                 <Text>
-                  {order.shippingAddress.city}, {order.shippingAddress.postalCode}
+                  {order.shippingCity}, {order.shippingPostalCode}
                 </Text>
-                <Text>{order.shippingAddress.country}</Text>
+                <Text>{order.shippingCountry}</Text>
               </Box>
             </HStack>
           </Card.Body>
@@ -392,7 +408,7 @@ export default function OrderDetails() {
             </Table.Header>
             <Table.Body>
               {order.items.map((item) => (
-                <Table.Row key={item.$id} _hover={{ bg: 'bg.subtle' }} transition="background 0.2s">
+                <Table.Row key={item._id} _hover={{ bg: 'bg.subtle' }} transition="background 0.2s">
                   <Table.Cell px="6" py="4">
                     <HStack gap="4">
                       <Box
@@ -424,16 +440,11 @@ export default function OrderDetails() {
                         <Text fontWeight="medium" color="fg">
                           {item.productName}
                         </Text>
-                        {item.variant && (
-                          <Text fontSize="xs" color="fg.muted" mt="1">
-                            {item.variant}
-                          </Text>
-                        )}
                       </Box>
                     </HStack>
                   </Table.Cell>
                   <Table.Cell px="6" py="4" textAlign="center" color="fg.muted">
-                    {item.quantity}
+                    {item.quantity.toString()}
                   </Table.Cell>
                   <Table.Cell px="6" py="4" textAlign="start" color="fg.muted">
                     {formatCurrency(item.price)}
@@ -487,27 +498,27 @@ export default function OrderDetails() {
                 justify="center"
               >
                 <Text fontWeight="bold" color="blue.800" fontStyle="italic" fontSize="xs">
-                  VISA
+                  {order.paymentMethod.toUpperCase()}
                 </Text>
               </Flex>
               <Box>
                 <Text fontSize="sm" fontWeight="medium" color="fg">
-                  {order.payment.method}
+                  {order.paymentMethod}
                 </Text>
-                {order.payment.cardExpiry && (
+                {order.paymentCardExpiry && (
                   <Text fontSize="xs" color="fg.muted">
-                    תוקף: {order.payment.cardExpiry}
+                    תוקף: {order.paymentCardExpiry}
                   </Text>
                 )}
               </Box>
             </HStack>
             <HStack justify="space-between" fontSize="sm" color="fg.muted">
               <Text>מזהה תשלום:</Text>
-              <Text fontFamily="mono" dir="ltr">{order.payment.transactionId}</Text>
+              <Text fontFamily="mono" dir="ltr">{order.paymentTransactionId}</Text>
             </HStack>
             <HStack justify="space-between" fontSize="sm" color="fg.muted">
               <Text>תאריך חיוב:</Text>
-              <Text dir="ltr">{order.payment.chargeDate}</Text>
+              <Text dir="ltr">{order.paymentChargeDate}</Text>
             </HStack>
           </Card.Body>
         </Card.Root>
