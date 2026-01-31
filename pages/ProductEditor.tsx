@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { api } from '@convex/api';
+import { Id } from '@convex/dataModel';
 import { Product, ProductStatus, StockStatus, WineType } from '@shared/types';
 import {
   Box,

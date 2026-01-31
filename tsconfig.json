@@ -11,6 +11,9 @@
       ],
       "@shared/*": [
         "../../packages/shared-*/src"
+      ],
+      "@convex/*": [
+        "../../convex/_generated/*"
       ]
     }
   },

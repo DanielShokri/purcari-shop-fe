@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { api } from '@convex/api';
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { ProductsFilterToolbar, ProductsTable } from '../components/products';
