@@ -96,3 +96,87 @@ export const getMonthlySales = query({
     }));
   },
 });
+
+export const globalSearch = query({
+  args: { searchTerm: v.string() },
+  handler: async (ctx, args) => {
+    const term = args.searchTerm.toLowerCase();
+    const startTime = Date.now();
+
+    if (term.length < 2) {
+      return {
+        orders: [],
+        users: [],
+        products: [],
+        categories: [],
+        counts: { total: 0, orders: 0, users: 0, products: 0, categories: 0 },
+        searchTime: 0,
+      };
+    }
+
+    // Search Products
+    const products = await ctx.db
+      .query("products")
+      .collect();
+    
+    const filteredProducts = products.filter(p => 
+      p.productName.toLowerCase().includes(term) || 
+      (p.productNameHe && p.productNameHe.toLowerCase().includes(term)) ||
+      (p.description && p.description.toLowerCase().includes(term)) ||
+      (p.descriptionHe && p.descriptionHe.toLowerCase().includes(term)) ||
+      p.sku.toLowerCase().includes(term)
+    );
+
+    // Search Users
+    const users = await ctx.db
+      .query("users")
+      .collect();
+    
+    const filteredUsers = users.filter(u => 
+      u.name.toLowerCase().includes(term) || 
+      u.email.toLowerCase().includes(term) ||
+      (u.phone && u.phone.toLowerCase().includes(term))
+    );
+
+    // Search Orders
+    const orders = await ctx.db
+      .query("orders")
+      .collect();
+    
+    const filteredOrders = orders.filter(o => 
+      o.paymentTransactionId.toLowerCase().includes(term) || 
+      o.customerName.toLowerCase().includes(term) ||
+      o.customerEmail.toLowerCase().includes(term) ||
+      o.shippingCity.toLowerCase().includes(term)
+    );
+
+    // Search Categories
+    const categories = await ctx.db
+      .query("categories")
+      .collect();
+    
+    const filteredCategories = categories.filter(c => 
+      c.name.toLowerCase().includes(term) || 
+      c.description?.toLowerCase().includes(term)
+    );
+
+    const counts = {
+      orders: filteredOrders.length,
+      users: filteredUsers.length,
+      products: filteredProducts.length,
+      categories: filteredCategories.length,
+      total: filteredOrders.length + filteredUsers.length + filteredProducts.length + filteredCategories.length,
+    };
+
+    const searchTime = (Date.now() - startTime) / 1000;
+
+    return {
+      orders: filteredOrders,
+      users: filteredUsers,
+      products: filteredProducts,
+      categories: filteredCategories,
+      counts,
+      searchTime,
+    };
+  },
+});
