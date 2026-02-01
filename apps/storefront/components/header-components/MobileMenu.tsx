@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useToast } from '../../hooks/useToast';
+import useToast from '../../store/hooks/useToast';
 import { motion } from 'framer-motion';
 import { X, ChevronLeft, Search, User, LogOut } from 'lucide-react';
 import { useAppDispatch } from '../../store/hooks';
@@ -28,26 +28,21 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
     dispatch(openSearchModal());
   };
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await signOut();
-      dispatch(handleCartLogout());
-      handleClose();
-      toast.success({
-        title: "התנתקת בהצלחה",
-      });
-      navigate('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error({
-        title: "שגיאה",
-        description: "שגיאה בהתנתקות. אנא נסו שוב.",
-      });
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
+   const handleLogout = async () => {
+     setIsLoggingOut(true);
+     try {
+       await signOut();
+       dispatch(handleCartLogout());
+       handleClose();
+       toast.success("התנתקת בהצלחה");
+       navigate('/');
+     } catch (error) {
+       console.error('Logout error:', error);
+       toast.error("שגיאה בהתנתקות. אנא נסו שוב.");
+     } finally {
+       setIsLoggingOut(false);
+     }
+   };
 
   return (
     <div className="fixed inset-0 z-50 lg:hidden">

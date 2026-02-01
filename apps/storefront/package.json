@@ -10,9 +10,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@chakra-ui/react": "^3.31.0",
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
     "@hookform/resolvers": "^5.2.2",
     "@reduxjs/toolkit": "2.2.3",
     "@shared/api": "workspace:*",

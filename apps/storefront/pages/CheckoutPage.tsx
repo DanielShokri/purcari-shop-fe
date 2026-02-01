@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { useToast } from '../hooks/useToast';
+import useToast from '../store/hooks/useToast';
 import { selectCartItems, clearCart, useCartSummaryWithRules } from '../store/slices/cartSlice';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -85,14 +85,11 @@ const CheckoutPage: React.FC = () => {
    const totalDiscount = automaticDiscount + couponDiscount;
    const total = Math.max(0, subtotal + shipping - totalDiscount);
 
-   const nextStep = async () => {
-     if (validationErrors.length > 0) {
-       toast.error({
-         title: "שגיאה",
-         description: validationErrors[0],
-       });
-       return;
-     }
+    const nextStep = async () => {
+      if (validationErrors.length > 0) {
+        toast.error(validationErrors[0]);
+        return;
+      }
 
     let fieldsToValidate: (keyof CheckoutInput)[] = [];
     if (step === 1) {
@@ -142,19 +139,13 @@ const CheckoutPage: React.FC = () => {
           }),
         });
 
-        trackEvent({ type: 'checkout' });
-        dispatch(clearCart());
-         toast.success({
-           title: "בחזקת!",
-           description: 'ההזמנה בוצעה בהצלחה!',
-         });
-         navigate(`/order-confirmation/${orderId}`);
-       } catch (err) {
-         console.error('Failed to create order:', err);
-         toast.error({
-           title: "שגיאה",
-           description: 'שגיאה ביצירת ההזמנה, נסה שוב',
-         });
+         trackEvent({ type: 'checkout' });
+         dispatch(clearCart());
+          toast.success('בחזקת! ההזמנה בוצעה בהצלחה!');
+          navigate(`/order-confirmation/${orderId}`);
+        } catch (err) {
+          console.error('Failed to create order:', err);
+          toast.error('שגיאה ביצירת ההזמנה, נסה שוב');
       } finally {
         setIsCreatingOrder(false);
       }

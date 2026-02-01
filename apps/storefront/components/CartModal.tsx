@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { useToast } from '../hooks/useToast';
+import useToast from '../store/hooks/useToast';
 import { selectCartItems, selectCartSubtotal, removeFromCart, updateQuantity } from '../store/slices/cartSlice';
 import { closeCartModal } from '../store/slices/uiSlice';
 import { X, Trash2, Plus, Minus } from 'lucide-react';
@@ -13,13 +13,10 @@ const CartModal: React.FC = () => {
   const items = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartSubtotal);
 
-  const handleRemoveItem = (productId: string, title: string) => {
-    dispatch(removeFromCart(productId));
-    toast.info({
-      title: "הסר מסל",
-      description: `${title} הוסר מהסל`,
-    });
-  };
+   const handleRemoveItem = (productId: string, title: string) => {
+     dispatch(removeFromCart(productId));
+     toast.info(`${title} הוסר מהסל`);
+   };
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">

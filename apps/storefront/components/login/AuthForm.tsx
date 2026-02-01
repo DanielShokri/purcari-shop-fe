@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { useToast } from '../../hooks/useToast';
+import useToast from '../../store/hooks/useToast';
 import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -63,14 +63,12 @@ const AuthForm: React.FC = () => {
           // LOGIN FLOW
           const loginData = data as LoginInput;
            await signIn("password", { 
-             email: loginData.email, 
-             password: loginData.password, 
-             flow: "signIn" 
-           });
-           
-           toast.success({
-             title: "התחברת בהצלחה",
-           });
+              email: loginData.email, 
+              password: loginData.password, 
+              flow: "signIn" 
+            });
+            
+            toast.success("התחברת בהצלחה");
         } else {
           // SIGNUP FLOW
           const registerData = data as RegisterInput;
@@ -83,18 +81,15 @@ const AuthForm: React.FC = () => {
             flow: "signUp" 
           });
           
-           // Step 2: Create user profile with phone number
-           // Phone is not part of standard Password provider, so we store it separately
-           await createUserProfile({
-             phone: registerData.phone,
-             name: registerData.name,
-             email: registerData.email,
-           });
-           
-           toast.success({
-             title: "ברוכים הבאים!",
-             description: "החשבון נוצר בהצלחה",
-           });
+            // Step 2: Create user profile with phone number
+            // Phone is not part of standard Password provider, so we store it separately
+            await createUserProfile({
+              phone: registerData.phone,
+              name: registerData.name,
+              email: registerData.email,
+            });
+            
+            toast.success("ברוכים הבאים! החשבון נוצר בהצלחה");
         }
         
         // Set login success flag - useEffect will handle navigation after user state is confirmed
@@ -122,11 +117,8 @@ const AuthForm: React.FC = () => {
             : 'שגיאה בהרשמה. אנא נסו שוב מאוחר יותר.';
         }
         
-        setError(userFriendlyError);
-         toast.error({
-           title: "שגיאה",
-           description: userFriendlyError,
-         });
+         setError(userFriendlyError);
+          toast.error(userFriendlyError);
       } finally {
         setIsLoading(false);
       }

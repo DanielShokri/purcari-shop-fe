@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
-import { useToast } from '../hooks/useToast';
+import useToast from '../store/hooks/useToast';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { Product } from '@shared/types';
@@ -142,11 +142,8 @@ const ProductPage: React.FC = () => {
       maxQuantity: Number(Number(product.quantityInStock)) || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
-     trackEvent({ event: 'add_to_cart', properties: { productId: product._id } });
-     toast.success({
-       title: "הוסף לסל",
-       description: quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל',
-     });
+      trackEvent({ event: 'add_to_cart', properties: { productId: product._id } });
+      toast.success(quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל');
   };
 
   return (

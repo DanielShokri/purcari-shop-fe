@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '@shared/types';
 import { useAppDispatch } from '../store/hooks';
-import { useToast } from '../hooks/useToast';
+import useToast from '../store/hooks/useToast';
 import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingBag, Eye, Zap, Package, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -81,11 +81,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       maxQuantity: Number(product.quantityInStock) || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
-    
-    toast.success({
-      title: "הוסף לסל",
-      description: 'המוצר נוסף לסל',
-    });
+     
+    toast.success('המוצר נוסף לסל');
   };
 
   // Sale banner text
