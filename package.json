@@ -33,6 +33,7 @@
     "@convex-dev/auth": "^0.0.90",
     "appwrite": "21.5.0",
     "convex": "^1.31.7",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "zod": "^4.3.5"
   }
 }
