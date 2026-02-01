@@ -26,30 +26,34 @@ export const { auth, signIn, signOut, store } = convexAuth({
         }
       },
       profile(params) {
-        // Validate and return profile data for the user
-        // This extracts email and name from signup/signin params
-        const email = params.email as string;
-        const name = (params.name as string) || "";
+         // Validate and return profile data for the user
+         // This extracts email and name from signup/signin params
+         const email = params.email as string;
+         const name = (params.name as string) || "";
 
-        // Validate email format
-        const emailResult = emailSchema.safeParse(email);
-        if (!emailResult.success) {
-          throw new ConvexError("כתובת אימייל לא תקינה");
-        }
+         // Validate email format
+         const emailResult = emailSchema.safeParse(email);
+         if (!emailResult.success) {
+           throw new ConvexError("כתובת אימייל לא תקינה");
+         }
 
-        // Validate name if provided
-        if (name && name.length > 0) {
-          const nameResult = nameSchema.safeParse(name);
-          if (!nameResult.success) {
-            throw new ConvexError(nameResult.error.errors[0].message);
-          }
-        }
+         // Validate name if provided
+         if (name && name.length > 0) {
+           const nameResult = nameSchema.safeParse(name);
+           if (!nameResult.success) {
+             throw new ConvexError(nameResult.error.errors[0].message);
+           }
+         }
 
-        return {
-          email: emailResult.data,
-          name: name || email.split("@")[0], // Use email prefix as fallback name
-        };
-      },
+         const now = new Date().toISOString();
+
+         return {
+           email: emailResult.data,
+           name: name || email.split("@")[0], // Use email prefix as fallback name
+           createdAt: now,
+           updatedAt: now,
+         };
+       },
     }),
   ],
 });
