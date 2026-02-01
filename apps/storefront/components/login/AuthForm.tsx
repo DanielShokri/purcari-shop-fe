@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../../convex/_generated/api";
-import { useToast, useAppDispatch } from '../../store/hooks';
-import { syncCartOnLogin } from '../../store/slices/cartSlice';
-import { useConvex } from "convex/react";
+import { useToast } from '@chakra-ui/react';
 import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useForm, SubmitHandler } from 'react-hook-form';
@@ -14,17 +12,16 @@ import { loginSchema, registerSchema, LoginInput, RegisterInput } from '../../sc
 
 const AuthForm: React.FC = () => {
    const navigate = useNavigate();
-   const dispatch = useAppDispatch();
    const [searchParams] = useSearchParams();
    const redirect = searchParams.get('redirect');
-   const toast = useToast();
+   const chakraToast = useToast();
    const [isLogin, setIsLogin] = useState(true);
    const [error, setError] = useState<string | null>(null);
    const [loginSuccess, setLoginSuccess] = useState(false);
    const [isLoading, setIsLoading] = useState(false);
 
    const { signIn } = useAuthActions();
-   const convex = useConvex();
+   const createUserProfile = useMutation(api.users.createOrUpdateUserProfile);
    const user = useQuery(api.users.get);
 
   // Redirect when user is confirmed logged in
@@ -59,57 +56,90 @@ const AuthForm: React.FC = () => {
   }, [isLogin, reset]);
 
    const onSubmit: SubmitHandler<FormData> = async (data) => {
-     setError(null);
-     setIsLoading(true);
-     try {
-       if (isLogin) {
-         const loginData = data as LoginInput;
-         await signIn("password", { email: loginData.email, password: loginData.password, flow: "signIn" });
-         toast.success('התחברת בהצלחה');
-       } else {
-         const registerData = data as RegisterInput;
-         await signIn("password", { 
-           email: registerData.email, 
-           password: registerData.password, 
-           name: registerData.name, 
-           phone: registerData.phone,
-           flow: "signUp" 
-         });
-         toast.success('ברוכים הבאים! החשבון נוצר בהצלחה');
-       }
-       // Sync cart with cloud after login/register
-       dispatch(syncCartOnLogin(convex));
-       // Set login success flag - the useEffect will handle navigation after user state is confirmed
-       setLoginSuccess(true);
-     } catch (err: any) {
-       console.error('Auth error:', err);
-       
-       // Parse specific error messages from Convex auth
-       const errorMessage = err?.message || '';
-       let userFriendlyError = '';
-       
-       if (errorMessage.includes('Invalid password')) {
-         userFriendlyError = 'הסיסמה לא עומדת בדרישות. הסיסמה חייבת להכיל לפחות 4 תווים.';
-       } else if (errorMessage.includes('User does not exist')) {
-         userFriendlyError = 'לא קיים משתמש עם כתובת אימייל זו. אנא הרשמו או בדקו את האימייל.';
-       } else if (errorMessage.includes('Incorrect password')) {
-         userFriendlyError = 'הסיסמה שהוזנה אינה נכונה. אנא נסו שוב.';
-       } else if (errorMessage.includes('already exists')) {
-         userFriendlyError = 'כתובת אימייל זו כבר רשומה במערכת. אנא התחברו או אפסו את הסיסמה.';
-       } else if (errorMessage.includes('Invalid email')) {
-         userFriendlyError = 'כתובת אימייל לא תקינה. אנא בדקו את הפורמט.';
-       } else {
-         userFriendlyError = isLogin 
-           ? 'שגיאה בהתחברות. אנא בדקו את הפרטים ונסו שוב.'
-           : 'שגיאה בהרשמה. אנא נסו שוב מאוחר יותר.';
-       }
-       
-       setError(userFriendlyError);
-       toast.error(userFriendlyError);
-     } finally {
-       setIsLoading(false);
-     }
-   };
+      setError(null);
+      setIsLoading(true);
+      try {
+        if (isLogin) {
+          // LOGIN FLOW
+          const loginData = data as LoginInput;
+          await signIn("password", { 
+            email: loginData.email, 
+            password: loginData.password, 
+            flow: "signIn" 
+          });
+          
+          chakraToast({
+            title: "התחברת בהצלחה",
+            status: "success",
+            isClosable: true,
+            duration: 3000,
+          });
+        } else {
+          // SIGNUP FLOW
+          const registerData = data as RegisterInput;
+          
+          // Step 1: Sign up with Convex Auth
+          await signIn("password", { 
+            email: registerData.email, 
+            password: registerData.password, 
+            name: registerData.name, 
+            flow: "signUp" 
+          });
+          
+          // Step 2: Create user profile with phone number
+          // Phone is not part of standard Password provider, so we store it separately
+          await createUserProfile({
+            phone: registerData.phone,
+            name: registerData.name,
+            email: registerData.email,
+          });
+          
+          chakraToast({
+            title: "ברוכים הבאים!",
+            description: "החשבון נוצר בהצלחה",
+            status: "success",
+            isClosable: true,
+            duration: 3000,
+          });
+        }
+        
+        // Set login success flag - useEffect will handle navigation after user state is confirmed
+        setLoginSuccess(true);
+      } catch (err: any) {
+        console.error('Auth error:', err);
+        
+        // Parse specific error messages from Convex auth
+        const errorMessage = err?.message || '';
+        let userFriendlyError = '';
+        
+        if (errorMessage.includes('Invalid password') || errorMessage.includes('הסיסמה')) {
+          userFriendlyError = 'הסיסמה לא עומדת בדרישות. הסיסמה חייבת להכיל לפחות 4 תווים.';
+        } else if (errorMessage.includes('User does not exist') || errorMessage.includes('Invalid credentials')) {
+          userFriendlyError = 'לא קיים משתמש עם כתובת אימייל זו. אנא הרשמו או בדקו את האימייל.';
+        } else if (errorMessage.includes('Incorrect password')) {
+          userFriendlyError = 'הסיסמה שהוזנה אינה נכונה. אנא נסו שוב.';
+        } else if (errorMessage.includes('already exists') || errorMessage.includes('Unique') || errorMessage.includes('constraint')) {
+          userFriendlyError = 'כתובת אימייל זו כבר רשומה במערכת. אנא התחברו או אפסו את הסיסמה.';
+        } else if (errorMessage.includes('Invalid email') || errorMessage.includes('אימייל')) {
+          userFriendlyError = 'כתובת אימייל לא תקינה. אנא בדקו את הפורמט.';
+        } else {
+          userFriendlyError = isLogin 
+            ? 'שגיאה בהתחברות. אנא בדקו את הפרטים ונסו שוב.'
+            : 'שגיאה בהרשמה. אנא נסו שוב מאוחר יותר.';
+        }
+        
+        setError(userFriendlyError);
+        chakraToast({
+          title: "שגיאה",
+          description: userFriendlyError,
+          status: "error",
+          isClosable: true,
+          duration: 5000,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   return (
     <motion.div 
