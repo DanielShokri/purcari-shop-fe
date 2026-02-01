@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch, useToast } from '../store/hooks';
+import { useAppSelector, useAppDispatch } from '../store/hooks';
+import { useToast } from '@chakra-ui/react';
 import { selectCartItems, clearCart, useCartSummaryWithRules } from '../store/slices/cartSlice';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -19,7 +20,7 @@ import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const toast = useToast();
+  const chakraToast = useToast();
   // Use the new hook that triggers cart rules fetch
   const cartSummary = useCartSummaryWithRules();
   const { items: cartItems, subtotal, shipping, validationErrors, appliedBenefits, discount: automaticDiscount } = cartSummary;
@@ -86,7 +87,13 @@ const CheckoutPage: React.FC = () => {
 
   const nextStep = async () => {
     if (validationErrors.length > 0) {
-      toast.error(validationErrors[0]);
+      chakraToast({
+        title: "שגיאה",
+        description: validationErrors[0],
+        status: "error",
+        isClosable: true,
+        duration: 3000,
+      });
       return;
     }
 
@@ -106,48 +113,60 @@ const CheckoutPage: React.FC = () => {
   const prevStep = () => setStep(s => s - 1);
 
    const onSubmit = async (data: CheckoutInput) => {
-     try {
-       setIsCreatingOrder(true);
-       const orderId = await createOrder({
-         customerId: user?._id,
-         customerName: data.name,
-         customerEmail: data.email,
-         customerPhone: data.phone,
-         shippingAddress: {
-           street: data.street,
-           city: data.city,
-           postalCode: data.postalCode || '',
-           country: data.country,
-         },
-         payment: {
-           method: 'Credit Card',
-           transactionId: `mock_${Date.now()}`,
-           chargeDate: new Date().toISOString(),
-         },
-         items: cartItems.map(item => ({
-           productId: item.productId as any, // Convex IDs need proper casting if they come from strings
-           productName: item.title,
-           productImage: item.imgSrc,
-           quantity: BigInt(item.quantity),
-           price: item.price,
-         })),
-         // Add coupon snapshot if applied
-         ...(appliedCoupon && {
-           appliedCouponCode: appliedCoupon.code,
-           appliedCouponDiscount: appliedCoupon.discountAmount,
-         }),
-       });
+      try {
+        setIsCreatingOrder(true);
+        const orderId = await createOrder({
+          customerId: user?._id,
+          customerName: data.name,
+          customerEmail: data.email,
+          customerPhone: data.phone,
+          shippingAddress: {
+            street: data.street,
+            city: data.city,
+            postalCode: data.postalCode || '',
+            country: data.country,
+          },
+          payment: {
+            method: 'Credit Card',
+            transactionId: `mock_${Date.now()}`,
+            chargeDate: new Date().toISOString(),
+          },
+          items: cartItems.map(item => ({
+            productId: item.productId as any, // Convex IDs need proper casting if they come from strings
+            productName: item.title,
+            productImage: item.imgSrc,
+            quantity: BigInt(item.quantity),
+            price: item.price,
+          })),
+          // Add coupon snapshot if applied
+          ...(appliedCoupon && {
+            appliedCouponCode: appliedCoupon.code,
+            appliedCouponDiscount: appliedCoupon.discountAmount,
+          }),
+        });
 
-       trackEvent({ type: 'checkout' });
-       dispatch(clearCart());
-       toast.success('ההזמנה בוצעה בהצלחה!');
-       navigate(`/order-confirmation/${orderId}`);
-     } catch (err) {
-       console.error('Failed to create order:', err);
-       toast.error('שגיאה ביצירת ההזמנה, נסה שוב');
-     } finally {
-       setIsCreatingOrder(false);
-     }
+        trackEvent({ type: 'checkout' });
+        dispatch(clearCart());
+        chakraToast({
+          title: "בחזקת!",
+          description: 'ההזמנה בוצעה בהצלחה!',
+          status: "success",
+          isClosable: true,
+          duration: 3000,
+        });
+        navigate(`/order-confirmation/${orderId}`);
+      } catch (err) {
+        console.error('Failed to create order:', err);
+        chakraToast({
+          title: "שגיאה",
+          description: 'שגיאה ביצירת ההזמנה, נסה שוב',
+          status: "error",
+          isClosable: true,
+          duration: 3000,
+        });
+      } finally {
+        setIsCreatingOrder(false);
+      }
    };
 
   if (cartItems.length === 0 && step !== 4) {

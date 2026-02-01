@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '@shared/types';
-import { useAppDispatch, useToast } from '../store/hooks';
+import { useAppDispatch } from '../store/hooks';
+import { useToast } from '@chakra-ui/react';
 import { addToCart } from '../store/slices/cartSlice';
 import { ShoppingBag, Eye, Zap, Package, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -55,7 +56,7 @@ const SaleMarquee: React.FC<{ text: string }> = ({ text }) => {
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const dispatch = useAppDispatch();
-  const toast = useToast();
+  const chakraToast = useToast();
   const discountPercent = getDiscountPercent(product.price, product.salePrice);
   
   // Stock status helpers
@@ -81,7 +82,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
     
-    toast.success('המוצר נוסף לסל');
+    chakraToast({
+      title: "הוסף לסל",
+      description: 'המוצר נוסף לסל',
+      status: "success",
+      isClosable: true,
+      duration: 2000,
+    });
   };
 
   // Sale banner text

@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
+import { ChakraProvider } from '@chakra-ui/react';
 import { HelmetProvider } from 'react-helmet-async';
 import { store } from './store/index';
 import { ConvexClientProvider } from './providers/ConvexClientProvider';
@@ -17,9 +18,11 @@ root.render(
   <React.StrictMode>
     <ConvexClientProvider>
       <Provider store={store}>
-        <HelmetProvider>
-          <App />
-        </HelmetProvider>
+        <ChakraProvider>
+          <HelmetProvider>
+            <App />
+          </HelmetProvider>
+        </ChakraProvider>
       </Provider>
     </ConvexClientProvider>
   </React.StrictMode>
