@@ -4,9 +4,7 @@ import { auth } from "./auth";
 
 /**
  * Get current user's profile.
- * 
- * In a real-world scenario, the `auth.getUserIdentity` or Convex Auth context
- * would provide the current user's tokenIdentifier.
+ * Uses Convex Auth's getUserIdentity to get the authenticated user.
  */
 export const get = query({
   args: {},
@@ -16,10 +14,11 @@ export const get = query({
       return null;
     }
 
+    // Use email index to find the user (Convex Auth provides email in identity)
     return await ctx.db
       .query("users")
-      .withIndex("by_tokenIdentifier", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      .withIndex("email", (q) =>
+        q.eq("email", identity.email)
       )
       .unique();
   },
@@ -28,10 +27,8 @@ export const get = query({
 /**
  * Create or update user profile after authentication.
  * 
- * This mutation is called immediately after a user signs up or logs in.
- * It bridges the gap between Convex Auth tables and your custom users table.
- * 
- * Phone number is stored here because it's not part of the standard Password provider.
+ * This mutation updates the user profile with phone number and other custom fields.
+ * The user is already created by Convex Auth's createOrUpdateUser callback.
  */
 export const createOrUpdateUserProfile = mutation({
   args: {
@@ -49,8 +46,8 @@ export const createOrUpdateUserProfile = mutation({
     // Check if user already exists
     const existingUser = await ctx.db
       .query("users")
-      .withIndex("by_tokenIdentifier", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      .withIndex("email", (q) =>
+        q.eq("email", identity.email)
       )
       .unique();
 
@@ -61,17 +58,15 @@ export const createOrUpdateUserProfile = mutation({
       await ctx.db.patch(existingUser._id, {
         phone: args.phone,
         ...(args.name && { name: args.name }),
-        ...(args.email && { email: args.email }),
         updatedAt: now,
       });
       return existingUser._id;
     } else {
-      // Create new user document
-      // Note: name and email should come from the auth profile() method
+      // Create new user document if not exists
+      // (Convex Auth's callback should have created it, but this handles edge cases)
       const userId = await ctx.db.insert("users", {
-        tokenIdentifier: identity.tokenIdentifier,
         name: args.name || identity.name || "User",
-        email: args.email || identity.email || "",
+        email: identity.email,
         phone: args.phone,
         status: "active",
         createdAt: now,
@@ -186,8 +181,8 @@ export const updateProfile = mutation({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_tokenIdentifier", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      .withIndex("email", (q) =>
+        q.eq("email", identity.email)
       )
       .unique();
 
@@ -217,8 +212,8 @@ export const getCart = query({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_tokenIdentifier", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      .withIndex("email", (q) =>
+        q.eq("email", identity.email)
       )
       .unique();
 
@@ -249,8 +244,8 @@ export const updateCart = mutation({
 
     const user = await ctx.db
       .query("users")
-      .withIndex("by_tokenIdentifier", (q) =>
-        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      .withIndex("email", (q) =>
+        q.eq("email", identity.email)
       )
       .unique();
 

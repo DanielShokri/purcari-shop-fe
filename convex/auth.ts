@@ -18,69 +18,56 @@ const nameSchema = z.string()
 export const { auth, signIn, signOut, store } = convexAuth({
   providers: [
     Password<DataModel>({
-      validatePasswordRequirements: (password: string) => {
-        // Validate password requirements
-        const result = passwordSchema.safeParse(password);
-        if (!result.success) {
-          throw new ConvexError(result.error.errors[0].message);
-        }
-      },
-      profile(params) {
-         // Validate and return profile data for the user
-         // This extracts email and name from signup/signin params
-         const email = params.email as string;
-         const name = (params.name as string) || "";
-
-         // Validate email format
-         const emailResult = emailSchema.safeParse(email);
-         if (!emailResult.success) {
-           throw new ConvexError("כתובת אימייל לא תקינה");
+       validatePasswordRequirements: (password: string) => {
+         // Validate password requirements
+         const result = passwordSchema.safeParse(password);
+         if (!result.success) {
+           throw new ConvexError(result.error.message);
          }
+       },
+      profile(params) {
+        // Validate and return profile data for the user
+        // This extracts email and name from signup/signin params
+        const email = params.email as string;
+        const name = (params.name as string) || "";
+
+        // Validate email format
+        const emailResult = emailSchema.safeParse(email);
+        if (!emailResult.success) {
+          throw new ConvexError("כתובת אימייל לא תקינה");
+        }
 
          // Validate name if provided
          if (name && name.length > 0) {
            const nameResult = nameSchema.safeParse(name);
            if (!nameResult.success) {
-             throw new ConvexError(nameResult.error.errors[0].message);
+             throw new ConvexError(nameResult.error.message);
            }
          }
 
-         return {
-           email: emailResult.data,
-           name: name || email.split("@")[0], // Use email prefix as fallback name
-         };
-       },
+        return {
+          email: emailResult.data,
+          name: name || email.split("@")[0], // Use email prefix as fallback name
+        };
+      },
     }),
   ],
   callbacks: {
-    async createOrUpdateUser(ctx, input) {
-      const now = new Date().toISOString();
-      
-      // Only include fields that exist in the users schema
-      const userData = {
-        tokenIdentifier: input.tokenIdentifier,
-        email: input.email,
-        name: input.name,
-      };
-
-      const existingUser = await ctx.db
-        .query("users")
-        .withIndex("by_tokenIdentifier", (q) =>
-          q.eq("tokenIdentifier", input.tokenIdentifier)
-        )
-        .first();
-
-      if (existingUser) {
-        await ctx.db.patch(existingUser._id, {
-          ...userData,
+    async createOrUpdateUser(ctx, args) {
+      // If user already exists, optionally update and return
+      if (args.existingUserId) {
+        const now = new Date().toISOString();
+        await ctx.db.patch(args.existingUserId, {
+          ...args.profile,
           updatedAt: now,
         });
-        return existingUser._id;
+        return args.existingUserId;
       }
 
-      // Create new user with required fields
+      // Create new user with profile data from provider
+      const now = new Date().toISOString();
       return await ctx.db.insert("users", {
-        ...userData,
+        ...args.profile, // Contains email, name from Password profile()
         createdAt: now,
         updatedAt: now,
       });

@@ -1,49 +1,31 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
-  // Convex Auth tables
-  authAccounts: defineTable({
-    userId: v.id("users"),
-    provider: v.string(),
-    providerAccountId: v.string(),
-    accessToken: v.optional(v.string()),
-    refreshToken: v.optional(v.string()),
-    idToken: v.optional(v.string()),
-    accessTokenExpiresAt: v.optional(v.int64()),
-    refreshTokenExpiresAt: v.optional(v.int64()),
-    password: v.optional(v.string()),
-    scope: v.optional(v.string()),
-    type: v.string(),
-  }).index("providerAndAccountId", ["provider", "providerAccountId"])
-    .index("by_userId", ["userId"]),
+  // Use standard Convex Auth tables (authAccounts, authSessions, authVerificationTokens)
+  ...authTables,
 
-  authSessions: defineTable({
-    userId: v.id("users"),
-    token: v.string(),
-    expiresAt: v.int64(),
-  }).index("by_token", ["token"])
-    .index("by_userId", ["userId"]),
-
-  authVerificationTokens: defineTable({
-    identifier: v.string(),
-    token: v.string(),
-    expiresAt: v.int64(),
-  }).index("by_identifierAndToken", ["identifier", "token"]),
-
+  // Override users table with custom fields
   users: defineTable({
-    tokenIdentifier: v.string(), // From Convex Auth
+    // Standard auth fields
     name: v.string(),
     email: v.string(),
+    image: v.optional(v.string()),
+    emailVerificationTime: v.optional(v.number()),
     phone: v.optional(v.string()),
+    phoneVerificationTime: v.optional(v.number()),
+    isAnonymous: v.optional(v.boolean()),
+
+    // Custom fields
     role: v.optional(
       v.union(v.literal("admin"), v.literal("editor"), v.literal("viewer"))
     ),
     status: v.optional(
       v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended"))
     ),
-    createdAt: v.string(),
-    updatedAt: v.string(),
+    createdAt: v.optional(v.string()),
+    updatedAt: v.optional(v.string()),
     cart: v.optional(
       v.object({
         items: v.array(v.any()),
@@ -52,8 +34,8 @@ export default defineSchema({
       })
     ),
   })
-    .index("by_email", ["email"])
-    .index("by_tokenIdentifier", ["tokenIdentifier"]),
+    .index("email", ["email"])
+    .index("phone", ["phone"]),
 
   userAddresses: defineTable({
     userId: v.id("users"),
