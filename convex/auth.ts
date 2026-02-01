@@ -55,6 +55,14 @@ export const { auth, signIn, signOut, store } = convexAuth({
   callbacks: {
     async createOrUpdateUser(ctx, input) {
       const now = new Date().toISOString();
+      
+      // Only include fields that exist in the users schema
+      const userData = {
+        tokenIdentifier: input.tokenIdentifier,
+        email: input.email,
+        name: input.name,
+      };
+
       const existingUser = await ctx.db
         .query("users")
         .withIndex("by_tokenIdentifier", (q) =>
@@ -64,7 +72,7 @@ export const { auth, signIn, signOut, store } = convexAuth({
 
       if (existingUser) {
         await ctx.db.patch(existingUser._id, {
-          ...input,
+          ...userData,
           updatedAt: now,
         });
         return existingUser._id;
@@ -72,7 +80,7 @@ export const { auth, signIn, signOut, store } = convexAuth({
 
       // Create new user with required fields
       return await ctx.db.insert("users", {
-        ...input,
+        ...userData,
         createdAt: now,
         updatedAt: now,
       });
