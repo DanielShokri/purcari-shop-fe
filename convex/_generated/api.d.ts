@@ -18,6 +18,7 @@ import type * as notifications from "../notifications.js";
 import type * as orderItems from "../orderItems.js";
 import type * as orders from "../orders.js";
 import type * as products from "../products.js";
+import type * as seed from "../seed.js";
 import type * as userAddresses from "../userAddresses.js";
 import type * as users from "../users.js";
 
@@ -38,6 +39,7 @@ declare const fullApi: ApiFromModules<{
   orderItems: typeof orderItems;
   orders: typeof orders;
   products: typeof products;
+  seed: typeof seed;
   userAddresses: typeof userAddresses;
   users: typeof users;
 }>;

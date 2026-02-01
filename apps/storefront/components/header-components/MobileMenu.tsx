@@ -1,11 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useToast } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { X, ChevronLeft, Search, User, LogOut } from 'lucide-react';
 import { useAppDispatch } from '../../store/hooks';
 import { toggleMobileMenu, openSearchModal } from '../../store/slices/uiSlice';
 import { handleLogout as handleCartLogout } from '../../store/slices/cartSlice';
-import { useLogoutMutation } from '../../services/api/authApi';
 import { navLinks } from './navLinks';
 
 interface MobileMenuProps {
@@ -16,7 +17,9 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
   const dispatch = useAppDispatch();
   const location = useLocation();
   const navigate = useNavigate();
-  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const { signOut } = useAuthActions();
+  const chakraToast = useToast();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleClose = () => dispatch(toggleMobileMenu());
 
@@ -26,13 +29,29 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
   };
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
-      await logout().unwrap();
+      await signOut();
       dispatch(handleCartLogout());
       handleClose();
+      chakraToast({
+        title: "התנתקת בהצלחה",
+        status: "success",
+        isClosable: true,
+        duration: 2000,
+      });
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
+      chakraToast({
+        title: "שגיאה",
+        description: "שגיאה בהתנתקות. אנא נסו שוב.",
+        status: "error",
+        isClosable: true,
+        duration: 3000,
+      });
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
