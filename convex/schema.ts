@@ -15,7 +15,7 @@ export default defineSchema({
     password: v.optional(v.string()),
     scope: v.optional(v.string()),
     type: v.string(),
-  }).index("by_providerAndAccountId", ["provider", "providerAccountId"])
+  }).index("providerAndAccountId", ["provider", "providerAccountId"])
     .index("by_userId", ["userId"]),
 
   authSessions: defineTable({
