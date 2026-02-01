@@ -26,6 +26,63 @@ export const get = query({
 });
 
 /**
+ * Create or update user profile after authentication.
+ * 
+ * This mutation is called immediately after a user signs up or logs in.
+ * It bridges the gap between Convex Auth tables and your custom users table.
+ * 
+ * Phone number is stored here because it's not part of the standard Password provider.
+ */
+export const createOrUpdateUserProfile = mutation({
+  args: {
+    phone: v.string(),
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    // Get the current user's identity from auth
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("User not authenticated");
+    }
+
+    // Check if user already exists
+    const existingUser = await ctx.db
+      .query("users")
+      .withIndex("by_tokenIdentifier", (q) =>
+        q.eq("tokenIdentifier", identity.tokenIdentifier)
+      )
+      .unique();
+
+    const now = new Date().toISOString();
+
+    if (existingUser) {
+      // Update existing user with phone and other fields if provided
+      await ctx.db.patch(existingUser._id, {
+        phone: args.phone,
+        ...(args.name && { name: args.name }),
+        ...(args.email && { email: args.email }),
+        updatedAt: now,
+      });
+      return existingUser._id;
+    } else {
+      // Create new user document
+      // Note: name and email should come from the auth profile() method
+      const userId = await ctx.db.insert("users", {
+        tokenIdentifier: identity.tokenIdentifier,
+        name: args.name || identity.name || "User",
+        email: args.email || identity.email || "",
+        phone: args.phone,
+        status: "active",
+        createdAt: now,
+        updatedAt: now,
+      });
+      return userId;
+    }
+  },
+});
+
+/**
  * List all users. (Admin only - logical check)
  */
 export const listAll = query({
