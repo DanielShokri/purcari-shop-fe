@@ -45,17 +45,39 @@ export const { auth, signIn, signOut, store } = convexAuth({
            }
          }
 
-         const now = new Date().toISOString();
-
          return {
            email: emailResult.data,
            name: name || email.split("@")[0], // Use email prefix as fallback name
-           createdAt: now,
-           updatedAt: now,
          };
        },
     }),
   ],
+  callbacks: {
+    async createOrUpdateUser(ctx, input) {
+      const now = new Date().toISOString();
+      const existingUser = await ctx.db
+        .query("users")
+        .withIndex("by_tokenIdentifier", (q) =>
+          q.eq("tokenIdentifier", input.tokenIdentifier)
+        )
+        .first();
+
+      if (existingUser) {
+        await ctx.db.patch(existingUser._id, {
+          ...input,
+          updatedAt: now,
+        });
+        return existingUser._id;
+      }
+
+      // Create new user with required fields
+      return await ctx.db.insert("users", {
+        ...input,
+        createdAt: now,
+        updatedAt: now,
+      });
+    },
+  },
 });
 
 /**
