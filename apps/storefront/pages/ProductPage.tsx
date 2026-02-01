@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { useQuery, useMutation } from 'convex/react';
-import { useToast } from '@chakra-ui/react';
+import { useToast } from '../hooks/useToast';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { Product } from '@shared/types';
@@ -25,7 +25,7 @@ const ProductPage: React.FC = () => {
   const trackEvent = useMutation(api.products.trackEvent);
   
   const dispatch = useAppDispatch();
-  const chakraToast = useToast();
+  const toast = useToast();
   const [quantity, setQuantity] = useState(1);
 
   const isLoading = product === undefined;
@@ -142,14 +142,11 @@ const ProductPage: React.FC = () => {
       maxQuantity: Number(Number(product.quantityInStock)) || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
-    trackEvent({ event: 'add_to_cart', properties: { productId: product._id } });
-    chakraToast({
-      title: "הוסף לסל",
-      description: quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל',
-      status: "success",
-      isClosable: true,
-      duration: 2000,
-    });
+     trackEvent({ event: 'add_to_cart', properties: { productId: product._id } });
+     toast.success({
+       title: "הוסף לסל",
+       description: quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל',
+     });
   };
 
   return (

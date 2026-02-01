@@ -1,6 +1,6 @@
 import React from 'react';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { useToast } from '@chakra-ui/react';
+import { useToast } from '../hooks/useToast';
 import { selectCartItems, selectCartSubtotal, removeFromCart, updateQuantity } from '../store/slices/cartSlice';
 import { closeCartModal } from '../store/slices/uiSlice';
 import { X, Trash2, Plus, Minus } from 'lucide-react';
@@ -9,18 +9,15 @@ import { motion } from 'framer-motion';
 
 const CartModal: React.FC = () => {
   const dispatch = useAppDispatch();
-  const chakraToast = useToast();
+  const toast = useToast();
   const items = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartSubtotal);
 
   const handleRemoveItem = (productId: string, title: string) => {
     dispatch(removeFromCart(productId));
-    chakraToast({
+    toast.info({
       title: "הסר מסל",
       description: `${title} הוסר מהסל`,
-      status: "info",
-      isClosable: true,
-      duration: 2000,
     });
   };
 

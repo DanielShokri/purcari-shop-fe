@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { useToast } from '@chakra-ui/react';
+import { useToast } from '../hooks/useToast';
 import { selectCartItems, clearCart, useCartSummaryWithRules } from '../store/slices/cartSlice';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -20,7 +20,7 @@ import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const chakraToast = useToast();
+  const toast = useToast();
   // Use the new hook that triggers cart rules fetch
   const cartSummary = useCartSummaryWithRules();
   const { items: cartItems, subtotal, shipping, validationErrors, appliedBenefits, discount: automaticDiscount } = cartSummary;
@@ -85,17 +85,14 @@ const CheckoutPage: React.FC = () => {
    const totalDiscount = automaticDiscount + couponDiscount;
    const total = Math.max(0, subtotal + shipping - totalDiscount);
 
-  const nextStep = async () => {
-    if (validationErrors.length > 0) {
-      chakraToast({
-        title: "שגיאה",
-        description: validationErrors[0],
-        status: "error",
-        isClosable: true,
-        duration: 3000,
-      });
-      return;
-    }
+   const nextStep = async () => {
+     if (validationErrors.length > 0) {
+       toast.error({
+         title: "שגיאה",
+         description: validationErrors[0],
+       });
+       return;
+     }
 
     let fieldsToValidate: (keyof CheckoutInput)[] = [];
     if (step === 1) {
@@ -147,23 +144,17 @@ const CheckoutPage: React.FC = () => {
 
         trackEvent({ type: 'checkout' });
         dispatch(clearCart());
-        chakraToast({
-          title: "בחזקת!",
-          description: 'ההזמנה בוצעה בהצלחה!',
-          status: "success",
-          isClosable: true,
-          duration: 3000,
-        });
-        navigate(`/order-confirmation/${orderId}`);
-      } catch (err) {
-        console.error('Failed to create order:', err);
-        chakraToast({
-          title: "שגיאה",
-          description: 'שגיאה ביצירת ההזמנה, נסה שוב',
-          status: "error",
-          isClosable: true,
-          duration: 3000,
-        });
+         toast.success({
+           title: "בחזקת!",
+           description: 'ההזמנה בוצעה בהצלחה!',
+         });
+         navigate(`/order-confirmation/${orderId}`);
+       } catch (err) {
+         console.error('Failed to create order:', err);
+         toast.error({
+           title: "שגיאה",
+           description: 'שגיאה ביצירת ההזמנה, נסה שוב',
+         });
       } finally {
         setIsCreatingOrder(false);
       }

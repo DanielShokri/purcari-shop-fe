@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useToast } from '@chakra-ui/react';
+import { useToast } from '../../hooks/useToast';
 import { motion } from 'framer-motion';
 import { X, ChevronLeft, Search, User, LogOut } from 'lucide-react';
 import { useAppDispatch } from '../../store/hooks';
@@ -18,7 +18,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuthActions();
-  const chakraToast = useToast();
+  const toast = useToast();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleClose = () => dispatch(toggleMobileMenu());
@@ -34,21 +34,15 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
       await signOut();
       dispatch(handleCartLogout());
       handleClose();
-      chakraToast({
+      toast.success({
         title: "התנתקת בהצלחה",
-        status: "success",
-        isClosable: true,
-        duration: 2000,
       });
       navigate('/');
     } catch (error) {
       console.error('Logout error:', error);
-      chakraToast({
+      toast.error({
         title: "שגיאה",
         description: "שגיאה בהתנתקות. אנא נסו שוב.",
-        status: "error",
-        isClosable: true,
-        duration: 3000,
       });
     } finally {
       setIsLoggingOut(false);
