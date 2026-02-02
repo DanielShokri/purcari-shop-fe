@@ -1,12 +1,12 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { useSelector } from 'react-redux';
-import { CartItem, AppliedCoupon, SavedCart, CouponValidationResult } from '@shared/types';
+import { CartItem, AppliedCoupon, SavedCart } from '@shared/types';
 import { RootState } from '../index';
 import { calculateCartTotals } from '../../utils/cartCalculation';
-import { cartRulesApi, useGetCartRulesQuery } from '../../services/api/cartRulesApi';
-import { useLazyValidateCouponQuery } from '../../services/api/couponsApi';
 import { syncCartToConvex, fetchCartFromConvex } from './convexCartBridge';
 import { useAppDispatch } from '../hooks';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../../convex/_generated/api';
 
 // Constants
 const FREE_SHIPPING_THRESHOLD = 300; // ILS
@@ -308,12 +308,10 @@ export const selectCartDiscount = (state: RootState) => {
 };
 
 const getCartRulesFromState = (state: RootState): any[] => {
-  try {
-    const rulesResult = cartRulesApi.endpoints.getCartRules.select()(state);
-    return rulesResult.data || [];
-  } catch {
-    return [];
-  }
+  // TODO: Migrate to Convex - for now return empty array
+  // The cart rules should be fetched via useQuery(api.cartRules.get) in components
+  // and stored in Redux or accessed directly from Convex cache
+  return [];
 };
 
 export const selectShippingCost = (state: RootState) => {
@@ -358,7 +356,9 @@ export const selectCartSummary = (state: RootState) => {
 export const selectCartIsSyncing = (state: RootState) => state.cart.isSyncing;
 
 export const useCartSummaryWithRules = () => {
-  useGetCartRulesQuery();
+  // TODO: Migrate to Convex - for now just return selector
+  // Cart rules should be fetched via useQuery(api.cartRules.get) in components
+  // and passed to calculateCartTotals
   return useSelector(selectCartSummary);
 };
 
@@ -371,23 +371,17 @@ export const useCouponFlow = () => {
   const cartItems = useSelector(selectCartItems);
   const subtotal = useSelector(selectCartSubtotal);
   
-  const [validateCoupon, { isLoading: isValidating }] = useLazyValidateCouponQuery();
-
+  // TODO: Migrate to Convex - useQuery(api.coupons.validate) instead
   const handleValidateCoupon = async (code: string) => {
     dispatch(setCouponValidationState('validating'));
     dispatch(setCouponValidationError(undefined));
     
     try {
-      const result = await validateCoupon({ code, cartItems, subtotal });
-      if (result.isSuccess && result.data?.valid) {
-        dispatch(setCouponValidationState('valid'));
-        dispatch(setLastValidatedCode(code));
-        return { valid: true, data: result.data };
-      } else {
-        dispatch(setCouponValidationState('invalid'));
-        dispatch(setCouponValidationError(result.data?.error || 'קוד לא תקין'));
-        return { valid: false, message: result.data?.error || 'קוד לא תקין' };
-      }
+      // Placeholder - should use Convex validate coupon mutation
+      // const result = await validateCoupon({ code, cartItems, subtotal });
+      dispatch(setCouponValidationState('invalid'));
+      dispatch(setCouponValidationError('מערכת הקופונים בתחזוקה'));
+      return { valid: false, message: 'מערכת הקופונים בתחזוקה' };
     } catch (error) {
       dispatch(setCouponValidationState('invalid'));
       dispatch(setCouponValidationError('שגיאה באימות הקופון'));
