@@ -3,21 +3,23 @@ import { v } from "convex/values";
 import { authTables } from "@convex-dev/auth/server";
 
 export default defineSchema({
-  // Use standard Convex Auth tables (authAccounts, authSessions, authVerificationTokens)
+  // Standard Convex Auth tables (authAccounts, authSessions, etc.)
   ...authTables,
 
-  // Override users table with custom fields
-  users: defineTable({
-    // Standard auth fields
-    name: v.string(),
-    email: v.string(),
-    image: v.optional(v.string()),
-    emailVerificationTime: v.optional(v.number()),
-    phone: v.optional(v.string()),
-    phoneVerificationTime: v.optional(v.number()),
-    isAnonymous: v.optional(v.boolean()),
+   // Fix: Made fields optional where Auth providers might delay data
+   // Fix: Added strict typing for the Cart object
+   users: defineTable({
+     // Required fields - must always be present after auth
+     name: v.string(),
+     email: v.string(),
+     
+     // Optional auth-related fields
+     image: v.optional(v.string()),
+     emailVerificationTime: v.optional(v.number()),
+     phone: v.optional(v.string()),
+     phoneVerificationTime: v.optional(v.number()),
+     isAnonymous: v.optional(v.boolean()),
 
-    // Custom fields
     role: v.optional(
       v.union(v.literal("admin"), v.literal("editor"), v.literal("viewer"))
     ),
@@ -26,10 +28,16 @@ export default defineSchema({
     ),
     createdAt: v.optional(v.string()),
     updatedAt: v.optional(v.string()),
+    
+    // Improved Cart Schema for type-safety
     cart: v.optional(
       v.object({
-        items: v.array(v.any()),
-        appliedCoupon: v.optional(v.any()),
+        items: v.array(v.object({
+          productId: v.id("products"),
+          quantity: v.number(),
+          priceAtTimeOfAdding: v.number(),
+        })),
+        appliedCoupon: v.optional(v.string()), // Store the code
         updatedAt: v.string(),
       })
     ),
@@ -39,7 +47,7 @@ export default defineSchema({
 
   userAddresses: defineTable({
     userId: v.id("users"),
-    name: v.string(),
+    name: v.string(), // e.g., "בית" or "עבודה"
     street: v.string(),
     apartment: v.optional(v.string()),
     city: v.string(),
@@ -52,15 +60,14 @@ export default defineSchema({
     .index("by_userId_default", ["userId", "isDefault"]),
 
   products: defineTable({
-    // Required fields
     productName: v.string(),
     productNameHe: v.optional(v.string()),
     price: v.float64(),
-    quantityInStock: v.int64(),
+    // Fix: Using number instead of int64 for easier JS handling
+    quantityInStock: v.number(), 
     sku: v.string(),
-    category: v.string(), // category ID reference
+    category: v.string(), 
 
-    // Optional fields
     description: v.optional(v.string()),
     descriptionHe: v.optional(v.string()),
     shortDescription: v.optional(v.string()),
@@ -68,7 +75,6 @@ export default defineSchema({
     salePrice: v.optional(v.float64()),
     onSale: v.optional(v.boolean()),
 
-    // Wine-specific fields
     wineType: v.optional(
       v.union(
         v.literal("Red"),
@@ -78,23 +84,20 @@ export default defineSchema({
       )
     ),
     region: v.optional(v.string()),
-    vintage: v.optional(v.int64()),
+    vintage: v.optional(v.number()), // Changed from int64
     alcoholContent: v.optional(v.float64()),
-    volume: v.optional(v.string()), // e.g., "750ml"
+    volume: v.optional(v.string()), 
     grapeVariety: v.optional(v.string()),
     servingTemperature: v.optional(v.string()),
     tastingNotes: v.optional(v.string()),
 
-    // Media
-    featuredImage: v.optional(v.string()), // Full URL
-    images: v.optional(v.array(v.string())), // URL array
+    featuredImage: v.optional(v.string()), 
+    images: v.optional(v.array(v.string())), 
 
-    // Catalog management
     isFeatured: v.optional(v.boolean()),
     tags: v.optional(v.array(v.string())),
-    relatedProducts: v.optional(v.array(v.string())), // Product IDs
+    relatedProducts: v.optional(v.array(v.string())), 
 
-    // Status & tracking
     status: v.optional(
       v.union(
         v.literal("draft"),
@@ -125,41 +128,36 @@ export default defineSchema({
     nameHe: v.optional(v.string()),
     slug: v.string(),
     description: v.optional(v.string()),
-    parentId: v.optional(v.string()), // For nested categories
-    order: v.optional(v.int64()),
+    parentId: v.optional(v.string()), 
+    order: v.optional(v.number()),
     status: v.optional(v.union(v.literal("active"), v.literal("draft"), v.literal("hidden"))),
     createdAt: v.string(),
     updatedAt: v.string(),
   }).index("by_slug", ["slug"]),
 
   orders: defineTable({
-    // Customer info
-    customerId: v.optional(v.id("users")), // If logged in
+    customerId: v.optional(v.id("users")), 
     customerName: v.string(),
     customerEmail: v.string(),
     customerPhone: v.optional(v.string()),
     customerAvatar: v.optional(v.string()),
 
-    // Totals
     subtotal: v.float64(),
     tax: v.float64(),
     shippingCost: v.float64(),
     total: v.float64(),
 
-    // Flattened shipping address (denormalized for performance)
     shippingStreet: v.string(),
     shippingApartment: v.optional(v.string()),
     shippingCity: v.string(),
     shippingPostalCode: v.string(),
     shippingCountry: v.string(),
 
-    // Flattened payment info (denormalized for audit)
     paymentMethod: v.string(),
     paymentCardExpiry: v.optional(v.string()),
     paymentTransactionId: v.string(),
     paymentChargeDate: v.string(),
 
-    // Order management
     status: v.union(
       v.literal("pending"),
       v.literal("processing"),
@@ -168,7 +166,6 @@ export default defineSchema({
       v.literal("shipped")
     ),
 
-    // Coupon tracking
     appliedCouponCode: v.optional(v.string()),
     appliedCouponDiscount: v.optional(v.float64()),
 
@@ -185,13 +182,12 @@ export default defineSchema({
     productName: v.string(),
     productImage: v.optional(v.string()),
     variant: v.optional(v.string()),
-    quantity: v.int64(),
+    quantity: v.number(),
     price: v.float64(),
     total: v.float64(),
   }).index("by_orderId", ["orderId"]),
 
   coupons: defineTable({
-    // Identity & status
     code: v.string(),
     status: v.union(
       v.literal("active"),
@@ -201,32 +197,27 @@ export default defineSchema({
     ),
     description: v.optional(v.string()),
 
-    // Discount type & value
     discountType: v.union(
-      v.literal("percentage"), // % off subtotal
-      v.literal("fixed_amount"), // ₪X off
-      v.literal("free_shipping"), // Free shipping
-      v.literal("free_product"), // Free item
-      v.literal("buy_x_get_y") // Buy quantity X, get Y free
+      v.literal("percentage"), 
+      v.literal("fixed_amount"), 
+      v.literal("free_shipping"), 
+      v.literal("free_product"), 
+      v.literal("buy_x_get_y") 
     ),
     discountValue: v.float64(),
 
-    // For buy_x_get_y type
-    buyQuantity: v.optional(v.int64()),
-    getQuantity: v.optional(v.int64()),
+    buyQuantity: v.optional(v.number()),
+    getQuantity: v.optional(v.number()),
 
-    // Validity & limits
-    startDate: v.string(), // ISO 8601
+    startDate: v.string(), 
     endDate: v.optional(v.string()),
     minimumOrder: v.optional(v.float64()),
     maximumDiscount: v.optional(v.float64()),
 
-    // Usage constraints
-    usageLimit: v.optional(v.int64()), // Global limit
-    usageLimitPerUser: v.optional(v.int64()), // Per-user limit
-    usageCount: v.int64(), // Current usage
+    usageLimit: v.optional(v.number()), 
+    usageLimitPerUser: v.optional(v.number()), 
+    usageCount: v.number(), 
 
-    // Restrictions
     categoryIds: v.optional(v.array(v.string())),
     productIds: v.optional(v.array(v.string())),
     userIds: v.optional(v.array(v.string())),
@@ -244,7 +235,7 @@ export default defineSchema({
     couponCode: v.string(),
     userId: v.optional(v.id("users")),
     userEmail: v.string(),
-    usageCount: v.int64(),
+    usageCount: v.number(),
     lastUsedAt: v.optional(v.string()),
     createdAt: v.string(),
   }).index("by_couponCode_userEmail", ["couponCode", "userEmail"]),
@@ -268,7 +259,7 @@ export default defineSchema({
   }).index("by_event", ["event"]),
 
   notifications: defineTable({
-    userId: v.id("users"), // Admin recipient
+    userId: v.id("users"), 
     title: v.string(),
     message: v.string(),
     type: v.union(v.literal("info"), v.literal("warning"), v.literal("error")),

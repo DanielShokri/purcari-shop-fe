@@ -39,11 +39,11 @@ const DashboardPage: React.FC = () => {
   const user = convexUser as AuthUser | null;
   const isUserLoading = convexUser === undefined;
 
-  const convexOrders = useQuery(api.orders.listByCustomer, convexUser ? { email: convexUser.email } : "skip");
+   const convexOrders = useQuery(api.orders.listByCustomer, convexUser && convexUser.email ? { email: convexUser.email } : "skip");
   const orders = convexOrders as Order[] || [];
   const isOrdersLoading = convexOrders === undefined;
   
-  const convexAddresses = useQuery(api.userAddresses.list, convexUser ? { userId: convexUser._id } : "skip");
+   const convexAddresses = useQuery(api.userAddresses.list, convexUser && convexUser._id ? { userId: convexUser._id } : "skip");
   const addresses = convexAddresses as Address[] || [];
   const isPrefsLoading = convexAddresses === undefined;
   
