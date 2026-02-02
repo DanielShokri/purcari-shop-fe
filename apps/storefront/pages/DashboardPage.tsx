@@ -40,12 +40,14 @@ const DashboardPage: React.FC = () => {
   const isUserLoading = convexUser === undefined;
 
    const convexOrders = useQuery(api.orders.listByCustomer, convexUser && convexUser.email ? { email: convexUser.email } : "skip");
-  const orders = convexOrders as Order[] || [];
-  const isOrdersLoading = convexOrders === undefined;
+   const orders = convexOrders as Order[] || [];
+   // Orders are loading only if we have a user email but convexOrders is still undefined
+   const isOrdersLoading = (convexUser && convexUser.email) ? convexOrders === undefined : false;
   
    const convexAddresses = useQuery(api.userAddresses.list, convexUser && convexUser._id ? { userId: convexUser._id } : "skip");
-  const addresses = convexAddresses as Address[] || [];
-  const isPrefsLoading = convexAddresses === undefined;
+   const addresses = convexAddresses as Address[] || [];
+   // Addresses are loading only if we have a user ID but convexAddresses is still undefined
+   const isPrefsLoading = (convexUser && convexUser._id) ? convexAddresses === undefined : false;
   
   const { signOut } = useAuthActions();
   const updateProfileMutation = useMutation(api.users.updateProfile);
