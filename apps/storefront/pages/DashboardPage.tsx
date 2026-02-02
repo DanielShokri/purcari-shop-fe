@@ -4,7 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, Authenticated, Unauthenticated, AuthLoading } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from '@convex/api';
 
@@ -36,18 +36,19 @@ const DashboardPage: React.FC = () => {
   
   // Queries & Mutations
   const convexUser = useQuery(api.users.get);
-  const user = convexUser as AuthUser | null;
+  
+  // User now includes addresses in the combined data structure
+  type UserWithAddresses = AuthUser & { addresses?: Address[] };
+  const user = convexUser as UserWithAddresses | null;
   const isUserLoading = convexUser === undefined;
+  
+  // Extract addresses from the combined user data
+  const addresses = convexUser?.addresses || [];
 
    const convexOrders = useQuery(api.orders.listByCustomer, convexUser && convexUser.email ? { email: convexUser.email } : "skip");
    const orders = convexOrders as Order[] || [];
    // Orders are loading only if we have a user email but convexOrders is still undefined
    const isOrdersLoading = (convexUser && convexUser.email) ? convexOrders === undefined : false;
-  
-   const convexAddresses = useQuery(api.userAddresses.list, convexUser && convexUser._id ? { userId: convexUser._id } : "skip");
-   const addresses = convexAddresses as Address[] || [];
-   // Addresses are loading only if we have a user ID but convexAddresses is still undefined
-   const isPrefsLoading = (convexUser && convexUser._id) ? convexAddresses === undefined : false;
   
   const { signOut } = useAuthActions();
   const updateProfileMutation = useMutation(api.users.updateProfile);
@@ -155,7 +156,7 @@ const DashboardPage: React.FC = () => {
   };
 
   const openEditAddress = (address: Address) => {
-    setEditingAddressId(address.id);
+    setEditingAddressId(address._id);
     resetAddress({
       name: address.name,
       street: address.street,
@@ -193,63 +194,81 @@ const DashboardPage: React.FC = () => {
     });
   };
 
-  // Loading & Auth guards
-  if (isUserLoading) {
-    return <div className="min-h-screen flex items-center justify-center">טוען...</div>;
-  }
-  
-  if (!user) {
-    navigate('/login');
-    return null;
-  }
-
   return (
-    <div className="bg-gray-50 min-h-screen py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <DashboardHeader user={user} onLogout={handleLogout} />
-        
-        <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
+    <>
+      <AuthLoading>
+        <div className="min-h-screen flex items-center justify-center">טוען...</div>
+      </AuthLoading>
+      
+      <Unauthenticated>
+        <RedirectToLogin />
+      </Unauthenticated>
+      
+      <Authenticated>
+        {isUserLoading ? (
+          <div className="min-h-screen flex items-center justify-center">טוען...</div>
+        ) : !user ? (
+          <div className="min-h-screen flex items-center justify-center">טוען נתוני משתמש...</div>
+        ) : (
+          <div className="bg-gray-50 min-h-screen py-12">
+            <div className="container mx-auto px-4 max-w-4xl">
+              <DashboardHeader user={user} onLogout={handleLogout} />
+              
+              <DashboardTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-        <div className="min-h-[400px]">
-          <AnimatePresence mode="wait">
-            {activeTab === 'orders' && (
-              <OrdersTab orders={orders} isLoading={isOrdersLoading} />
-            )}
+              <div className="min-h-[400px]">
+                <AnimatePresence mode="wait">
+                  {activeTab === 'orders' && (
+                    <OrdersTab orders={orders} isLoading={isOrdersLoading} />
+                  )}
 
-            {activeTab === 'profile' && (
-              <ProfileTab
-                userEmail={user.email}
-                register={registerProfile}
-                errors={profileErrors}
-                onSubmit={handleProfileSubmitHook(onProfileSubmit)}
-                isUpdating={isUpdatingProfile || isUpdatingPrefs}
-                status={profileStatus}
+                  {activeTab === 'profile' && (
+                    <ProfileTab
+                      userEmail={user.email}
+                      register={registerProfile}
+                      errors={profileErrors}
+                      onSubmit={handleProfileSubmitHook(onProfileSubmit)}
+                      isUpdating={isUpdatingProfile || isUpdatingPrefs}
+                      status={profileStatus}
+                    />
+                  )}
+                  {activeTab === 'addresses' && (
+                    <AddressesTab
+                      addresses={addresses}
+                      isLoading={isUserLoading}
+                      onAddNew={openNewAddress}
+                      onEdit={openEditAddress}
+                      onDelete={deleteAddress}
+                    />
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <AddressModal
+                isOpen={isAddressModalOpen}
+                isEditing={!!editingAddressId}
+                formMethods={addressFormMethods}
+                isSubmitting={isUpdatingPrefs}
+                onSubmit={addressFormMethods.handleSubmit(onAddressSubmit)}
+                onClose={closeAddressModal}
               />
-            )}
-
-            {activeTab === 'addresses' && (
-              <AddressesTab
-                addresses={addresses}
-                isLoading={isPrefsLoading}
-                onAddNew={openNewAddress}
-                onEdit={openEditAddress}
-                onDelete={deleteAddress}
-              />
-            )}
-          </AnimatePresence>
-        </div>
-
-        <AddressModal
-          isOpen={isAddressModalOpen}
-          isEditing={!!editingAddressId}
-          formMethods={addressFormMethods}
-          isSubmitting={isUpdatingPrefs}
-          onSubmit={addressFormMethods.handleSubmit(onAddressSubmit)}
-          onClose={closeAddressModal}
-        />
-      </div>
-    </div>
+            </div>
+          </div>
+        )}
+      </Authenticated>
+    </>
   );
+};
+
+// Helper component to handle redirect
+const RedirectToLogin: React.FC = () => {
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    navigate('/login');
+  }, [navigate]);
+  
+  return <div className="min-h-screen flex items-center justify-center">מפנה...</div>;
 };
 
 export default DashboardPage;

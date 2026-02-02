@@ -27,7 +27,7 @@ const AddressCard: React.FC<AddressCardProps> = ({ address, onEdit, onDelete }) 
             <Edit2 size={16} />
           </button>
           <button 
-            onClick={() => onDelete(address.id)}
+            onClick={() => onDelete(address._id)}
             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
           >
             <Trash2 size={16} />

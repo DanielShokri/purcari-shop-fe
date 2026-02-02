@@ -1,26 +1,39 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import { auth } from "./auth";
 
 /**
- * Get current user's profile.
- * Uses Convex Auth's getUserIdentity to get the authenticated user.
+ * Get current user's full profile including addresses.
+ * Uses Convex Auth's getAuthUserId to reliably get the authenticated user ID.
  */
 export const get = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    // Use getAuthUserId for reliable auth user lookup
+    const userId = await getAuthUserId(ctx);
+    
+    if (userId === null) {
       return null;
     }
 
-    // Use email index to find the user (Convex Auth provides email in identity)
-    return await ctx.db
-      .query("users")
-      .withIndex("email", (q) =>
-        q.eq("email", identity.email)
-      )
-      .unique();
+    // Fetch user by ID
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      return null;
+    }
+
+    // Fetch all addresses linked to this user
+    const addresses = await ctx.db
+      .query("userAddresses")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+
+    // Return combined profile with addresses
+    return {
+      ...user,
+      addresses,
+    };
   },
 });
 
@@ -37,17 +50,19 @@ export const createOrUpdateUserProfile = mutation({
     email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Get the current user's identity from auth
+    // Try to get identity, but if not available, use email to find user
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      throw new Error("User not authenticated");
+    const userEmail = identity?.email || args.email;
+
+    if (!userEmail) {
+      throw new Error("User not authenticated and no email provided");
     }
 
-    // Check if user already exists
+    // Check if user already exists by email
     const existingUser = await ctx.db
       .query("users")
       .withIndex("email", (q) =>
-        q.eq("email", identity.email)
+        q.eq("email", userEmail)
       )
       .unique();
 
@@ -63,10 +78,9 @@ export const createOrUpdateUserProfile = mutation({
       return existingUser._id;
     } else {
       // Create new user document if not exists
-      // (Convex Auth's callback should have created it, but this handles edge cases)
       const userId = await ctx.db.insert("users", {
-        name: args.name || identity.name || "User",
-        email: identity.email,
+        name: args.name || identity?.name || "User",
+        email: userEmail,
         phone: args.phone,
         status: "active",
         createdAt: now,
