@@ -15,7 +15,7 @@ interface AddressesTabProps {
 const LoadingSkeleton: React.FC = () => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
     {[1, 2].map(i => (
-      <div key={i} className="h-40 bg-gray-200 rounded-2xl animate-pulse" />
+      <div key={`loading-skeleton-${i}`} className="h-40 bg-gray-200 rounded-2xl animate-pulse" />
     ))}
   </div>
 );
@@ -58,7 +58,7 @@ const AddressesTab: React.FC<AddressesTabProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {addresses.map((address) => (
             <AddressCard
-              key={address.id}
+              key={address?._id}
               address={address}
               onEdit={onEdit}
               onDelete={onDelete}
