@@ -183,7 +183,7 @@ export default function Dashboard() {
 
       {/* Footer */}
       <Box textAlign="center" fontSize="xs" color="fg.muted" mt="4">
-        © 2024 כל הזכויות שמורות למערכת הניהול. עוצב עבור ממשק RTL כהה.
+        {new Date().getFullYear()} Purcari Israel - Daniel Shokri
       </Box>
     </VStack>
   );

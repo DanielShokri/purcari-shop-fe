@@ -30,7 +30,18 @@ const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
   if (user === undefined) return null; // Loading handled by AuthLoading
 
   if (user === null || user.role !== 'admin') {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // If user is authenticated but not admin, show access denied message
+    const isAuthenticated = user !== null;
+    return (
+      <Navigate 
+        to="/login" 
+        state={{ 
+          from: location,
+          accessDenied: isAuthenticated 
+        }} 
+        replace 
+      />
+    );
   }
 
   return <Layout>{children}</Layout>;

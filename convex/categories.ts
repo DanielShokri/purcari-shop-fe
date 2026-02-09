@@ -1,8 +1,10 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { adminMutation } from "./authHelpers";
 
 /**
  * List all categories sorted by order.
+ * Public query - no admin check needed (used by storefront).
  */
 export const list = query({
   args: {
@@ -43,8 +45,9 @@ export const get = query({
 
 /**
  * Create a new category.
+ * Admin-only mutation.
  */
-export const create = mutation({
+export const create = adminMutation({
   args: {
     name: v.string(),
     nameHe: v.optional(v.string()),
@@ -66,8 +69,9 @@ export const create = mutation({
 
 /**
  * Update a category.
+ * Admin-only mutation.
  */
-export const update = mutation({
+export const update = adminMutation({
   args: {
     id: v.id("categories"),
     name: v.optional(v.string()),
@@ -89,8 +93,9 @@ export const update = mutation({
 
 /**
  * Delete a category.
+ * Admin-only mutation.
  */
-export const remove = mutation({
+export const remove = adminMutation({
   args: {
     id: v.id("categories"),
   },

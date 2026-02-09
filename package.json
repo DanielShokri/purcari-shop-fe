@@ -14,8 +14,7 @@
     "preview": "pnpm -r --parallel run preview",
     "type-check": "pnpm -r --parallel run type-check",
     "lint": "pnpm -r --parallel run lint",
-    "clean": "pnpm -r --parallel run clean && rm -rf node_modules",
-    "test:appwrite": "tsx scripts/test-appwrite.ts"
+    "clean": "pnpm -r --parallel run clean && rm -rf node_modules"
   },
   "devDependencies": {
     "@types/node": "^22.19.7",
@@ -31,7 +30,6 @@
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.90",
-    "appwrite": "21.5.0",
     "convex": "^1.31.7",
     "dotenv": "^17.2.3",
     "zod": "^4.3.5"

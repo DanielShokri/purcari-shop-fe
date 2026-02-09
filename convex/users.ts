@@ -2,6 +2,7 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 import { auth } from "./auth";
+import { requireAdmin } from "./authHelpers";
 
 /**
  * Get current user's full profile including addresses.
@@ -92,7 +93,7 @@ export const createOrUpdateUserProfile = mutation({
 });
 
 /**
- * List all users. (Admin only - logical check)
+ * List all users. (Admin only)
  */
 export const listAll = query({
   args: {
@@ -100,7 +101,9 @@ export const listAll = query({
     status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended"))),
   },
   handler: async (ctx, args) => {
-    // Note: Add proper admin role check here in production
+    // Verify admin access
+    await requireAdmin(ctx);
+    
     let usersQuery = ctx.db.query("users");
     
     // Manual filtering for now as we don't have indexes for these yet
@@ -116,17 +119,19 @@ export const listAll = query({
 });
 
 /**
- * Delete a user.
+ * Delete a user. (Admin only)
  */
 export const remove = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
+    // Verify admin access
+    await requireAdmin(ctx);
     await ctx.db.delete(args.userId);
   },
 });
 
 /**
- * Update a user (Admin).
+ * Update a user (Admin only).
  */
 export const update = mutation({
   args: {
@@ -139,6 +144,9 @@ export const update = mutation({
     status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended"))),
   },
   handler: async (ctx, args) => {
+    // Verify admin access
+    await requireAdmin(ctx);
+    
     const { userId, ...updates } = args;
     await ctx.db.patch(userId, {
       ...updates,
@@ -148,7 +156,7 @@ export const update = mutation({
 });
 
 /**
- * Update user role.
+ * Update user role. (Admin only)
  */
 export const updateRole = mutation({
   args: {
@@ -156,6 +164,9 @@ export const updateRole = mutation({
     role: v.union(v.literal("admin"), v.literal("editor"), v.literal("viewer")),
   },
   handler: async (ctx, args) => {
+    // Verify admin access
+    await requireAdmin(ctx);
+    
     await ctx.db.patch(args.userId, {
       role: args.role,
       updatedAt: new Date().toISOString(),
@@ -164,7 +175,7 @@ export const updateRole = mutation({
 });
 
 /**
- * Update user status.
+ * Update user status. (Admin only)
  */
 export const updateStatus = mutation({
   args: {
@@ -172,6 +183,9 @@ export const updateStatus = mutation({
     status: v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended")),
   },
   handler: async (ctx, args) => {
+    // Verify admin access
+    await requireAdmin(ctx);
+    
     await ctx.db.patch(args.userId, {
       status: args.status,
       updatedAt: new Date().toISOString(),

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from "convex/react";
 import { api } from '@convex/api';
+import { Id } from "@convex/dataModel";
 import { UserRole, User } from '@shared/types';
 import { 
   VStack, 
@@ -17,6 +18,16 @@ import {
 import { LoadingState, PageHeader, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { UsersFilterToolbar, UsersTable } from '../components/users';
 import { toaster } from '../components/ui/toaster';
+
+// Helper to validate Convex ID format
+const isValidConvexId = (id: string, tableName: string): id is Id<typeof tableName> => {
+  return typeof id === 'string' && id.startsWith(`${tableName}:`) && id.length > tableName.length + 10;
+};
+
+// Helper to safely cast Convex ID
+const asUserId = (id: string): Id<"users"> | null => {
+  return isValidConvexId(id, "users") ? id as Id<"users"> : null;
+};
 
 const roleOptions = createListCollection({
   items: [
@@ -124,7 +135,9 @@ const paginatedUsers = filteredUsers.slice(
     if (userToDelete) {
       setIsDeleting(true);
       try {
-        await deleteUserMutation({ userId: userToDelete as any });
+        const validUserId = asUserId(userToDelete);
+        if (!validUserId) throw new Error("Invalid user ID");
+        await deleteUserMutation({ userId: validUserId });
         toaster.create({
           title: "משתמש נמחק בהצלחה",
           type: "success",
@@ -180,12 +193,14 @@ const paginatedUsers = filteredUsers.slice(
 
     setIsUpdating(true);
     try {
+      const validUserId = asUserId(editingUser);
+      if (!validUserId) throw new Error("Invalid user ID");
       await updateUserMutation({
-        userId: editingUser as any,
+        userId: validUserId,
         name: editUserName,
         email: editUserEmail,
         phone: editUserPhone,
-        role: editUserRole as any,
+        role: editUserRole as "admin" | "editor" | "viewer",
       });
       
       toaster.create({

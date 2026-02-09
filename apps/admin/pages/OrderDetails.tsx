@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from "convex/react";
 import { api } from '@convex/api';
+import { Id } from "@convex/dataModel";
 import { OrderStatus } from '@shared/types';
 import {
   Box,
@@ -22,6 +23,11 @@ import {
 } from '@chakra-ui/react';
 import { LoadingState, Breadcrumbs, StatusBadge, orderStatusConfig } from '../components/shared';
 import { toaster } from '../components/ui/toaster';
+
+// Helper to validate Convex ID format
+const isValidConvexId = (id: string, tableName: string): id is Id<typeof tableName> => {
+  return typeof id === 'string' && id.startsWith(`${tableName}:`) && id.length > tableName.length + 10;
+};
 
 // Helper to format date in Hebrew locale
 const formatDate = (dateStr: string) => {
@@ -64,7 +70,9 @@ export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  const order = useQuery(api.orders.get, { orderId: id as any });
+  // Safely cast the orderId with validation
+  const orderId = id && isValidConvexId(id, "orders") ? id as Id<"orders"> : null;
+  const order = useQuery(orderId ? api.orders.get : undefined, orderId ? { orderId } : "skip");
   const isLoading = order === undefined;
   const updateStatus = useMutation(api.orders.updateStatus);
   const [isUpdating, setIsUpdating] = React.useState(false);
@@ -92,7 +100,8 @@ export default function OrderDetails() {
   const handleStatusChange = async (newStatus: OrderStatus) => {
     setIsUpdating(true);
     try {
-      await updateStatus({ orderId: order._id as any, status: newStatus as any });
+      if (!orderId) throw new Error("Invalid order ID");
+      await updateStatus({ orderId: orderId, status: newStatus });
       toaster.create({
         title: "סטטוס עודכן",
         type: "success",

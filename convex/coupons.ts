@@ -1,10 +1,11 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { adminMutation, adminQuery } from "./authHelpers";
 
 /**
  * Admin: Get coupon by ID.
  */
-export const get = query({
+export const get = adminQuery({
   args: { id: v.id("coupons") },
   handler: async (ctx, args) => {
     return await ctx.db.get(args.id);
@@ -14,7 +15,7 @@ export const get = query({
 /**
  * Admin: List all coupons.
  */
-export const list = query({
+export const list = adminQuery({
   args: {},
   handler: async (ctx) => {
     return await ctx.db.query("coupons").order("desc").collect();
@@ -37,7 +38,7 @@ export const getByCode = query({
 /**
  * Admin: Create a new coupon.
  */
-export const create = mutation({
+export const create = adminMutation({
   args: {
     code: v.string(),
     status: v.union(
@@ -84,7 +85,7 @@ export const create = mutation({
 /**
  * Admin: Update an existing coupon.
  */
-export const update = mutation({
+export const update = adminMutation({
   args: {
     id: v.id("coupons"),
     status: v.optional(v.union(
@@ -111,7 +112,7 @@ export const update = mutation({
 /**
  * Admin: Remove a coupon.
  */
-export const remove = mutation({
+export const remove = adminMutation({
   args: { id: v.id("coupons") },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.id);

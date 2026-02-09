@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { adminMutation } from "./authHelpers";
 
 /**
  * List products with optional filtering.
@@ -162,9 +163,9 @@ export const validateStock = query({
 });
 
 /**
- * Admin: Create/Update/Delete
+ * Admin: Create/Update/Delete - Protected by adminMutation
  */
-export const create = mutation({
+export const create = adminMutation({
   args: {
     productName: v.string(),
     productNameHe: v.optional(v.string()),
@@ -205,7 +206,7 @@ export const create = mutation({
   },
 });
 
-export const update = mutation({
+export const update = adminMutation({
   args: {
     id: v.id("products"),
     productName: v.optional(v.string()),
@@ -237,7 +238,7 @@ export const update = mutation({
   },
 });
 
-export const remove = mutation({
+export const remove = adminMutation({
   args: { id: v.id("products") },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.id);

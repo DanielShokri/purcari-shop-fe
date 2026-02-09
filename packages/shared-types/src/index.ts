@@ -335,15 +335,41 @@ export interface CartRule {
 }
 
 // ============================================================================
-// USER & AUTH INTERFACES
+// CART RULE INTERFACES
 // ============================================================================
 
-export interface AuthUser {
+export type CartRuleType = 'buy_x_get_y' | 'bulk_discount';
+export type CartRuleStatus = 'draft' | 'active' | 'paused';
+
+export interface BuyXGetYConfig {
+  type: 'buy_x_get_y';
+  buyQuantity: number;
+  getQuantity: number;
+  discountProductId?: string;
+  discountPercentage?: number;
+}
+
+export interface BulkDiscountConfig {
+  type: 'bulk_discount';
+  minQuantity: number;
+  discountPercentage: number;
+  maxDiscountAmount?: number;
+}
+
+export type CartRuleConfig = BuyXGetYConfig | BulkDiscountConfig;
+
+export interface CartRule {
   _id: string;
   name: string;
-  email: string;
-  phone?: string;
-  prefs?: Record<string, any>;
+  description?: string;
+  ruleType: CartRuleType;
+  status: CartRuleStatus;
+  config: CartRuleConfig;
+  priority?: number;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Address {
@@ -460,29 +486,6 @@ export interface User extends AuthUser {
   createdAt?: string;
   updatedAt?: string;
   prefs?: Record<string, any>;
-}
-
-export interface AppwriteUser {
-  _id: string;
-  email: string;
-  name?: string;
-  phone?: string;
-  prefs?: Record<string, any>;
-  _creationTime?: number;
-  [key: string]: any;
-}
-
-export function mapAppwriteUserToUser(appwriteUser: AppwriteUser): User {
-  return {
-    _id: appwriteUser._id,
-    email: appwriteUser.email,
-    name: appwriteUser.name || '',
-    phone: appwriteUser.phone || '',
-    role: appwriteUser.prefs?.role || UserRole.VIEWER,
-    status: appwriteUser.prefs?.status || UserStatus.ACTIVE,
-    createdAt: appwriteUser.prefs?.createdAt || appwriteUser._creationTime?.toString() || new Date().toISOString(),
-    updatedAt: appwriteUser.prefs?.updatedAt || new Date().toISOString(),
-  };
 }
 
 // ============================================================================

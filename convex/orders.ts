@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { api } from "./_generated/api";
+import { adminMutation, adminQuery } from "./authHelpers";
 
 // Israeli business logic constants
 const VAT_RATE = 0.17;
@@ -166,8 +167,9 @@ export const listByCustomer = query({
 /**
  * List all orders for admin.
  * Supports status filtering.
+ * Admin-only query.
  */
-export const listAll = query({
+export const listAll = adminQuery({
   args: { 
     status: v.optional(v.union(
       v.literal("pending"),
@@ -189,9 +191,10 @@ export const listAll = query({
 });
 
 /**
- * Update order status (Admin only).
+ * Update order status.
+ * Admin-only mutation.
  */
-export const updateStatus = mutation({
+export const updateStatus = adminMutation({
   args: {
     orderId: v.id("orders"),
     status: v.union(

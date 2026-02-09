@@ -30,9 +30,9 @@ export default function Search() {
   const [searchInput, setSearchInput] = useState(queryParam);
   const [activeTab, setActiveTab] = useState<TabType>('all');
 
-  const results = useQuery(api.admin.globalSearch, { 
-    searchTerm: queryParam 
-  });
+  const results = useQuery(api.admin.globalSearch, queryParam ? { 
+    query: queryParam
+  } : "skip");
   const isLoading = results === undefined;
   const isFetching = false; // Convex handles this automatically
 
@@ -287,7 +287,7 @@ export default function Search() {
                   {results.orders.slice(0, activeTab === 'all' ? 3 : undefined).map((order) => (
                     <OrderResultCard
                       key={order._id}
-                      order={{ ...order, $id: order._id, $createdAt: order._creationTime ? new Date(order._creationTime).toISOString() : order.createdAt }}
+                      order={order}
                       searchTerm={queryParam}
                     />
                   ))}
@@ -311,7 +311,7 @@ export default function Search() {
                   {results.users.slice(0, activeTab === 'all' ? 4 : undefined).map((user) => (
                     <UserResultCard
                       key={user._id}
-                      user={{ ...user, $id: user._id }}
+                      user={user}
                       searchTerm={queryParam}
                     />
                   ))}
@@ -332,7 +332,7 @@ export default function Search() {
                   {results.products.slice(0, activeTab === 'all' ? 3 : undefined).map((product) => (
                     <ProductResultCard
                       key={product._id}
-                      product={{ ...product, $id: product._id }}
+                      product={product}
                       searchTerm={queryParam}
                     />
                   ))}
@@ -356,7 +356,7 @@ export default function Search() {
                   {results.categories.slice(0, activeTab === 'all' ? 4 : undefined).map((category) => (
                     <CategoryResultCard
                       key={category._id}
-                      category={{ ...category, $id: category._id, displayOrder: Number(category.order ?? 0) }}
+                      category={category}
                       searchTerm={queryParam}
                     />
                   ))}
