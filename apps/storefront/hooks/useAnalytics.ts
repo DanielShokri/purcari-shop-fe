@@ -36,7 +36,7 @@ export function clearAnonymousId(): void {
  * Hook for tracking analytics events
  */
 export function useAnalytics() {
-  const trackEvent = useMutation(api.analytics.events.trackEvent);
+  const trackEvent = useMutation(api.analytics.trackEvent);
 
   const track = useCallback(
     async (event: string, properties?: Record<string, any>) => {
