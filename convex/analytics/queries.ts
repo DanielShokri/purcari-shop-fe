@@ -26,13 +26,13 @@ interface TimeSeriesDataPoint {
 async function countPageViewsInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
   const events = await ctx.db
     .query("analyticsEvents")
-    .withIndex("by_event_timestamp", (q: any) => 
-      q.eq("event", "page_viewed")
-       .gte("timestamp", startTime)
-       .lte("timestamp", endTime)
-    )
+    .withIndex("by_event", (q: any) => q.eq("event", "page_viewed"))
     .collect();
-  return events.length;
+  
+  return events.filter((e: any) => {
+    const ts = typeof e.timestamp === "string" ? Number(e.timestamp) : e.timestamp;
+    return ts >= startTime && ts <= endTime;
+  }).length;
 }
 
 /**
@@ -91,16 +91,8 @@ export const getSummary = query({
     const todayStart = getStartOfDay(now);
     const todayEnd = getEndOfDay(now);
     
-    // Get this week's times
-    const startOfWeek = getStartOfDay(now - 7 * 24 * 60 * 60 * 1000);
-    const endOfWeek = getEndOfDay(now);
-    
-    // Get this month's times
-    const startOfMonth = new Date(now);
-    startOfMonth.setUTCDate(1);
-    startOfMonth.setUTCHours(0, 0, 0, 0);
-    const endOfMonth = new Date(now);
-    endOfMonth.setUTCHours(23, 59, 59, 999);
+    console.log(`Querying views for today: ${new Date(todayStart).toISOString()} to ${new Date(todayEnd).toISOString()}`);
+    console.log(`Current time: ${new Date(now).toISOString()} (${now})`);
 
     // Get page views (total page view events)
     const viewsToday = await countPageViewsInRange(ctx, todayStart, todayEnd);
