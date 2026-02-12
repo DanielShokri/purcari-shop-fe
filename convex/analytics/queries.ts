@@ -91,6 +91,17 @@ export const getSummary = query({
     const todayStart = getStartOfDay(now);
     const todayEnd = getEndOfDay(now);
     
+    // Calculate week boundaries (Sunday to Saturday)
+    const today = new Date(now);
+    const dayOfWeek = today.getDay();
+    const startOfWeekDate = new Date(now - dayOfWeek * 24 * 60 * 60 * 1000);
+    const startOfWeek = getStartOfDay(startOfWeekDate.getTime());
+    const endOfWeek = todayEnd; // Up to end of today
+    
+    // Calculate month boundaries
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
+    
     console.log(`Querying views for today: ${new Date(todayStart).toISOString()} to ${new Date(todayEnd).toISOString()}`);
     console.log(`Current time: ${new Date(now).toISOString()} (${now})`);
 
