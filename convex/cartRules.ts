@@ -18,6 +18,31 @@ const bulkDiscountConfig = v.object({
   maxDiscountAmount: v.optional(v.float64()),
 });
 
+const shippingConfig = v.object({
+  type: v.literal("shipping"),
+  minOrderAmount: v.number(),
+});
+
+// Public query for storefront - returns active rules sorted by priority
+export const getActive = query({
+  args: {},
+  handler: async (ctx) => {
+    const now = new Date().toISOString();
+    const rules = await ctx.db
+      .query("cartRules")
+      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .collect();
+
+    return rules
+      .filter((rule) => {
+        if (rule.startDate && rule.startDate > now) return false;
+        if (rule.endDate && rule.endDate < now) return false;
+        return true;
+      })
+      .sort((a, b) => (a.priority ?? 99) - (b.priority ?? 99));
+  },
+});
+
 // Admin-only queries for cart rules management
 export const get = adminQuery({
   args: {},
@@ -39,8 +64,8 @@ export const create = adminMutation({
     name: v.string(),
     description: v.optional(v.string()),
     status: v.union(v.literal("draft"), v.literal("active"), v.literal("paused")),
-    ruleType: v.union(v.literal("buy_x_get_y"), v.literal("bulk_discount")),
-    config: v.union(buyXGetYConfig, bulkDiscountConfig),
+    ruleType: v.union(v.literal("buy_x_get_y"), v.literal("bulk_discount"), v.literal("shipping")),
+    config: v.union(buyXGetYConfig, bulkDiscountConfig, shippingConfig),
     priority: v.optional(v.number()),
     startDate: v.optional(v.string()),
     endDate: v.optional(v.string()),
@@ -61,8 +86,8 @@ export const update = adminMutation({
     name: v.optional(v.string()),
     description: v.optional(v.string()),
     status: v.optional(v.union(v.literal("draft"), v.literal("active"), v.literal("paused"))),
-    ruleType: v.optional(v.union(v.literal("buy_x_get_y"), v.literal("bulk_discount"))),
-    config: v.optional(v.union(buyXGetYConfig, bulkDiscountConfig)),
+    ruleType: v.optional(v.union(v.literal("buy_x_get_y"), v.literal("bulk_discount"), v.literal("shipping"))),
+    config: v.optional(v.union(buyXGetYConfig, bulkDiscountConfig, shippingConfig)),
     priority: v.optional(v.number()),
     startDate: v.optional(v.string()),
     endDate: v.optional(v.string()),

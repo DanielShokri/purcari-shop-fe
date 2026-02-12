@@ -356,10 +356,28 @@ export const selectCartSummary = (state: RootState) => {
 export const selectCartIsSyncing = (state: RootState) => state.cart.isSyncing;
 
 export const useCartSummaryWithRules = () => {
-  // TODO: Migrate to Convex - for now just return selector
-  // Cart rules should be fetched via useQuery(api.cartRules.get) in components
-  // and passed to calculateCartTotals
-  return useSelector(selectCartSummary);
+  const cartRules = useQuery(api.cartRules.getActive);
+  const cartState = useSelector((state: RootState) => state.cart);
+  const subtotal = cartState.items.reduce((acc, item) => {
+    const price = item.salePrice ?? item.price;
+    return acc + (price * item.quantity);
+  }, 0);
+
+  const totals = calculateCartTotals(cartState.items, cartRules ?? []);
+
+  return {
+    items: cartState.items,
+    itemCount: totals.itemCount,
+    subtotal: totals.subtotal,
+    shipping: totals.shippingCost,
+    discount: totals.discount,
+    total: totals.total,
+    appliedCoupon: cartState.appliedCoupon,
+    freeShippingThreshold: FREE_SHIPPING_THRESHOLD,
+    amountUntilFreeShipping: Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal),
+    validationErrors: totals.validationErrors,
+    appliedBenefits: totals.appliedBenefits,
+  };
 };
 
 // Hook for coupon validation and application flow
@@ -401,6 +419,8 @@ export const useCouponFlow = () => {
     dispatch(setCouponValidationError(undefined));
     dispatch(setLastValidatedCode(undefined));
   };
+
+  const isValidating = validationState === 'validating';
 
   return {
     validationState,

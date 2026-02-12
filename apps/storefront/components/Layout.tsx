@@ -8,9 +8,13 @@ import { ToastContainer } from './toast';
 import { useAppSelector } from '../store/hooks';
 import { selectIsCartModalOpen } from '../store/slices/uiSlice';
 import { AnimatePresence } from 'framer-motion';
+import { useTrackPageView } from '../hooks/useAnalytics';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const isCartOpen = useAppSelector(selectIsCartModalOpen);
+
+  // Enable automatic page view tracking (must be inside Router context)
+  useTrackPageView();
 
   return (
     <div className="flex flex-col min-h-screen font-sans">

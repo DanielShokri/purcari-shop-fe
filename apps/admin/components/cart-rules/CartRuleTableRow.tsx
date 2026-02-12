@@ -1,6 +1,6 @@
 import React from 'react';
 import { HStack, Text, Table, Checkbox, IconButton, Box } from '@chakra-ui/react';
-import { CartRule, CartRuleType } from '@shared/types';
+import { CartRule } from '@shared/types';
 import StatusBadge, { cartRuleStatusConfig } from '../shared/StatusBadge';
 
 interface CartRuleTableRowProps {
@@ -11,12 +11,10 @@ interface CartRuleTableRowProps {
   onDelete: () => void;
 }
 
-// Icon and color mapping for cart rule types
-const typeConfig: Record<CartRuleType, { icon: string; color: string; label: string }> = {
-  [CartRuleType.SHIPPING]: { icon: 'local_shipping', color: 'purple.500', label: 'משלוח' },
-  [CartRuleType.DISCOUNT]: { icon: 'percent', color: 'orange.500', label: 'הנחה' },
-  [CartRuleType.RESTRICTION]: { icon: 'block', color: 'red.500', label: 'הגבלות' },
-  [CartRuleType.BENEFIT]: { icon: 'card_giftcard', color: 'blue.500', label: 'הטבה' },
+const typeConfig: Record<string, { icon: string; color: string; label: string }> = {
+  'shipping': { icon: 'local_shipping', color: 'purple.500', label: 'משלוח' },
+  'bulk_discount': { icon: 'percent', color: 'orange.500', label: 'הנחה כמותית' },
+  'buy_x_get_y': { icon: 'local_offer', color: 'green.500', label: 'קנה X קבל Y' },
 };
 
 export default function CartRuleTableRow({
@@ -26,10 +24,26 @@ export default function CartRuleTableRow({
   onEdit,
   onDelete
 }: CartRuleTableRowProps) {
-  const typeInfo = typeConfig[cartRule.type] || typeConfig[CartRuleType.SHIPPING];
+  const typeInfo = typeConfig[cartRule.ruleType] || { icon: 'rule', color: 'gray.500', label: 'חוק' };
 
-  const formatPriority = (priority: number): string => {
-    return priority.toString().padStart(2, '0');
+  const formatPriority = (priority?: number): string => {
+    return (priority ?? 0).toString().padStart(2, '0');
+  };
+
+  const formatValue = (): string => {
+    const config = cartRule.config;
+    if (!config) return '-';
+
+    switch (cartRule.ruleType) {
+      case 'shipping':
+        return `מעל ₪${config.minOrderAmount}`;
+      case 'bulk_discount':
+        return `${config.discountPercentage}%`;
+      case 'buy_x_get_y':
+        return `קנה ${config.buyQuantity} קבל ${config.getQuantity}`;
+      default:
+        return '-';
+    }
   };
 
   return (
@@ -96,8 +110,13 @@ export default function CartRuleTableRow({
         </Text>
       </Table.Cell>
       <Table.Cell px="6" py="4">
-        <StatusBadge 
-          status={cartRule.status} 
+        <Text fontSize="sm" color="fg">
+          {formatValue()}
+        </Text>
+      </Table.Cell>
+      <Table.Cell px="6" py="4">
+        <StatusBadge
+          status={cartRule.status}
           config={cartRuleStatusConfig}
           variant="dot"
         />

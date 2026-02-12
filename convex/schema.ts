@@ -250,7 +250,7 @@ export default defineSchema({
     name: v.string(),
     description: v.optional(v.string()),
     status: v.union(v.literal("draft"), v.literal("active"), v.literal("paused")),
-    ruleType: v.union(v.literal("buy_x_get_y"), v.literal("bulk_discount")),
+    ruleType: v.union(v.literal("buy_x_get_y"), v.literal("bulk_discount"), v.literal("shipping")),
     config: v.union(
       v.object({
         type: v.literal("buy_x_get_y"),
@@ -264,6 +264,10 @@ export default defineSchema({
         minQuantity: v.number(),
         discountPercentage: v.number(),
         maxDiscountAmount: v.optional(v.float64()),
+      }),
+      v.object({
+        type: v.literal("shipping"),
+        minOrderAmount: v.number(),
       })
     ),
     priority: v.optional(v.number()),

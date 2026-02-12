@@ -56,14 +56,14 @@ export const create = adminMutation({
       v.literal("buy_x_get_y")
     ),
     discountValue: v.float64(),
-    buyQuantity: v.optional(v.int64()),
-    getQuantity: v.optional(v.int64()),
+    buyQuantity: v.optional(v.number()),
+    getQuantity: v.optional(v.number()),
     startDate: v.string(),
     endDate: v.optional(v.string()),
     minimumOrder: v.optional(v.float64()),
     maximumDiscount: v.optional(v.float64()),
-    usageLimit: v.optional(v.int64()),
-    usageLimitPerUser: v.optional(v.int64()),
+    usageLimit: v.optional(v.number()),
+    usageLimitPerUser: v.optional(v.number()),
     categoryIds: v.optional(v.array(v.string())),
     productIds: v.optional(v.array(v.string())),
     userIds: v.optional(v.array(v.string())),
@@ -75,7 +75,7 @@ export const create = adminMutation({
     return await ctx.db.insert("coupons", {
       ...args,
       code: args.code.toUpperCase(),
-      usageCount: 0n,
+      usageCount: 0,
       createdAt: now,
       updatedAt: now,
     });
@@ -97,8 +97,8 @@ export const update = adminMutation({
     description: v.optional(v.string()),
     discountValue: v.optional(v.float64()),
     endDate: v.optional(v.string()),
-    usageLimit: v.optional(v.int64()),
-    usageLimitPerUser: v.optional(v.int64()),
+    usageLimit: v.optional(v.number()),
+    usageLimitPerUser: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     const { id, ...patch } = args;
@@ -141,7 +141,7 @@ export const incrementUsage = mutation({
 
     // 1. Update global usage count
     await ctx.db.patch(coupon._id, {
-      usageCount: (coupon.usageCount || 0n) + 1n,
+      usageCount: (coupon.usageCount || 0) + 1,
       updatedAt: now,
     });
 
@@ -155,7 +155,7 @@ export const incrementUsage = mutation({
 
     if (existingUsage) {
       await ctx.db.patch(existingUsage._id, {
-        usageCount: (existingUsage.usageCount || 0n) + 1n,
+        usageCount: (existingUsage.usageCount || 0) + 1,
         lastUsedAt: now,
       });
     } else {
@@ -164,7 +164,7 @@ export const incrementUsage = mutation({
         couponCode: code,
         userId: args.userId,
         userEmail: args.userEmail,
-        usageCount: 1n,
+        usageCount: 1,
         lastUsedAt: now,
         createdAt: now,
       });
@@ -182,7 +182,7 @@ export const validate = query({
     subtotal: v.float64(),
     userEmail: v.optional(v.string()),
     userId: v.optional(v.id("users")),
-    itemCount: v.int64(),
+    itemCount: v.number(),
   },
   handler: async (ctx, args) => {
     const code = args.code.toUpperCase();

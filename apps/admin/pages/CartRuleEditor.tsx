@@ -17,7 +17,7 @@ export default function CartRuleEditor() {
 
   const { form, state, handlers } = useCartRuleEditor({ id });
   const { register, formState: { errors }, watch, control } = form;
-  const ruleType = watch('ruleType');
+  const ruleType = watch('ruleType') as 'buy_x_get_y' | 'bulk_discount' | 'shipping' | undefined;
 
   // Loading state
   if (state.isEditMode && state.isLoadingCartRule) {

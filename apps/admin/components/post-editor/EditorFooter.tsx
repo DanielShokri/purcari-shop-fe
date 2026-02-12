@@ -33,7 +33,7 @@ export default function EditorFooter({
       <Box maxW="1200px" mx="auto" display="flex" alignItems="center" justifyContent="space-between">
         <HStack gap="3">
           <Button
-            type="submit"
+            type="button"
             colorPalette="blue"
             size="md"
             loading={isCreating || isUpdating}

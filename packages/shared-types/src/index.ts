@@ -322,23 +322,7 @@ export interface CouponUsageRecord {
 // CART RULE INTERFACES
 // ============================================================================
 
-export interface CartRule {
-  _id: string;
-  name: string;
-  description?: string;
-  type?: CartRuleType;
-  ruleType?: 'buy_x_get_y' | 'bulk_discount' | string;
-  priority?: number;
-  status: CartRuleStatus | 'active' | 'paused' | string;
-  value?: number;
-  config?: any;
-}
-
-// ============================================================================
-// CART RULE INTERFACES
-// ============================================================================
-
-export type CartRuleType = 'buy_x_get_y' | 'bulk_discount';
+export type CartRuleType = 'buy_x_get_y' | 'bulk_discount' | 'shipping';
 export type CartRuleStatus = 'draft' | 'active' | 'paused';
 
 export interface BuyXGetYConfig {
@@ -356,7 +340,26 @@ export interface BulkDiscountConfig {
   maxDiscountAmount?: number;
 }
 
-export type CartRuleConfig = BuyXGetYConfig | BulkDiscountConfig;
+export interface ShippingConfig {
+  type: 'shipping';
+  minOrderAmount: number;
+}
+
+export type CartRuleConfig = BuyXGetYConfig | BulkDiscountConfig | ShippingConfig;
+
+export interface CartRule {
+  _id: string;
+  name: string;
+  description?: string;
+  ruleType: CartRuleType;
+  status: CartRuleStatus;
+  config: CartRuleConfig;
+  priority?: number;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface CartRule {
   _id: string;
@@ -478,8 +481,8 @@ export interface AnalyticsSummary {
 // ============================================================================
 
 export interface User extends AuthUser {
-  role?: UserRole;
-  status?: UserStatus;
+  role: UserRole;
+  status: UserStatus;
   avatar?: string;
   address?: string;
   joinedAt?: string;

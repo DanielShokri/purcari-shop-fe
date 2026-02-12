@@ -11,8 +11,10 @@ interface CartRuleForm {
   name: string;
   description: string;
   status: CartRuleStatus;
-  ruleType: 'buy_x_get_y' | 'bulk_discount';
-  type: CartRuleType;
+  ruleType: 'buy_x_get_y' | 'bulk_discount' | 'shipping';
+  value?: number;
+  getQuantity?: number;
+  priority?: number;
   config: any;
 }
 
@@ -45,6 +47,9 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
       description: '',
       status: 'active',
       ruleType: 'buy_x_get_y',
+      value: undefined,
+      getQuantity: 1,
+      priority: 10,
       config: {},
     },
   });
@@ -55,14 +60,27 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [hasLoadedData, setHasLoadedData] = useState(false);
 
+  // Extract value from config for edit mode
+  const extractValueFromConfig = (config: any, ruleType: string): { value?: number; getQuantity?: number } => {
+    if (!config) return { value: undefined, getQuantity: undefined };
+    if (ruleType === 'shipping') return { value: config.minOrderAmount };
+    if (ruleType === 'bulk_discount') return { value: config.discountPercentage };
+    if (ruleType === 'buy_x_get_y') return { value: config.buyQuantity, getQuantity: config.getQuantity };
+    return { value: undefined, getQuantity: undefined };
+  };
+
   // Reset form when cart rule data loads (only once)
   useEffect(() => {
     if (existingCartRule && !hasLoadedData) {
+      const extracted = extractValueFromConfig(existingCartRule.config, existingCartRule.ruleType);
       reset({
         name: existingCartRule.name,
         description: existingCartRule.description || '',
         status: existingCartRule.status,
         ruleType: existingCartRule.ruleType,
+        priority: existingCartRule.priority,
+        value: extracted.value,
+        getQuantity: extracted.getQuantity,
         config: existingCartRule.config || {},
       });
       setHasLoadedData(true);
@@ -72,6 +90,9 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
   // Submit handler
   const onSubmit = async (data: CartRuleForm) => {
     try {
+      const config = buildConfig(data.ruleType, data.value, data.getQuantity);
+      const priorityValue = data.priority ? Number(data.priority) : 10;
+
       if (isEditMode && id) {
         setIsUpdating(true);
         await updateCartRule({
@@ -80,7 +101,8 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
           description: data.description,
           status: data.status,
           ruleType: data.ruleType,
-          config: data.config,
+          config,
+          priority: priorityValue,
         });
       } else {
         setIsCreating(true);
@@ -89,7 +111,8 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
           description: data.description,
           status: data.status,
           ruleType: data.ruleType,
-          config: data.config,
+          config,
+          priority: priorityValue,
         });
       }
       navigate('/cart-rules');
@@ -99,6 +122,27 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
       setIsUpdating(false);
       setIsCreating(false);
     }
+  };
+
+  const buildConfig = (ruleType: string, value: number | undefined, getQuantity: number | undefined) => {
+    if (ruleType === 'buy_x_get_y') {
+      return {
+        type: 'buy_x_get_y' as const,
+        buyQuantity: Math.floor(value || 1),
+        getQuantity: Math.floor(getQuantity || 1),
+      };
+    }
+    if (ruleType === 'shipping') {
+      return {
+        type: 'shipping' as const,
+        minOrderAmount: value || 0,
+      };
+    }
+    return {
+      type: 'bulk_discount' as const,
+      minQuantity: Math.floor(value || 1),
+      discountPercentage: value || 0,
+    };
   };
 
   // Action handlers

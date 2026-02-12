@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, HStack, VStack, Text, Table, Checkbox, IconButton } from '@chakra-ui/react';
 import { User } from '@shared/types';
-import { StatusBadge, userStatusConfig, userRoleConfig } from '../shared';
+import { StatusBadge, userRoleConfig } from '../shared';
 
 interface UserTableRowProps {
   user: User;
@@ -64,14 +64,11 @@ export default function UserTableRow({
         </Text>
       </Table.Cell>
       <Table.Cell px="6" py="4">
-        <StatusBadge status={user.role} config={userRoleConfig} />
-      </Table.Cell>
-      <Table.Cell px="6" py="4">
-        <StatusBadge status={user.status} config={userStatusConfig} />
+        <StatusBadge status={user.role || 'viewer'} config={userRoleConfig} />
       </Table.Cell>
       <Table.Cell px="6" py="4" color="fg.muted" display={{ base: 'none', lg: 'table-cell' }} dir="ltr">
         <Text fontSize="sm">
-          {new Date(user.joinedAt).toLocaleDateString('he-IL')}
+          {user.createdAt ? new Date(user.createdAt).toLocaleDateString('he-IL') : '-'}
         </Text>
       </Table.Cell>
       <Table.Cell px="6" py="4">

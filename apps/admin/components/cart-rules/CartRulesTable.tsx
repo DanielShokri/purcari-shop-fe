@@ -58,6 +58,9 @@ export default function CartRulesTable({
                   עדיפות
                 </Table.ColumnHeader>
                 <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
+                  ערך
+                </Table.ColumnHeader>
+                <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
                   סטטוס
                 </Table.ColumnHeader>
                 <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted" textAlign="start">
@@ -68,7 +71,7 @@ export default function CartRulesTable({
             <Table.Body>
               {cartRules.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={6} px="6" py="8" textAlign="center" color="fg.subtle">
+                  <Table.Cell colSpan={7} px="6" py="8" textAlign="center" color="fg.subtle">
                     לא נמצאו חוקי עגלה
                   </Table.Cell>
                 </Table.Row>

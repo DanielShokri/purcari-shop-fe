@@ -57,9 +57,6 @@ export default function UsersTable({
                 <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
                   תפקיד
                 </Table.ColumnHeader>
-                <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted">
-                  סטטוס
-                </Table.ColumnHeader>
                 <Table.ColumnHeader px="6" py="4" fontSize="xs" textTransform="uppercase" fontWeight="semibold" color="fg.muted" display={{ base: 'none', lg: 'table-cell' }}>
                   תאריך הצטרפות
                 </Table.ColumnHeader>
@@ -71,7 +68,7 @@ export default function UsersTable({
             <Table.Body>
               {users.length === 0 ? (
                 <Table.Row>
-                  <Table.Cell colSpan={7} px="6" py="8" textAlign="center" color="fg.subtle">
+                  <Table.Cell colSpan={6} px="6" py="8" textAlign="center" color="fg.subtle">
                     לא נמצאו משתמשים
                   </Table.Cell>
                 </Table.Row>

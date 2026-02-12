@@ -14,12 +14,23 @@ import {
   Portal,
 } from '@chakra-ui/react';
 import { Control, Controller, FieldErrors, UseFormRegister } from 'react-hook-form';
-import { CartRule, CartRuleType, CartRuleStatus } from '@shared/types';
+import { CartRuleStatus } from '@shared/types';
+import { SupportedRuleType } from '../../utils/cartRuleHelpers';
+
+interface CartRuleFormData {
+  name: string;
+  description?: string;
+  status: 'active' | 'paused' | 'draft';
+  ruleType: SupportedRuleType;
+  value?: number;
+  priority?: number;
+  config: any;
+}
 
 interface CartRuleBasicInfoCardProps {
-  register: UseFormRegister<Partial<CartRule>>;
-  control: Control<Partial<CartRule>>;
-  errors: FieldErrors<Partial<CartRule>>;
+  register: UseFormRegister<CartRuleFormData>;
+  control: Control<CartRuleFormData>;
+  errors: FieldErrors<CartRuleFormData>;
   typeOptions: any;
   statusOptions: any;
 }
@@ -59,8 +70,8 @@ export default function CartRuleBasicInfoCard({
               render={({ field }) => (
                 <Switch.Root
                   size="sm"
-                  checked={field.value === CartRuleStatus.ACTIVE}
-                  onCheckedChange={(e) => field.onChange(e.checked ? CartRuleStatus.ACTIVE : CartRuleStatus.PAUSED)}
+                  checked={field.value === 'active'}
+                  onCheckedChange={(e) => field.onChange(e.checked ? 'active' : 'paused')}
                 >
                   <Switch.HiddenInput />
                   <Switch.Control>
@@ -94,14 +105,14 @@ export default function CartRuleBasicInfoCard({
               סוג החוק
             </Text>
             <Controller
-              name="type"
+              name="ruleType"
               control={control}
               rules={{ required: 'שדה חובה' }}
               render={({ field }) => (
                 <Select.Root
                   collection={typeOptions}
                   value={field.value ? [field.value] : []}
-                  onValueChange={(e) => field.onChange(e.value[0] as CartRuleType)}
+                  onValueChange={(e) => field.onChange(e.value[0])}
                 >
                   <Select.HiddenSelect />
                   <Select.Control
@@ -138,8 +149,8 @@ export default function CartRuleBasicInfoCard({
                 </Select.Root>
               )}
             />
-            {errors.type && (
-              <Text fontSize="xs" color="red.500">{errors.type.message}</Text>
+            {errors.ruleType && (
+              <Text fontSize="xs" color="red.500">{errors.ruleType.message}</Text>
             )}
           </VStack>
         </SimpleGrid>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
-import { selectCartItems, clearCart, useCartSummaryWithRules } from '../store/slices/cartSlice';
+import { selectCartItems, clearCart, useCartSummaryWithRules, useCouponFlow } from '../store/slices/cartSlice';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { ShoppingBag } from 'lucide-react';
@@ -26,7 +26,7 @@ const CheckoutPage: React.FC = () => {
   const { items: cartItems, subtotal, shipping, validationErrors, appliedBenefits, discount: automaticDiscount } = cartSummary;
   
   const user = useQuery(api.users.get);
-  const addresses = useQuery(api.addresses.listByUserId, user ? { userId: user._id } : "skip");
+  const addresses = useQuery(api.userAddresses.list, user ? { userId: user._id } : "skip");
   
    const [step, setStep] = useState(1);
 

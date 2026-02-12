@@ -53,6 +53,8 @@ export const { auth, signIn, signOut, store } = convexAuth({
       const now = new Date().toISOString();
       return await ctx.db.insert("users", {
         ...args.profile,
+        role: "viewer",
+        status: "active",
         createdAt: now,
         updatedAt: now,
       });

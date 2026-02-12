@@ -1,13 +1,14 @@
 import { createListCollection } from '@chakra-ui/react';
 import { CartRuleType, CartRuleStatus } from '@shared/types';
 
+export type SupportedRuleType = 'buy_x_get_y' | 'bulk_discount' | 'shipping';
+
 // Cart Rule Type options
 export const typeOptions = createListCollection({
   items: [
-    { label: 'משלוח', value: CartRuleType.SHIPPING, icon: 'local_shipping', color: 'purple' },
-    { label: 'הנחה', value: CartRuleType.DISCOUNT, icon: 'percent', color: 'orange' },
-    { label: 'הגבלות', value: CartRuleType.RESTRICTION, icon: 'block', color: 'red' },
-    { label: 'הטבה', value: CartRuleType.BENEFIT, icon: 'card_giftcard', color: 'blue' },
+    { label: 'קנה X קבל Y', value: 'buy_x_get_y' as const, icon: 'local_offer', color: 'green' },
+    { label: 'הנחה כמותית', value: 'bulk_discount' as const, icon: 'percent', color: 'orange' },
+    { label: 'משלוח חינם', value: 'shipping' as const, icon: 'local_shipping', color: 'purple' },
   ],
 });
 
@@ -20,16 +21,14 @@ export const statusOptions = createListCollection({
 });
 
 // Get value label based on rule type
-export const getCartRuleValueLabel = (type: CartRuleType | undefined): string => {
+export const getCartRuleValueLabel = (type: SupportedRuleType | undefined): string => {
   switch (type) {
-    case CartRuleType.SHIPPING:
+    case 'shipping':
       return 'סכום מינימום למשלוח חינם (₪)';
-    case CartRuleType.DISCOUNT:
+    case 'bulk_discount':
       return 'אחוז הנחה (%)';
-    case CartRuleType.RESTRICTION:
-      return 'סכום מינימום להזמנה (₪)';
-    case CartRuleType.BENEFIT:
-      return 'סכום מינימום להטבה (₪)';
+    case 'buy_x_get_y':
+      return 'קנה (יחידות)';
     default:
       return 'ערך';
   }
