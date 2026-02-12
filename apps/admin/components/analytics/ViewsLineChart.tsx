@@ -44,13 +44,13 @@ export default function ViewsLineChart({
           <Heading size="md" fontWeight="bold" color="fg">
             {title}
           </Heading>
-          <Select.Root
-            collection={intervalOptions}
-            size="sm"
-            width="auto"
-            value={[interval]}
-            onValueChange={(e) => onIntervalChange(e.value[0] as AnalyticsInterval)}
-          >
+           <Select.Root
+             collection={intervalOptions}
+             size="sm"
+             width={{ base: "full", md: "auto" }}
+             value={[interval]}
+             onValueChange={(e) => onIntervalChange(e.value[0] as AnalyticsInterval)}
+           >
             <Select.HiddenSelect />
             <Select.Control>
               <Select.Trigger

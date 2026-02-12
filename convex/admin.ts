@@ -1,14 +1,6 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
-import { getSummary as getAnalyticsSummary } from "./analytics";
 import { adminQuery } from "./authHelpers";
-
-export const getSummary = query({
-  args: {},
-  handler: async (ctx) => {
-    return await getAnalyticsSummary(ctx, {});
-  }
-});
 
 export const getStats = query({
   args: {},
