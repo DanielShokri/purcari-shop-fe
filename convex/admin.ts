@@ -1,12 +1,12 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
-import { getAnalyticsSummaryInternal } from "./analytics";
+import { getSummary as getAnalyticsSummary } from "./analytics";
 import { adminQuery } from "./authHelpers";
 
 export const getSummary = query({
   args: {},
   handler: async (ctx) => {
-    return await getAnalyticsSummaryInternal(ctx, {});
+    return await getAnalyticsSummary(ctx, {});
   }
 });
 
