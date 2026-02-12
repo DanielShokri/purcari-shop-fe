@@ -15,4 +15,10 @@ export {
 // Event tracking mutations
 export { trackEvent, identifyUser } from "./events";
 
-// Queries will be exported from queries.ts (created in later plan)
+// Dashboard queries
+export {
+  getSummary,
+  getViewsSeries,
+  getNewUsersSeries,
+  getTopProducts,
+} from "./queries";
