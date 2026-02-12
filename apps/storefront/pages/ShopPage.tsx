@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import SEO from '../components/SEO';
 import ProductCard from '../components/ProductCard';
@@ -38,19 +38,12 @@ const ShopPage: React.FC = () => {
     setSearchParams(searchParams);
   };
   
-  const productsResult = useQuery(api.products.list, 
+  const productsResult = useQuery(api.products.list,
     activeCategory !== 'all' ? { category: activeCategory } : {}
   );
-  
-  const categoriesResult = useQuery(api.products.list, {}); // Use product categories if we don't have a separate categories query yet
-  const trackEvent = useMutation(api.products.trackEvent);
 
   const isLoading = productsResult === undefined;
   const products = productsResult || [];
-
-  useEffect(() => {
-    trackEvent({ event: 'page_view', properties: { page: 'shop' } });
-  }, [trackEvent]);
 
   // Sort products based on selected option
   const sortedProducts = useMemo(() => {
