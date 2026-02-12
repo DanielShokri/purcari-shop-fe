@@ -26,7 +26,7 @@ export const trackEvent = mutation({
       anonymousId: args.anonymousId,
       event: args.event,
       properties: args.properties || {},
-      timestamp: timestamp.toString(),
+      timestamp: timestamp,
     });
 
     // Get the inserted document for aggregate updates

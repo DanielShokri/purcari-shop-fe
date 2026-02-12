@@ -69,7 +69,7 @@ export const dailyViewsAggregate = new TableAggregate<{
   sortKey: (event) => {
     // Only aggregate page_viewed events
     if (event.event !== "page_viewed") return null;
-    return getDayKey(Number(event.timestamp));
+    return getDayKey(event.timestamp);
   },
   sumValue: () => 1, // Each event counts as 1 view
 });
@@ -91,7 +91,7 @@ export const activeUsersAggregate = new TableAggregate<{
     // Track any user activity (any event type)
     const userId = event.userId || event.anonymousId;
     if (!userId) return null;
-    return [getDayKey(Number(event.timestamp)), userId];
+    return [getDayKey(event.timestamp), userId];
   },
   sumValue: () => 1,
 });
@@ -112,7 +112,7 @@ export const productViewsAggregate = new TableAggregate<{
     // Extract productId from event properties
     const productId = event.properties?.productId;
     if (!productId || typeof productId !== "string") return null;
-    return [getDayKey(Number(event.timestamp)), productId];
+    return [getDayKey(event.timestamp), productId];
   },
   sumValue: () => 1,
 });

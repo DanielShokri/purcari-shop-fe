@@ -26,14 +26,11 @@ interface TimeSeriesDataPoint {
 async function countPageViewsInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
   const events = await ctx.db
     .query("analyticsEvents")
-    .filter((q: any) => {
-      const ts = Number(q.field("timestamp"));
-      return q.and(
-        q.gte(ts, startTime),
-        q.lte(ts, endTime),
-        q.eq(q.field("event"), "page_viewed")
-      );
-    })
+    .withIndex("by_event_timestamp", (q: any) => 
+      q.eq("event", "page_viewed")
+       .gte("timestamp", startTime)
+       .lte("timestamp", endTime)
+    )
     .collect();
   return events.length;
 }
@@ -44,13 +41,10 @@ async function countPageViewsInRange(ctx: any, startTime: number, endTime: numbe
 async function countAuthenticatedUsersInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
   const events = await ctx.db
     .query("analyticsEvents")
-    .filter((q: any) => {
-      const ts = Number(q.field("timestamp"));
-      return q.and(
-        q.gte(ts, startTime),
-        q.lte(ts, endTime)
-      );
-    })
+    .withIndex("by_timestamp", (q: any) => 
+      q.gte("timestamp", startTime)
+       .lte("timestamp", endTime)
+    )
     .collect();
   
   // Only count authenticated users (those with userId)
@@ -69,13 +63,10 @@ async function countAuthenticatedUsersInRange(ctx: any, startTime: number, endTi
 async function countUniqueVisitorsInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
   const events = await ctx.db
     .query("analyticsEvents")
-    .filter((q: any) => {
-      const ts = Number(q.field("timestamp"));
-      return q.and(
-        q.gte(ts, startTime),
-        q.lte(ts, endTime)
-      );
-    })
+    .withIndex("by_timestamp", (q: any) => 
+      q.gte("timestamp", startTime)
+       .lte("timestamp", endTime)
+    )
     .collect();
   
   const uniqueVisitors = new Set<string>();
@@ -122,10 +113,13 @@ export const getSummary = query({
     const mau = await countAuthenticatedUsersInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
 
     // Calculate total metrics
-    const allEvents = await ctx.db.query("analyticsEvents").collect();
-    const totalViews = allEvents.filter((e: any) => e.event === "page_viewed").length;
+    const totalViews = (await ctx.db
+      .query("analyticsEvents")
+      .withIndex("by_event", (q) => q.eq("event", "page_viewed"))
+      .collect()).length;
     
     // Count authenticated users for total
+    const allEvents = await ctx.db.query("analyticsEvents").collect();
     const allAuthenticatedUsers = new Set<string>();
     for (const event of allEvents) {
       if (event.userId) {
