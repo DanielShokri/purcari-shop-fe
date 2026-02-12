@@ -39,18 +39,24 @@ export default function ViewsLineChart({
       borderWidth="1px"
       borderColor="border"
     >
-      <Card.Body p="6">
-        <Flex justify="space-between" align="center" mb="6">
-          <Heading size="md" fontWeight="bold" color="fg">
-            {title}
-          </Heading>
-           <Select.Root
-             collection={intervalOptions}
-             size="sm"
-             width={{ base: "full", md: "auto" }}
-             value={[interval]}
-             onValueChange={(e) => onIntervalChange(e.value[0] as AnalyticsInterval)}
-           >
+       <Card.Body p="6">
+         <Flex 
+           justify="space-between" 
+           align="center" 
+           mb="6"
+           gap="4"
+           flexDir={{ base: "column", md: "row" }}
+         >
+           <Heading size="md" fontWeight="bold" color="fg">
+             {title}
+           </Heading>
+            <Select.Root
+              collection={intervalOptions}
+              size="sm"
+              width={{ base: "full", md: "auto" }}
+              value={[interval]}
+              onValueChange={(e) => onIntervalChange(e.value[0] as AnalyticsInterval)}
+            >
             <Select.HiddenSelect />
             <Select.Control>
               <Select.Trigger
