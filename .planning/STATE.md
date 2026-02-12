@@ -1,23 +1,25 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 12, 2026 (11:24 UTC)
+**Last updated:** February 12, 2026 (11:27 UTC)
 
 ---
 
 ## Current Position
 
 **Active phase:** Phase 01 - Analytics Infrastructure (in progress)
-**Current plan:** 01-analytics-02 (ready to execute)
-**Plans completed:** 1 of 4
+**Current plan:** 01-analytics-03 (ready to execute)
+**Plans completed:** 2 of 4
 
 **Current blockers:**
 - None
 
 **Recently completed:**
-- Plan 01-analytics-01: Aggregate component setup
-  - @convex-dev/aggregate@0.2.1 installed
-  - convex.config.ts created with three aggregate instances
-  - convex/analytics/index.ts module structure established
+- Plan 01-analytics-02: TableAggregate instances
+  - Date utilities (getDayKey, getWeekKey, getMonthKey) for UTC bucketing
+  - dailyViewsAggregate for page view counts
+  - activeUsersAggregate with composite [date, userId] key for DAU/WAU/MAU
+  - productViewsAggregate with composite [date, productId] key for product analytics
+  - All aggregates exported through convex/analytics/index.ts
 
 ---
 
@@ -38,6 +40,8 @@
 | Event naming convention | Use past tense: `page_viewed`, `product_viewed`, `added_to_cart` |
 | Time bucketing | Daily granularity for MVP; hourly can be added later |
 | Anonymous ID storage | localStorage with 30-minute session timeout |
+| Date handling | UTC for all aggregation to ensure consistent timezone behavior |
+| Aggregate keys | Composite [date, dimension] keys enable multi-dimensional queries |
 
 ### Deferred
 
@@ -53,7 +57,7 @@
 
 - [x] Install @convex-dev/aggregate package
 - [x] Create convex.config.ts with aggregate definitions
-- [ ] Set up TableAggregate instances (next plan)
+- [x] Set up TableAggregate instances
 - [ ] Create trackEvent mutation
 - [ ] Implement useAnalytics hook
 - [ ] Wire up dashboard queries
@@ -80,6 +84,6 @@
 
 ## Next Actions
 
-1. Execute plan 01-analytics-02: TableAggregate instances and tracking setup
-2. Continue through remaining plans (01-03, 01-04) sequentially
+1. Execute plan 01-analytics-03: Create trackEvent mutation
+2. Continue through remaining plans (01-04) sequentially
 
