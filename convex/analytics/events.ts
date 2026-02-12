@@ -1,4 +1,4 @@
-import { mutation } from "../_generated/server";
+import { mutation, internalMutation } from "../_generated/server";
 import { v } from "convex/values";
 import {
   dailyViewsAggregate,
@@ -156,5 +156,43 @@ export const migrateTimestamps = mutation({
       }
     }
     return { updated };
+  },
+});
+
+/**
+ * Prune analytics events older than 180 days
+ * Called by cron job daily at 2:00 AM UTC
+ * Deletes events in batches to avoid timeout
+ */
+export const pruneOldEvents = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const RETENTION_DAYS = 180;
+    const cutoffDate = Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000;
+    
+    // Query events older than cutoff using timestamp index
+    const oldEvents = await ctx.db
+      .query("analyticsEvents")
+      .withIndex("by_timestamp", (q) => q.lt("timestamp", cutoffDate))
+      .take(1000); // Process in batches to avoid timeout
+    
+    let deleted = 0;
+    for (const event of oldEvents) {
+      // Remove from aggregates before deleting
+      try {
+        await dailyViewsAggregate.deleteIfExists(ctx, event);
+        await activeUsersAggregate.deleteIfExists(ctx, event);
+        await productViewsAggregate.deleteIfExists(ctx, event);
+      } catch (error) {
+        // Aggregate may not have this event, continue
+        console.warn("Error removing from aggregate:", error);
+      }
+      
+      await ctx.db.delete(event._id);
+      deleted++;
+    }
+    
+    console.log(`Pruned ${deleted} analytics events older than ${RETENTION_DAYS} days`);
+    return { deleted, hasMore: oldEvents.length === 1000 };
   },
 });

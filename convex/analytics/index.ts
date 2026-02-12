@@ -13,7 +13,7 @@ export {
 } from "./aggregates";
 
 // Event tracking mutations
-export { trackEvent, track, identifyUser, linkIdentity, migrateTimestamps } from "./events";
+export { trackEvent, track, identifyUser, linkIdentity, migrateTimestamps, pruneOldEvents } from "./events";
 
 // Dashboard queries
 export {
