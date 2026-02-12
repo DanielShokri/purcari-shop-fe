@@ -10,5 +10,8 @@ export {
   
   // Mutations
   trackEvent,
+  track,
   identifyUser,
+  linkIdentity,
+  migrateTimestamps,
 } from "./analytics/index";
