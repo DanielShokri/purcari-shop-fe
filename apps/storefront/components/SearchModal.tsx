@@ -8,6 +8,7 @@ import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { Product } from '@shared/types';
 import { getWineTypeLabel } from '../utils/wineHelpers';
+import { useTrackSearch } from '../hooks/useAnalytics';
 
 // Debounce hook
 const useDebounce = (value: string, delay: number) => {
@@ -31,6 +32,8 @@ const SearchModal: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const debouncedSearch = useDebounce(searchTerm, 300);
+  const { trackSearch } = useTrackSearch();
+  const hasTrackedSearch = useRef<string>('');
 
   // Fetch products from Convex using search query
   const searchResults = useQuery(api.products.search, 
@@ -38,6 +41,14 @@ const SearchModal: React.FC = () => {
   ) || [];
 
   const isLoading = searchResults === undefined && searchTerm.length >= 2;
+
+  // Track search when results are loaded
+  useEffect(() => {
+    if (debouncedSearch.length >= 2 && searchResults && hasTrackedSearch.current !== debouncedSearch) {
+      hasTrackedSearch.current = debouncedSearch;
+      trackSearch(debouncedSearch, searchResults.length);
+    }
+  }, [debouncedSearch, searchResults, trackSearch]);
 
   // Focus input when modal opens
   useEffect(() => {

@@ -7,8 +7,9 @@ import { Id } from '../../../convex/_generated/dataModel';
 import { Product } from '@shared/types';
 import SEO from '../components/SEO';
 import { useAppDispatch } from '../store/hooks';
-import { addToCart } from '../store/slices/cartSlice';
+import { addToCart, selectCartSubtotal } from '../store/slices/cartSlice';
 import { useTrackProductView, useTrackAddToCart } from '../hooks/useAnalytics';
+import { useAppSelector } from '../store/hooks';
 import { Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/common/Breadcrumbs';
@@ -26,9 +27,15 @@ const ProductPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const toast = useToast();
   const [quantity, setQuantity] = useState(1);
+  const cartTotal = useAppSelector(selectCartSubtotal);
 
-  // Track product view using analytics hook
-  useTrackProductView(id || '', product?.productNameHe || product?.productName);
+  // Track product view with all required properties
+  useTrackProductView(
+    id || '',
+    product?.productNameHe || product?.productName,
+    product?.onSale && product?.salePrice ? product?.salePrice : product?.price,
+    getWineTypeLabel(product?.category)
+  );
 
   // Track add to cart events
   const { trackAddToCart } = useTrackAddToCart();
@@ -145,7 +152,8 @@ const ProductPage: React.FC = () => {
       product._id,
       product.productNameHe || product.productName,
       quantity,
-      currentPrice
+      currentPrice,
+      cartTotal
     );
     toast.success(quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל');
   };

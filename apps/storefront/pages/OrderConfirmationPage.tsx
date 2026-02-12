@@ -1,13 +1,36 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import { useTrackPurchase } from '../hooks/useAnalytics';
 import { CheckCircle, Package, Truck, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const OrderConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const orderData = useQuery(api.orders.get, id ? { orderId: id as any } : "skip");
+  const { trackPurchase } = useTrackPurchase();
+  const hasTracked = useRef(false);
+
+  // Track order completion once when data loads
+  useEffect(() => {
+    if (orderData && !hasTracked.current) {
+      hasTracked.current = true;
+      
+      const items = orderData.items?.map((item: any) => ({
+        productId: item.productId,
+        quantity: Number(item.quantity),
+        price: item.price,
+      })) || [];
+
+      trackPurchase(
+        orderData._id,
+        orderData.total,
+        items,
+        orderData.paymentMethod
+      );
+    }
+  }, [orderData, trackPurchase]);
 
   if (orderData === undefined) return <div className="min-h-screen flex items-center justify-center">טוען פרטי הזמנה...</div>;
   if (orderData === null) return <div className="min-h-screen flex items-center justify-center">הזמנה לא נמצאה</div>;

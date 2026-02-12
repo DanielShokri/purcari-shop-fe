@@ -3,6 +3,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
 import { selectCartItems, selectCartSubtotal, removeFromCart, updateQuantity } from '../store/slices/cartSlice';
 import { closeCartModal } from '../store/slices/uiSlice';
+import { useTrackCheckoutStart } from '../hooks/useAnalytics';
 import { X, Trash2, Plus, Minus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -12,11 +13,22 @@ const CartModal: React.FC = () => {
   const toast = useToast();
   const items = useAppSelector(selectCartItems);
   const subtotal = useAppSelector(selectCartSubtotal);
+  const { trackCheckoutStart } = useTrackCheckoutStart();
 
    const handleRemoveItem = (productId: string, title: string) => {
      dispatch(removeFromCart(productId));
      toast.info(`${title} הוסר מהסל`);
    };
+
+  const handleCheckoutClick = () => {
+    // Track checkout started event
+    trackCheckoutStart(
+      `cart_${Date.now()}`, // Cart ID (generate if not available)
+      items.length,
+      subtotal
+    );
+    dispatch(closeCartModal());
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -120,7 +132,7 @@ const CartModal: React.FC = () => {
             <Link 
               to="/checkout"
               className="block w-full bg-secondary hover:bg-red-900 text-white text-center py-3 rounded-md font-bold text-lg transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-1"
-              onClick={() => dispatch(closeCartModal())}
+              onClick={handleCheckoutClick}
             >
               לקופה
             </Link>

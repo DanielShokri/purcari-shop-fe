@@ -5,6 +5,7 @@ import useToast from '../store/hooks/useToast';
 import { selectCartItems, clearCart, useCartSummaryWithRules, useCouponFlow } from '../store/slices/cartSlice';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
+import { useTrackCheckoutStart } from '../hooks/useAnalytics';
 import { ShoppingBag } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -77,8 +78,20 @@ const CheckoutPage: React.FC = () => {
 
    const createOrder = useMutation(api.orders.create);
    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-   // TrackEvent replaced by manual call or analytics utility if needed
-   const trackEvent = (payload: any) => console.log('Track event:', payload);
+   const { trackCheckoutStart } = useTrackCheckoutStart();
+   const hasTrackedCheckout = useRef(false);
+
+   // Track checkout start when page loads with items
+   useEffect(() => {
+     if (cartItems.length > 0 && !hasTrackedCheckout.current) {
+       hasTrackedCheckout.current = true;
+       trackCheckoutStart(
+         `checkout_${Date.now()}`,
+         cartItems.length,
+         subtotal
+       );
+     }
+   }, [cartItems.length, subtotal, trackCheckoutStart]);
 
    // Calculate total discount (automatic + applied coupon)
    const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
@@ -139,7 +152,7 @@ const CheckoutPage: React.FC = () => {
           }),
         });
 
-         trackEvent({ type: 'checkout' });
+         trackCheckoutStart(`checkout_complete_${Date.now()}`, cartItems.length, total);
          dispatch(clearCart());
           toast.success('בחזקת! ההזמנה בוצעה בהצלחה!');
           navigate(`/order-confirmation/${orderId}`);

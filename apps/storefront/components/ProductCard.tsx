@@ -4,6 +4,7 @@ import { Product } from '@shared/types';
 import { useAppDispatch } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
 import { addToCart } from '../store/slices/cartSlice';
+import { useTrackAddToCart } from '../hooks/useAnalytics';
 import { ShoppingBag, Eye, Zap, Package, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import theme from '../theme/styles';
@@ -57,6 +58,7 @@ const SaleMarquee: React.FC<{ text: string }> = ({ text }) => {
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const dispatch = useAppDispatch();
   const toast = useToast();
+  const { trackAddToCart } = useTrackAddToCart();
   const discountPercent = getDiscountPercent(product.price, product.salePrice);
   
   // Stock status helpers
@@ -81,6 +83,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       maxQuantity: Number(product.quantityInStock) || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
+
+    // Track add to cart event
+    trackAddToCart(
+      (product as any)._id,
+      product.productNameHe || product.productName,
+      1,
+      currentPrice
+    );
      
     toast.success('המוצר נוסף לסל');
   };
