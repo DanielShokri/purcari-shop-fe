@@ -18,10 +18,14 @@ import PrivacyPage from './pages/PrivacyPage';
 import { useConvex } from "convex/react";
 import { useAppDispatch } from './store/hooks';
 import { initializeCart } from './store/slices/cartSlice';
+import { useTrackPageView } from './hooks/useAnalytics';
 
 const App: React.FC = () => {
   const dispatch = useAppDispatch();
   const convex = useConvex();
+
+  // Enable automatic page view tracking
+  useTrackPageView();
 
   useEffect(() => {
     dispatch(initializeCart(convex));
