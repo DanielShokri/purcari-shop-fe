@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery } from 'convex/react';
 import useToast from '../store/hooks/useToast';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
@@ -8,6 +8,7 @@ import { Product } from '@shared/types';
 import SEO from '../components/SEO';
 import { useAppDispatch } from '../store/hooks';
 import { addToCart } from '../store/slices/cartSlice';
+import { useTrackProductView, useTrackAddToCart } from '../hooks/useAnalytics';
 import { Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/common/Breadcrumbs';
@@ -15,26 +16,24 @@ import { getWineTypeLabel } from '../utils/wineHelpers';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  
-  const product = useQuery(api.products.getById, { 
-    productId: id as Id<"products"> 
+
+  const product = useQuery(api.products.getById, {
+    productId: id as Id<"products">
   });
-  
+
   const allProducts = useQuery(api.products.list, {});
-  
-  const trackEvent = useMutation(api.products.trackEvent);
-  
+
   const dispatch = useAppDispatch();
   const toast = useToast();
   const [quantity, setQuantity] = useState(1);
 
-  const isLoading = product === undefined;
+  // Track product view using analytics hook
+  useTrackProductView(id || '', product?.productNameHe || product?.productName);
 
-  useEffect(() => {
-    if (product) {
-      trackEvent({ event: 'product_view', properties: { productId: product._id } });
-    }
-  }, [product, trackEvent]);
+  // Track add to cart events
+  const { trackAddToCart } = useTrackAddToCart();
+
+  const isLoading = product === undefined;
 
   // Reset quantity when product changes
   useEffect(() => {
@@ -130,7 +129,7 @@ const ProductPage: React.FC = () => {
   };
 
   const handleAddToCart = () => {
-    if (isOutOfStock) return;
+    if (isOutOfStock || !product) return;
     dispatch(addToCart({
       id: product._id,
       productId: product._id,
@@ -142,8 +141,13 @@ const ProductPage: React.FC = () => {
       maxQuantity: Number(Number(product.quantityInStock)) || 99,
       imgSrc: product.featuredImage || product.images?.[0] || ''
     }));
-      trackEvent({ event: 'add_to_cart', properties: { productId: product._id } });
-      toast.success(quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל');
+    trackAddToCart(
+      product._id,
+      product.productNameHe || product.productName,
+      quantity,
+      currentPrice
+    );
+    toast.success(quantity > 1 ? `${quantity} פריטים נוספו לסל` : 'המוצר נוסף לסל');
   };
 
   return (
