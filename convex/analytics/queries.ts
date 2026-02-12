@@ -21,7 +21,7 @@ interface TimeSeriesDataPoint {
 }
 
 /**
- * Helper function to count page views directly from events table (fallback for aggregates)
+ * Helper function to count page views directly from events table
  */
 async function countPageViewsInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
   const events = await ctx.db
@@ -39,9 +39,9 @@ async function countPageViewsInRange(ctx: any, startTime: number, endTime: numbe
 }
 
 /**
- * Helper function to count unique users in a date range
+ * Helper function to count authenticated users (those with userId, not anonymousId)
  */
-async function countUniqueUsersInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
+async function countAuthenticatedUsersInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
   const events = await ctx.db
     .query("analyticsEvents")
     .filter((q: any) => {
@@ -53,14 +53,39 @@ async function countUniqueUsersInRange(ctx: any, startTime: number, endTime: num
     })
     .collect();
   
-  const uniqueUsers = new Set<string>();
+  // Only count authenticated users (those with userId)
+  const authenticatedUsers = new Set<string>();
+  for (const event of events) {
+    if (event.userId) {  // Only count if they have a userId, not anonymousId
+      authenticatedUsers.add(event.userId);
+    }
+  }
+  return authenticatedUsers.size;
+}
+
+/**
+ * Helper function to count unique visitors (both authenticated and anonymous)
+ */
+async function countUniqueVisitorsInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
+  const events = await ctx.db
+    .query("analyticsEvents")
+    .filter((q: any) => {
+      const ts = Number(q.field("timestamp"));
+      return q.and(
+        q.gte(ts, startTime),
+        q.lte(ts, endTime)
+      );
+    })
+    .collect();
+  
+  const uniqueVisitors = new Set<string>();
   for (const event of events) {
     const userId = event.userId || event.anonymousId;
     if (userId) {
-      uniqueUsers.add(userId);
+      uniqueVisitors.add(userId);
     }
   }
-  return uniqueUsers.size;
+  return uniqueVisitors.size;
 }
 
 /**
@@ -70,9 +95,6 @@ export const getSummary = query({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
-    const today = getDayKey(now);
-    const thisWeek = getWeekKey(now);
-    const thisMonth = getMonthKey(now);
 
     // Get today's start and end times
     const todayStart = getStartOfDay(now);
@@ -89,52 +111,35 @@ export const getSummary = query({
     const endOfMonth = new Date(now);
     endOfMonth.setUTCHours(23, 59, 59, 999);
 
-    // Get views using direct event counting (more reliable than aggregates)
+    // Get page views (total page view events)
     const viewsToday = await countPageViewsInRange(ctx, todayStart, todayEnd);
     const viewsThisWeek = await countPageViewsInRange(ctx, startOfWeek, endOfWeek);
     const viewsThisMonth = await countPageViewsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
     
-    // Get user counts
-    const dau = await countUniqueUsersInRange(ctx, todayStart, todayEnd);
-    const wau = await countUniqueUsersInRange(ctx, startOfWeek, endOfWeek);
-    const mau = await countUniqueUsersInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
+    // Get authenticated user counts (DAU/WAU/MAU)
+    const dau = await countAuthenticatedUsersInRange(ctx, todayStart, todayEnd);
+    const wau = await countAuthenticatedUsersInRange(ctx, startOfWeek, endOfWeek);
+    const mau = await countAuthenticatedUsersInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
 
-    // Calculate total views and visitors
+    // Calculate total metrics
     const allEvents = await ctx.db.query("analyticsEvents").collect();
     const totalViews = allEvents.filter((e: any) => e.event === "page_viewed").length;
     
-    const uniqueVisitors = new Set<string>();
+    // Count authenticated users for total
+    const allAuthenticatedUsers = new Set<string>();
     for (const event of allEvents) {
-      const userId = event.userId || event.anonymousId;
-      if (userId) {
-        uniqueVisitors.add(userId);
+      if (event.userId) {
+        allAuthenticatedUsers.add(event.userId);
       }
     }
-    const totalVisitors = uniqueVisitors.size;
+    const totalAuthenticatedUsers = allAuthenticatedUsers.size;
 
     // Get top products by views
     const topProducts = await getTopProductsByViews(ctx, 10);
 
     return {
       totalViews,
-      totalVisitors,
-      viewsToday,
-      viewsThisWeek,
-      viewsThisMonth,
-      dau,
-      wau,
-      mau,
-      topProducts,
-      averageSessionDuration: 0, // Placeholder - requires session tracking
-      bounceRate: 0, // Placeholder - requires session tracking
-      conversionRate: 0, // Placeholder - requires order tracking
-    };
-  },
-});
-
-    return {
-      totalViews,
-      totalVisitors,
+      totalVisitors: totalAuthenticatedUsers,  // Only authenticated users
       viewsToday,
       viewsThisWeek,
       viewsThisMonth,
