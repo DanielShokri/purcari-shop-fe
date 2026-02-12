@@ -7,6 +7,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, registerSchema, LoginInput, RegisterInput } from "../../schemas/validationSchemas";
 import { useAuth, SignUpInput, SignInInput } from "../../hooks/useAuth";
+import { useAnalytics } from "../../hooks/useAnalytics";
 
 type FormData = LoginInput | RegisterInput;
 
@@ -18,6 +19,7 @@ const AuthForm: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
 
   const { signIn, signUp, isLoading, error, clearError } = useAuth();
+  const { identify } = useAnalytics();
 
   const {
     register,
@@ -52,6 +54,8 @@ const AuthForm: React.FC = () => {
     }
 
     if (success) {
+      // Link anonymous browsing history to authenticated user
+      identify();
       const url = redirect ? `/${redirect}` : "/dashboard";
       navigate(url);
     } else if (error) {
