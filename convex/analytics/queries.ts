@@ -162,11 +162,11 @@ export const getViewsSeries = query({
       // Last 30 days
       for (let i = 29; i >= 0; i--) {
         const date = new Date(now - i * 24 * 60 * 60 * 1000);
+        const dayStart = getStartOfDay(date.getTime());
+        const dayEnd = getEndOfDay(date.getTime());
         const dayKey = getDayKey(date.getTime());
-        const count = await dailyViewsAggregate.count(ctx, {
-          namespace: undefined,
-          bounds: { prefix: [dayKey] },
-        });
+        
+        const count = await countPageViewsInRange(ctx, dayStart, dayEnd);
         
         points.push({
           name: date.toLocaleDateString("he-IL", { day: "numeric", month: "short" }),
@@ -181,13 +181,7 @@ export const getViewsSeries = query({
         const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
         const weekKey = getWeekKey(weekStart.getTime());
         
-        const count = await dailyViewsAggregate.count(ctx, {
-          namespace: undefined,
-          bounds: {
-            lower: { key: getDayKey(weekStart.getTime()) },
-            upper: { key: getDayKey(weekEnd.getTime()) },
-          },
-        });
+        const count = await countPageViewsInRange(ctx, getStartOfDay(weekStart.getTime()), getEndOfDay(weekEnd.getTime()));
         
         points.push({
           name: `שבוע ${weekKey.split("-W")[1]}`,
@@ -207,13 +201,7 @@ export const getViewsSeries = query({
         const endOfMonth = new Date(date);
         endOfMonth.setUTCMonth(endOfMonth.getUTCMonth() + 1, 0);
         
-        const count = await dailyViewsAggregate.count(ctx, {
-          namespace: undefined,
-          bounds: {
-            lower: { key: getDayKey(startOfMonth.getTime()) },
-            upper: { key: getDayKey(endOfMonth.getTime()) },
-          },
-        });
+        const count = await countPageViewsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
         
         points.push({
           name: date.toLocaleDateString("he-IL", { month: "short" }),
@@ -261,11 +249,11 @@ async function getViewsSeriesInternal(
     // Last 30 days
     for (let i = 29; i >= 0; i--) {
       const date = new Date(now - i * 24 * 60 * 60 * 1000);
+      const dayStart = getStartOfDay(date.getTime());
+      const dayEnd = getEndOfDay(date.getTime());
       const dayKey = getDayKey(date.getTime());
-      const count = await dailyViewsAggregate.count(ctx, {
-        namespace: undefined,
-        bounds: { prefix: [dayKey] },
-      });
+      
+      const count = await countPageViewsInRange(ctx, dayStart, dayEnd);
       
       points.push({
         name: date.toLocaleDateString("he-IL", { day: "numeric", month: "short" }),
@@ -280,13 +268,7 @@ async function getViewsSeriesInternal(
       const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
       const weekKey = getWeekKey(weekStart.getTime());
       
-      const count = await dailyViewsAggregate.count(ctx, {
-        namespace: undefined,
-        bounds: {
-          lower: { key: getDayKey(weekStart.getTime()) },
-          upper: { key: getDayKey(weekEnd.getTime()) },
-        },
-      });
+      const count = await countPageViewsInRange(ctx, getStartOfDay(weekStart.getTime()), getEndOfDay(weekEnd.getTime()));
       
       points.push({
         name: `שבוע ${weekKey.split("-W")[1]}`,
@@ -306,13 +288,7 @@ async function getViewsSeriesInternal(
       const endOfMonth = new Date(date);
       endOfMonth.setUTCMonth(endOfMonth.getUTCMonth() + 1, 0);
       
-      const count = await dailyViewsAggregate.count(ctx, {
-        namespace: undefined,
-        bounds: {
-          lower: { key: getDayKey(startOfMonth.getTime()) },
-          upper: { key: getDayKey(endOfMonth.getTime()) },
-        },
-      });
+      const count = await countPageViewsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
       
       points.push({
         name: date.toLocaleDateString("he-IL", { month: "short" }),
