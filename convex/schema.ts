@@ -289,7 +289,9 @@ export default defineSchema({
     .index("by_event", ["event"])
     .index("by_userId", ["userId"])
     .index("by_timestamp", ["timestamp"])
-    .index("by_event_timestamp", ["event", "timestamp"]),
+    .index("by_event_timestamp", ["event", "timestamp"])
+    .index("by_userId_event", ["userId", "event"])
+    .index("by_anon_id", ["anonymousId"]),
 
   notifications: defineTable({
     userId: v.id("users"), 
