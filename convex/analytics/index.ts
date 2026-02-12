@@ -12,5 +12,7 @@ export {
   getEndOfDay,
 } from "./aggregates";
 
-// Events will be exported from events.ts (created in next plan)
+// Event tracking mutations
+export { trackEvent, identifyUser } from "./events";
+
 // Queries will be exported from queries.ts (created in later plan)
