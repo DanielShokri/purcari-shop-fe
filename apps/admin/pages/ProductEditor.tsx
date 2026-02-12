@@ -38,16 +38,6 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { RichTextEditor, Control } from '../components/ui/rich-text-editor';
 import { toaster } from '../components/ui/toaster';
 
-// Categories matching Convex/Appwrite enum values
-const categories = [
-  { id: 'red_wine', name: 'יינות אדומים' },
-  { id: 'white_wine', name: 'יינות לבנים' },
-  { id: 'rose_wine', name: 'יינות רוזה' },
-  { id: 'sparkling_wine', name: 'יינות מבעבעים' },
-  { id: 'dessert_wine', name: 'יינות קינוח' },
-  { id: 'gift_sets', name: 'מארזי מתנה' },
-];
-
 export default function ProductEditor() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -55,6 +45,7 @@ export default function ProductEditor() {
   
   const existingProduct = useQuery(api.products.getById, isEditMode ? { productId: id as Id<"products"> } : "skip");
   const allProducts = useQuery(api.products.list, {});
+  const categoriesData = useQuery(api.categories.list, { includeInactive: true });
   
   const createProduct = useMutation(api.products.create);
   const updateProduct = useMutation(api.products.update);
@@ -71,16 +62,42 @@ export default function ProductEditor() {
     },
   });
 
-  const [selectedCategories, setSelectedCategories] = useState<string[]>(['red_wine']);
+  // Transform categories from Convex to the format expected by CategoriesCard
+  const categories = (categoriesData || []).map(cat => ({
+    id: cat._id,
+    name: cat.nameHe || cat.name,
+  }));
+
+  const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
 
   // Wine-specific state
-  const normalizeWineType = (value: any): WineType => {
+  // Wine type mapping between frontend enum and Convex schema
+  const wineTypeToConvex = (type: WineType): "Red" | "White" | "Rosé" | "Sparkling" => {
+    const mapping: Record<WineType, "Red" | "White" | "Rosé" | "Sparkling"> = {
+      [WineType.RED]: "Red",
+      [WineType.WHITE]: "White",
+      [WineType.ROSE]: "Rosé",
+      [WineType.SPARKLING]: "Sparkling",
+    };
+    return mapping[type] || "Red";
+  };
+
+  const convexToWineType = (value: string | undefined): WineType => {
     if (!value) return WineType.RED;
-    const normalized = String(value); // Keep case for Convex matching if needed
-    const wineTypeValues = Object.values(WineType);
-    return (wineTypeValues.includes(normalized as WineType) ? normalized : WineType.RED) as WineType;
+    const mapping: Record<string, WineType> = {
+      "Red": WineType.RED,
+      "White": WineType.WHITE,
+      "Rosé": WineType.ROSE,
+      "Sparkling": WineType.SPARKLING,
+      // Also handle lowercase for backward compatibility
+      "red": WineType.RED,
+      "white": WineType.WHITE,
+      "rose": WineType.ROSE,
+      "sparkling": WineType.SPARKLING,
+    };
+    return mapping[value] || WineType.RED;
   };
   
   const [wineType, setWineType] = useState<WineType>(WineType.RED);
@@ -157,7 +174,8 @@ export default function ProductEditor() {
         status: (existingProduct.status as ProductStatus) || ProductStatus.DRAFT,
       });
       
-      setSelectedCategories(existingProduct.category ? [existingProduct.category] : ['red_wine']);
+      // Category is now an ID reference
+      setSelectedCategory(existingProduct.category || '');
       setTags(existingProduct.tags || []);
       setShortDescription(existingProduct.shortDescription || '');
       setPrice(existingProduct.price || 0);
@@ -167,10 +185,10 @@ export default function ProductEditor() {
       setQuantityInStock(Number(existingProduct.quantityInStock) || 0);
       setIsFeatured(existingProduct.isFeatured || false);
       setFeaturedImage(existingProduct.featuredImage || '');
-      setRelatedProductIds(existingProduct.relatedProducts || []);
+      setRelatedProductIds((existingProduct.relatedProducts as string[]) || []);
       
       // Update wine specific fields
-      setWineType(normalizeWineType(existingProduct.wineType));
+      setWineType(convexToWineType(existingProduct.wineType));
       setVolume(existingProduct.volume || '750 מ"ל');
       setGrapeVariety(existingProduct.grapeVariety || '');
       setVintage(Number(existingProduct.vintage) || new Date().getFullYear());
@@ -182,28 +200,44 @@ export default function ProductEditor() {
     return <LoadingState message="טוען מוצר..." />;
   }
 
+  if (categoriesData === undefined) {
+    return <LoadingState message="טוען קטגוריות..." />;
+  }
+
   const onSubmit = async (data: Partial<Product>) => {
     try {
       setIsSaving(true);
       const description = editor?.getHTML() || '';
+      
+      // Validate category is selected
+      if (!selectedCategory) {
+        setSaveError('יש לבחור קטגוריה');
+        setIsSaving(false);
+        return;
+      }
       
       const commonData = {
         productName: data.productName!,
         price,
         quantityInStock: BigInt(quantityInStock),
         sku,
-        category: selectedCategories[0],
+        category: selectedCategory as Id<"categories">,
         description,
         shortDescription: shortDescription || undefined,
         salePrice: onSale ? salePrice : undefined,
         onSale,
-        // tags: tags, // Tags not in schema yet? Check products.ts
-        // relatedProducts: relatedProductIds, // Not in mutation schema yet
+        tags: tags.length > 0 ? tags : undefined,
+        relatedProducts: relatedProductIds.length > 0 
+          ? relatedProductIds as Id<"products">[] 
+          : undefined,
         isFeatured,
         featuredImage: featuredImage || undefined,
         status: (data.status as "draft" | "active" | "hidden" | "discontinued") || "draft",
-        wineType: wineType as any,
-        // volume, grapeVariety, vintage, servingTemperature - not in current mutation schema
+        wineType: wineTypeToConvex(wineType),
+        volume: volume || undefined,
+        grapeVariety: grapeVariety || undefined,
+        vintage: vintage || undefined,
+        servingTemperature: servingTemperature || undefined,
       };
 
       if (isEditMode && id) {
@@ -275,10 +309,11 @@ export default function ProductEditor() {
   };
 
   const handleCategoryToggle = (categoryId: string) => {
-    if (selectedCategories.includes(categoryId)) {
-      setSelectedCategories(selectedCategories.filter(id => id !== categoryId));
+    // Single category selection - toggle or set
+    if (selectedCategory === categoryId) {
+      setSelectedCategory(''); // Deselect if clicking same category
     } else {
-      setSelectedCategories([...selectedCategories, categoryId]);
+      setSelectedCategory(categoryId);
     }
   };
 
@@ -481,7 +516,7 @@ export default function ProductEditor() {
 
                 <CategoriesCard
                   categories={categories}
-                  selectedCategories={selectedCategories}
+                  selectedCategories={selectedCategory ? [selectedCategory] : []}
                   onCategoryToggle={handleCategoryToggle}
                 />
 

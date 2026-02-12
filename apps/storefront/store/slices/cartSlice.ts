@@ -1,11 +1,11 @@
 import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
 import { useSelector } from 'react-redux';
-import { CartItem, AppliedCoupon, SavedCart } from '@shared/types';
+import { CartItem, AppliedCoupon, SavedCart, CouponValidationResult } from '@shared/types';
 import { RootState } from '../index';
 import { calculateCartTotals } from '../../utils/cartCalculation';
 import { syncCartToConvex, fetchCartFromConvex } from './convexCartBridge';
 import { useAppDispatch } from '../hooks';
-import { useQuery, useMutation } from 'convex/react';
+import { useQuery, useMutation, useConvex } from 'convex/react';
 import { api } from '../../../../convex/_generated/api';
 
 // Constants
@@ -363,7 +363,7 @@ export const useCartSummaryWithRules = () => {
     return acc + (price * item.quantity);
   }, 0);
 
-  const totals = calculateCartTotals(cartState.items, cartRules ?? []);
+  const totals = calculateCartTotals(cartState.items, cartRules as any ?? []);
 
   return {
     items: cartState.items,
@@ -377,38 +377,71 @@ export const useCartSummaryWithRules = () => {
     amountUntilFreeShipping: Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal),
     validationErrors: totals.validationErrors,
     appliedBenefits: totals.appliedBenefits,
+    freeItems: totals.freeItems,
   };
 };
 
 // Hook for coupon validation and application flow
 export const useCouponFlow = () => {
   const dispatch = useAppDispatch();
+  const convex = useConvex();
   const appliedCoupon = useSelector(selectAppliedCoupon);
   const validationState = useSelector(selectCouponValidationState);
   const validationError = useSelector(selectCouponValidationError);
   const cartItems = useSelector(selectCartItems);
   const subtotal = useSelector(selectCartSubtotal);
   
-  // TODO: Migrate to Convex - useQuery(api.coupons.validate) instead
-  const handleValidateCoupon = async (code: string) => {
+  const handleValidateCoupon = async (code: string): Promise<CouponValidationResult | null> => {
+    if (!code.trim()) {
+      dispatch(setCouponValidationError('יש להזין קוד קופון'));
+      return null;
+    }
+
     dispatch(setCouponValidationState('validating'));
     dispatch(setCouponValidationError(undefined));
+    dispatch(setLastValidatedCode(code.toUpperCase()));
     
     try {
-      // Placeholder - should use Convex validate coupon mutation
-      // const result = await validateCoupon({ code, cartItems, subtotal });
-      dispatch(setCouponValidationState('invalid'));
-      dispatch(setCouponValidationError('מערכת הקופונים בתחזוקה'));
-      return { valid: false, message: 'מערכת הקופונים בתחזוקה' };
+      const result = await convex.query(api.coupons.validate, {
+        code: code.trim(),
+        subtotal,
+        itemCount: cartItems.reduce((sum, item) => sum + item.quantity, 0),
+        // userEmail and userId could be added if user is logged in
+      });
+
+      if (result.valid && result.coupon) {
+        dispatch(setCouponValidationState('valid'));
+        return {
+          valid: true,
+          coupon: result.coupon as any, // Convex returns literal strings, cast to Coupon type
+          discountAmount: result.discountAmount,
+        };
+      } else {
+        dispatch(setCouponValidationState('invalid'));
+        dispatch(setCouponValidationError(result.error || 'קוד קופון לא תקין'));
+        return { valid: false, error: result.error };
+      }
     } catch (error) {
+      console.error('Coupon validation error:', error);
       dispatch(setCouponValidationState('invalid'));
       dispatch(setCouponValidationError('שגיאה באימות הקופון'));
-      return { valid: false, message: 'שגיאה באימות הקופון' };
+      return { valid: false, error: 'שגיאה באימות הקופון' };
     }
   };
 
-  const handleApplyCoupon = (coupon: AppliedCoupon) => {
-    dispatch(applyCoupon(coupon));
+  const handleApplyCoupon = (validationResult: CouponValidationResult) => {
+    if (!validationResult.valid || !validationResult.coupon || validationResult.discountAmount === undefined) {
+      return;
+    }
+    
+    const couponData: AppliedCoupon = {
+      code: validationResult.coupon.code,
+      discountType: validationResult.coupon.discountType,
+      discountValue: validationResult.coupon.discountValue,
+      discountAmount: validationResult.discountAmount,
+    };
+    
+    dispatch(applyCoupon(couponData));
     dispatch(setCouponValidationState('idle'));
     dispatch(setCouponValidationError(undefined));
   };

@@ -1,13 +1,14 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { adminMutation } from "./authHelpers";
+import { Id } from "./_generated/dataModel";
 
 /**
  * List products with optional filtering.
  */
 export const list = query({
   args: {
-    category: v.optional(v.string()), // Category slug or ID
+    category: v.optional(v.string()), // Category ID as string (from URL params)
     wineType: v.optional(
       v.union(
         v.literal("Red"),
@@ -25,17 +26,22 @@ export const list = query({
         v.literal("low_stock")
       )
     ),
-    relatedProducts: v.optional(v.array(v.string())), // Product IDs
+    relatedProducts: v.optional(v.array(v.id("products"))),
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query("products");
+    let results;
 
     if (args.category) {
-      q = q.withIndex("by_category", (idx) => idx.eq("category", args.category!));
+      // Cast string to Id<"categories"> for index query
+      const categoryId = args.category as Id<"categories">;
+      results = await ctx.db
+        .query("products")
+        .withIndex("by_category", (idx) => idx.eq("category", categoryId))
+        .collect();
+    } else {
+      results = await ctx.db.query("products").collect();
     }
-
-    const results = await q.collect();
 
     // Secondary filtering in memory for multiple parameters (Convex best practice for small-medium datasets)
     let filtered = results;
@@ -73,7 +79,7 @@ export const trackEvent = mutation({
     await ctx.db.insert("analyticsEvents", {
       event: args.event,
       properties: args.properties,
-      timestamp: new Date().toISOString(),
+      timestamp: Date.now(),
     });
   },
 });
@@ -121,9 +127,11 @@ export const getRelated = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
+    // Cast string category to Id<"categories"> for index query
+    const categoryId = args.category as Id<"categories">;
     const related = await ctx.db
       .query("products")
-      .withIndex("by_category", (q) => q.eq("category", args.category))
+      .withIndex("by_category", (q) => q.eq("category", categoryId))
       .filter((q) => q.neq(q.field("_id"), args.productId))
       .take(args.limit || 4);
     return related;
@@ -172,9 +180,11 @@ export const create = adminMutation({
     price: v.float64(),
     quantityInStock: v.int64(),
     sku: v.string(),
-    category: v.string(),
+    category: v.id("categories"),
     description: v.optional(v.string()),
     descriptionHe: v.optional(v.string()),
+    shortDescription: v.optional(v.string()),
+    shortDescriptionHe: v.optional(v.string()),
     salePrice: v.optional(v.float64()),
     onSale: v.optional(v.boolean()),
     wineType: v.optional(
@@ -185,8 +195,18 @@ export const create = adminMutation({
         v.literal("Sparkling")
       )
     ),
+    region: v.optional(v.string()),
+    vintage: v.optional(v.number()),
+    alcoholContent: v.optional(v.float64()),
+    volume: v.optional(v.string()),
+    grapeVariety: v.optional(v.string()),
+    servingTemperature: v.optional(v.string()),
+    tastingNotes: v.optional(v.string()),
     featuredImage: v.optional(v.string()),
+    images: v.optional(v.array(v.string())),
     isFeatured: v.optional(v.boolean()),
+    tags: v.optional(v.array(v.string())),
+    relatedProducts: v.optional(v.array(v.id("products"))),
     status: v.optional(
       v.union(
         v.literal("draft"),
@@ -199,7 +219,7 @@ export const create = adminMutation({
   handler: async (ctx, args) => {
     return await ctx.db.insert("products", {
       ...args,
-      stockStatus: args.quantityInStock > 0 ? "in_stock" : "out_of_stock",
+      stockStatus: Number(args.quantityInStock) > 0 ? "in_stock" : "out_of_stock",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -214,9 +234,33 @@ export const update = adminMutation({
     price: v.optional(v.float64()),
     quantityInStock: v.optional(v.int64()),
     sku: v.optional(v.string()),
-    category: v.optional(v.string()),
+    category: v.optional(v.id("categories")),
     description: v.optional(v.string()),
+    descriptionHe: v.optional(v.string()),
+    shortDescription: v.optional(v.string()),
+    shortDescriptionHe: v.optional(v.string()),
+    salePrice: v.optional(v.float64()),
     onSale: v.optional(v.boolean()),
+    wineType: v.optional(
+      v.union(
+        v.literal("Red"),
+        v.literal("White"),
+        v.literal("Rosé"),
+        v.literal("Sparkling")
+      )
+    ),
+    region: v.optional(v.string()),
+    vintage: v.optional(v.number()),
+    alcoholContent: v.optional(v.float64()),
+    volume: v.optional(v.string()),
+    grapeVariety: v.optional(v.string()),
+    servingTemperature: v.optional(v.string()),
+    tastingNotes: v.optional(v.string()),
+    featuredImage: v.optional(v.string()),
+    images: v.optional(v.array(v.string())),
+    isFeatured: v.optional(v.boolean()),
+    tags: v.optional(v.array(v.string())),
+    relatedProducts: v.optional(v.array(v.id("products"))),
     status: v.optional(
       v.union(
         v.literal("draft"),

@@ -1,18 +1,18 @@
 import React from 'react';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useAppDispatch } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
-import { selectCartItems, selectCartSubtotal, removeFromCart, updateQuantity } from '../store/slices/cartSlice';
+import { removeFromCart, updateQuantity, useCartSummaryWithRules } from '../store/slices/cartSlice';
 import { closeCartModal } from '../store/slices/uiSlice';
 import { useTrackCheckoutStart } from '../hooks/useAnalytics';
-import { X, Trash2, Plus, Minus } from 'lucide-react';
+import { X, Trash2, Plus, Minus, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const CartModal: React.FC = () => {
   const dispatch = useAppDispatch();
   const toast = useToast();
-  const items = useAppSelector(selectCartItems);
-  const subtotal = useAppSelector(selectCartSubtotal);
+  const cartSummary = useCartSummaryWithRules();
+  const { items, subtotal, discount, appliedBenefits } = cartSummary;
   const { trackCheckoutStart } = useTrackCheckoutStart();
 
    const handleRemoveItem = (productId: string, title: string) => {
@@ -122,12 +122,37 @@ const CartModal: React.FC = () => {
         {/* Footer */}
         {items.length > 0 && (
           <div className="p-6 border-t border-gray-100 bg-gray-50">
+            {/* Applied Benefits */}
+            {appliedBenefits.length > 0 && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-center gap-2 mb-1">
+                  <Gift size={16} className="text-green-600" />
+                  <span className="text-sm font-medium text-green-800">הטבות פעילות</span>
+                </div>
+                <ul className="text-xs text-green-700 space-y-1">
+                  {appliedBenefits.map((benefit, idx) => (
+                    <li key={idx}>• {benefit}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            
             <div className="space-y-2 mb-4">
-              <div className="flex justify-between items-center text-lg font-bold text-gray-900">
+              <div className="flex justify-between items-center text-gray-600">
                 <span>סכום ביניים:</span>
                 <span>₪{subtotal.toFixed(2)}</span>
               </div>
-              <p className="text-xs text-gray-500 text-center">משלוח ומע"מ יחושבו בקופה</p>
+              {discount > 0 && (
+                <div className="flex justify-between items-center text-green-600 font-medium">
+                  <span>הנחה:</span>
+                  <span>-₪{discount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex justify-between items-center text-lg font-bold text-gray-900 pt-2 border-t">
+                <span>סה"כ:</span>
+                <span>₪{(subtotal - discount).toFixed(2)}</span>
+              </div>
+              <p className="text-xs text-gray-500 text-center">משלוח יחושב בקופה</p>
             </div>
             <Link 
               to="/checkout"

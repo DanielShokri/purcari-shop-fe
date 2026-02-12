@@ -99,6 +99,7 @@ export enum NotificationType {
   SUCCESS = 'success',
   INFO = 'info',
   WARNING = 'warning',
+  ERROR = 'error',
   ORDER = 'order',
   SYSTEM = 'system',
 }
@@ -409,7 +410,7 @@ export interface Notification {
   _creationTime?: number;
   title: string;
   message: string;
-  type: NotificationType;
+  type: NotificationType | 'info' | 'warning' | 'error' | 'success' | 'order' | 'system';
   isRead: boolean;
   icon?: string;
   createdAt?: string;
@@ -479,6 +480,15 @@ export interface AnalyticsSummary {
 // ============================================================================
 // USER & ADMIN TYPES
 // ============================================================================
+
+export interface AuthUser {
+  _id: string;
+  _creationTime?: number;
+  name?: string;
+  email?: string;
+  image?: string;
+  phone?: string;
+}
 
 export interface User extends AuthUser {
   role: UserRole;
