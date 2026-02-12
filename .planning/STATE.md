@@ -1,26 +1,26 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 12, 2026 (11:48 UTC)
+**Last updated:** February 12, 2026 (18:24 UTC)
 
 ---
 
 ## Current Position
 
 **Active phase:** Phase 01 - Analytics Infrastructure (complete)
-**Current plan:** 01-analytics-04 (completed)
-**Plans completed:** 4 of 4
+**Current plan:** 01-analytics-05 (completed)
+**Plans completed:** 5 of 5
 
 **Current blockers:**
 - None
 
 **Recently completed:**
-- Plan 01-analytics-04: Dashboard queries and visualization
-  - getSummary query using dailyViewsAggregate and activeUsersAggregate
-  - getViewsSeries for time-series chart data (daily/weekly/monthly)
-  - getNewUsersSeries for user growth visualization
-  - getTopProducts for popular products table
-  - Analytics.tsx verified compatible with new data structure
-  - Dashboard now displays real-time data from aggregates
+- Plan 01-analytics-05: Identity Stitching & Standard Event Tracking
+  - Added by_anon_id and by_userId_event indexes for efficient identity queries
+  - track and linkIdentity mutations for unified tracking API
+  - Enhanced useAnalytics hook with identify() function and UUID generation
+  - Standard event tracking across storefront (product_viewed, cart_item_added, etc.)
+  - 180-day data retention via daily cron job at 2:00 AM UTC
+  - AuthForm integration calling identify() after login/registration
 
 ---
 
@@ -38,12 +38,14 @@
 
 | Area | Current thinking |
 |------|------------------|
-| Event naming convention | Use past tense: `page_viewed`, `product_viewed`, `added_to_cart` |
+| Event naming convention | Use past tense: `page_viewed`, `product_viewed`, `cart_item_added` |
 | Time bucketing | Daily granularity for MVP; hourly can be added later |
-| Anonymous ID storage | localStorage with 30-minute session timeout |
+| Anonymous ID storage | localStorage with `convex_anon_id` key |
 | Date handling | UTC for all aggregation to ensure consistent timezone behavior |
 | Aggregate keys | Composite [date, dimension] keys enable multi-dimensional queries |
 | Aggregate query pattern | Use `{ namespace: undefined, bounds: {...} }` for count() API |
+| Identity stitching | Link anon events to user on auth via by_anon_id index |
+| Data retention | 180 days, pruned daily at 2:00 AM UTC |
 
 ### Deferred
 
@@ -63,7 +65,12 @@
 - [x] Create trackEvent mutation
 - [x] Implement useAnalytics hook
 - [x] Wire up dashboard queries
-- [ ] Test with real page views
+- [x] Test with real page views
+- [x] Identity stitching indexes
+- [x] track and linkIdentity mutations
+- [x] Standard event tracking across storefront
+- [x] 180-day retention cron job
+- [x] AuthForm identify() integration
 
 ---
 
@@ -87,21 +94,22 @@
 
 ## Next Actions
 
-1. Phase 01 complete! Analytics infrastructure is ready
-2. Test with real page views:
-   - Browse storefront pages
-   - Check admin Analytics dashboard for live data
-   - Verify metrics update in real-time
+1. Phase 01 complete! Full analytics infrastructure with identity stitching is ready
+2. Test identity stitching flow:
+   - Browse storefront anonymously
+   - Login or register
+   - Verify anonymous events now have userId
 3. Consider next phase: Enhanced e-commerce features or marketing tools
 
 ---
 
 ## Phase 01 Completion Summary
 
-All 4 plans completed:
+All 5 plans completed:
 - Plan 01: Convex aggregate component installation and configuration
 - Plan 02: TableAggregate instances with date bucketing utilities
 - Plan 03: Event tracking system with automatic page view tracking
 - Plan 04: Dashboard queries wired to display real-time data
+- Plan 05: Identity stitching, standard event tracking, and data retention
 
-**Result:** Full analytics infrastructure from event collection to dashboard visualization.
+**Result:** Complete analytics infrastructure with identity resolution, event tracking, and 180-day retention.
