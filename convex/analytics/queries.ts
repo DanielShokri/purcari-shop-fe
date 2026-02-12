@@ -21,6 +21,49 @@ interface TimeSeriesDataPoint {
 }
 
 /**
+ * Helper function to count page views directly from events table (fallback for aggregates)
+ */
+async function countPageViewsInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
+  const events = await ctx.db
+    .query("analyticsEvents")
+    .filter((q: any) => {
+      const ts = Number(q.field("timestamp"));
+      return q.and(
+        q.gte(ts, startTime),
+        q.lte(ts, endTime),
+        q.eq(q.field("event"), "page_viewed")
+      );
+    })
+    .collect();
+  return events.length;
+}
+
+/**
+ * Helper function to count unique users in a date range
+ */
+async function countUniqueUsersInRange(ctx: any, startTime: number, endTime: number): Promise<number> {
+  const events = await ctx.db
+    .query("analyticsEvents")
+    .filter((q: any) => {
+      const ts = Number(q.field("timestamp"));
+      return q.and(
+        q.gte(ts, startTime),
+        q.lte(ts, endTime)
+      );
+    })
+    .collect();
+  
+  const uniqueUsers = new Set<string>();
+  for (const event of events) {
+    const userId = event.userId || event.anonymousId;
+    if (userId) {
+      uniqueUsers.add(userId);
+    }
+  }
+  return uniqueUsers.size;
+}
+
+/**
  * Get analytics summary for dashboard
  */
 export const getSummary = query({
@@ -31,66 +74,63 @@ export const getSummary = query({
     const thisWeek = getWeekKey(now);
     const thisMonth = getMonthKey(now);
 
-    // Get today's views
-    const viewsToday = await dailyViewsAggregate.count(ctx, {
-      namespace: undefined,
-      bounds: { prefix: [today] },
-    });
-
-    // Get this week's views
+    // Get today's start and end times
+    const todayStart = getStartOfDay(now);
+    const todayEnd = getEndOfDay(now);
+    
+    // Get this week's times
     const startOfWeek = getStartOfDay(now - 7 * 24 * 60 * 60 * 1000);
     const endOfWeek = getEndOfDay(now);
-    const viewsThisWeek = await dailyViewsAggregate.count(ctx, {
-      namespace: undefined,
-      bounds: {
-        lower: { key: getDayKey(startOfWeek) },
-        upper: { key: getDayKey(endOfWeek) },
-      },
-    });
-
-    // Get this month's views
+    
+    // Get this month's times
     const startOfMonth = new Date(now);
     startOfMonth.setUTCDate(1);
     startOfMonth.setUTCHours(0, 0, 0, 0);
     const endOfMonth = new Date(now);
-    const viewsThisMonth = await dailyViewsAggregate.count(ctx, {
-      namespace: undefined,
-      bounds: {
-        lower: { key: getDayKey(startOfMonth.getTime()) },
-        upper: { key: getDayKey(endOfMonth.getTime()) },
-      },
-    });
+    endOfMonth.setUTCHours(23, 59, 59, 999);
 
-    // Get DAU (Daily Active Users) - unique users today
-    const dau = await activeUsersAggregate.count(ctx, {
-      namespace: undefined,
-      bounds: { prefix: [today] },
-    });
-
-    // Get WAU (Weekly Active Users) - unique users this week
-    const wau = await activeUsersAggregate.count(ctx, {
-      namespace: undefined,
-      bounds: {
-        lower: { key: [getDayKey(startOfWeek), ""] },
-        upper: { key: [getDayKey(endOfWeek), "\xFF"] },
-      },
-    });
-
-    // Get MAU (Monthly Active Users) - unique users this month
-    const mau = await activeUsersAggregate.count(ctx, {
-      namespace: undefined,
-      bounds: {
-        lower: { key: [getDayKey(startOfMonth.getTime()), ""] },
-        upper: { key: [getDayKey(endOfMonth.getTime()), "\xFF"] },
-      },
-    });
+    // Get views using direct event counting (more reliable than aggregates)
+    const viewsToday = await countPageViewsInRange(ctx, todayStart, todayEnd);
+    const viewsThisWeek = await countPageViewsInRange(ctx, startOfWeek, endOfWeek);
+    const viewsThisMonth = await countPageViewsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
+    
+    // Get user counts
+    const dau = await countUniqueUsersInRange(ctx, todayStart, todayEnd);
+    const wau = await countUniqueUsersInRange(ctx, startOfWeek, endOfWeek);
+    const mau = await countUniqueUsersInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
 
     // Calculate total views and visitors
-    const totalViews = await dailyViewsAggregate.count(ctx, { namespace: undefined });
-    const totalVisitors = await activeUsersAggregate.count(ctx, { namespace: undefined });
+    const allEvents = await ctx.db.query("analyticsEvents").collect();
+    const totalViews = allEvents.filter((e: any) => e.event === "page_viewed").length;
+    
+    const uniqueVisitors = new Set<string>();
+    for (const event of allEvents) {
+      const userId = event.userId || event.anonymousId;
+      if (userId) {
+        uniqueVisitors.add(userId);
+      }
+    }
+    const totalVisitors = uniqueVisitors.size;
 
     // Get top products by views
     const topProducts = await getTopProductsByViews(ctx, 10);
+
+    return {
+      totalViews,
+      totalVisitors,
+      viewsToday,
+      viewsThisWeek,
+      viewsThisMonth,
+      dau,
+      wau,
+      mau,
+      topProducts,
+      averageSessionDuration: 0, // Placeholder - requires session tracking
+      bounceRate: 0, // Placeholder - requires session tracking
+      conversionRate: 0, // Placeholder - requires order tracking
+    };
+  },
+});
 
     return {
       totalViews,

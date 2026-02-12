@@ -33,14 +33,18 @@ export const trackEvent = mutation({
     const doc = await ctx.db.get("analyticsEvents", eventDoc);
     if (!doc) throw new Error("Failed to retrieve inserted event");
 
-    // Update dailyViews aggregate for page_viewed events
-    await dailyViewsAggregate.insertIfDoesNotExist(ctx, doc);
-
-    // Update activeUsers aggregate for any user activity
-    await activeUsersAggregate.insertIfDoesNotExist(ctx, doc);
-
-    // Update productViews aggregate for product_viewed events
-    await productViewsAggregate.insertIfDoesNotExist(ctx, doc);
+    // Update all aggregates (each has its own filtering logic)
+    // dailyViews: only tracks page_viewed events
+    // activeUsers: tracks all events for unique user counting
+    // productViews: only tracks product_viewed events
+    try {
+      await dailyViewsAggregate.insertIfDoesNotExist(ctx, doc);
+      await activeUsersAggregate.insertIfDoesNotExist(ctx, doc);
+      await productViewsAggregate.insertIfDoesNotExist(ctx, doc);
+    } catch (error) {
+      console.error("Error updating aggregates:", error);
+      throw error;
+    }
 
     return eventDoc;
   },
