@@ -86,34 +86,57 @@ export const getSummary = query({
   args: {},
   handler: async (ctx) => {
     const now = Date.now();
+    const ONE_DAY = 24 * 60 * 60 * 1000;
+    const ONE_WEEK = 7 * ONE_DAY;
 
     // Get today's start and end times
     const todayStart = getStartOfDay(now);
     const todayEnd = getEndOfDay(now);
     
+    // Yesterday's boundaries
+    const yesterdayStart = getStartOfDay(now - ONE_DAY);
+    const yesterdayEnd = getEndOfDay(now - ONE_DAY);
+    
     // Calculate week boundaries (Sunday to Saturday)
     const today = new Date(now);
     const dayOfWeek = today.getDay();
-    const startOfWeekDate = new Date(now - dayOfWeek * 24 * 60 * 60 * 1000);
+    const startOfWeekDate = new Date(now - dayOfWeek * ONE_DAY);
     const startOfWeek = getStartOfDay(startOfWeekDate.getTime());
     const endOfWeek = todayEnd; // Up to end of today
+    
+    // Last week's boundaries (same day range, one week ago)
+    const lastWeekStart = startOfWeek - ONE_WEEK;
+    const lastWeekEnd = endOfWeek - ONE_WEEK;
     
     // Calculate month boundaries
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999);
     
+    // Last month's boundaries
+    const lastMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0, 23, 59, 59, 999);
+    
     console.log(`Querying views for today: ${new Date(todayStart).toISOString()} to ${new Date(todayEnd).toISOString()}`);
-    console.log(`Current time: ${new Date(now).toISOString()} (${now})`);
 
-    // Get unique visitors (count each user/anonymous ID only once per period)
+    // Get unique visitors for current periods
     const visitorsToday = await countUniqueVisitorsInRange(ctx, todayStart, todayEnd);
     const visitorsThisWeek = await countUniqueVisitorsInRange(ctx, startOfWeek, endOfWeek);
     const visitorsThisMonth = await countUniqueVisitorsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
     
-    // Get authenticated user counts (DAU/WAU/MAU)
+    // Get unique visitors for previous periods (for comparison)
+    const visitorsYesterday = await countUniqueVisitorsInRange(ctx, yesterdayStart, yesterdayEnd);
+    const visitorsLastWeek = await countUniqueVisitorsInRange(ctx, lastWeekStart, lastWeekEnd);
+    const visitorsLastMonth = await countUniqueVisitorsInRange(ctx, lastMonthStart.getTime(), lastMonthEnd.getTime());
+    
+    // Get authenticated user counts (DAU/WAU/MAU) for current periods
     const dau = await countAuthenticatedUsersInRange(ctx, todayStart, todayEnd);
     const wau = await countAuthenticatedUsersInRange(ctx, startOfWeek, endOfWeek);
     const mau = await countAuthenticatedUsersInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
+    
+    // Get authenticated user counts for previous periods
+    const dauYesterday = await countAuthenticatedUsersInRange(ctx, yesterdayStart, yesterdayEnd);
+    const wauLastWeek = await countAuthenticatedUsersInRange(ctx, lastWeekStart, lastWeekEnd);
+    const mauLastMonth = await countAuthenticatedUsersInRange(ctx, lastMonthStart.getTime(), lastMonthEnd.getTime());
 
     // Calculate total unique visitors (all time)
     const allEvents = await ctx.db.query("analyticsEvents").collect();
@@ -128,20 +151,34 @@ export const getSummary = query({
 
     // Get top products by views
     const topProducts = await getTopProductsByViews(ctx, 10);
+    
+    // Helper to calculate percentage change
+    const calcChange = (current: number, previous: number): number => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return ((current - previous) / previous) * 100;
+    };
 
     return {
-      totalViews: totalVisitors, // Renamed but keeping field for backward compatibility
+      totalViews: totalVisitors,
       totalVisitors,
       viewsToday: visitorsToday,
       viewsThisWeek: visitorsThisWeek,
       viewsThisMonth: visitorsThisMonth,
+      // Change percentages for visitors
+      viewsTodayChange: calcChange(visitorsToday, visitorsYesterday),
+      viewsWeekChange: calcChange(visitorsThisWeek, visitorsLastWeek),
+      viewsMonthChange: calcChange(visitorsThisMonth, visitorsLastMonth),
       dau,
       wau,
       mau,
+      // Change percentages for authenticated users
+      dauChange: calcChange(dau, dauYesterday),
+      wauChange: calcChange(wau, wauLastWeek),
+      mauChange: calcChange(mau, mauLastMonth),
       topProducts,
-      averageSessionDuration: 0, // Placeholder - requires session tracking
-      bounceRate: 0, // Placeholder - requires session tracking
-      conversionRate: 0, // Placeholder - requires order tracking
+      averageSessionDuration: 0,
+      bounceRate: 0,
+      conversionRate: 0,
     };
   },
 });

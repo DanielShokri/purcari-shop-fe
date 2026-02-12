@@ -55,8 +55,8 @@ export default function Analytics() {
           iconBg="blue.500/10"
           iconColor="blue.500"
           trend={{ 
-            value: formatChange(0), 
-            isPositive: true, 
+            value: formatChange(summary?.viewsTodayChange || 0), 
+            isPositive: (summary?.viewsTodayChange || 0) >= 0, 
             label: 'מהיום אתמול' 
           }}
         />
@@ -67,8 +67,8 @@ export default function Analytics() {
           iconBg="purple.500/10"
           iconColor="purple.500"
           trend={{ 
-            value: formatChange(0), 
-            isPositive: true, 
+            value: formatChange(summary?.viewsWeekChange || 0), 
+            isPositive: (summary?.viewsWeekChange || 0) >= 0, 
             label: 'מהשבוע שעבר' 
           }}
         />
@@ -79,8 +79,8 @@ export default function Analytics() {
           iconBg="green.500/10"
           iconColor="green.500"
           trend={{ 
-            value: formatChange(0), 
-            isPositive: true, 
+            value: formatChange(summary?.viewsMonthChange || 0), 
+            isPositive: (summary?.viewsMonthChange || 0) >= 0, 
             label: 'מהחודש שעבר' 
           }}
         />
@@ -95,8 +95,8 @@ export default function Analytics() {
           iconBg="orange.500/10"
           iconColor="orange.500"
           trend={{ 
-            value: formatChange(0), 
-            isPositive: true, 
+            value: formatChange(summary?.dauChange || 0), 
+            isPositive: (summary?.dauChange || 0) >= 0, 
             label: 'מהיום אתמול' 
           }}
         />
@@ -107,8 +107,8 @@ export default function Analytics() {
           iconBg="teal.500/10"
           iconColor="teal.500"
           trend={{ 
-            value: formatChange(0), 
-            isPositive: true, 
+            value: formatChange(summary?.wauChange || 0), 
+            isPositive: (summary?.wauChange || 0) >= 0, 
             label: 'מהשבוע שעבר' 
           }}
         />
@@ -119,8 +119,8 @@ export default function Analytics() {
           iconBg="cyan.500/10"
           iconColor="cyan.500"
           trend={{ 
-            value: formatChange(0), 
-            isPositive: true, 
+            value: formatChange(summary?.mauChange || 0), 
+            isPositive: (summary?.mauChange || 0) >= 0, 
             label: 'מהחודש שעבר' 
           }}
         />
