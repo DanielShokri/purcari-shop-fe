@@ -105,41 +105,36 @@ export const getSummary = query({
     console.log(`Querying views for today: ${new Date(todayStart).toISOString()} to ${new Date(todayEnd).toISOString()}`);
     console.log(`Current time: ${new Date(now).toISOString()} (${now})`);
 
-    // Get page views (total page view events)
-    const viewsToday = await countPageViewsInRange(ctx, todayStart, todayEnd);
-    const viewsThisWeek = await countPageViewsInRange(ctx, startOfWeek, endOfWeek);
-    const viewsThisMonth = await countPageViewsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
+    // Get unique visitors (count each user/anonymous ID only once per period)
+    const visitorsToday = await countUniqueVisitorsInRange(ctx, todayStart, todayEnd);
+    const visitorsThisWeek = await countUniqueVisitorsInRange(ctx, startOfWeek, endOfWeek);
+    const visitorsThisMonth = await countUniqueVisitorsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
     
     // Get authenticated user counts (DAU/WAU/MAU)
     const dau = await countAuthenticatedUsersInRange(ctx, todayStart, todayEnd);
     const wau = await countAuthenticatedUsersInRange(ctx, startOfWeek, endOfWeek);
     const mau = await countAuthenticatedUsersInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
 
-    // Calculate total metrics
-    const totalViews = (await ctx.db
-      .query("analyticsEvents")
-      .withIndex("by_event", (q) => q.eq("event", "page_viewed"))
-      .collect()).length;
-    
-    // Count authenticated users for total
+    // Calculate total unique visitors (all time)
     const allEvents = await ctx.db.query("analyticsEvents").collect();
-    const allAuthenticatedUsers = new Set<string>();
+    const allUniqueVisitors = new Set<string>();
     for (const event of allEvents) {
-      if (event.userId) {
-        allAuthenticatedUsers.add(event.userId);
+      const visitorId = event.userId || event.anonymousId;
+      if (visitorId) {
+        allUniqueVisitors.add(visitorId);
       }
     }
-    const totalAuthenticatedUsers = allAuthenticatedUsers.size;
+    const totalVisitors = allUniqueVisitors.size;
 
     // Get top products by views
     const topProducts = await getTopProductsByViews(ctx, 10);
 
     return {
-      totalViews,
-      totalVisitors: totalAuthenticatedUsers,  // Only authenticated users
-      viewsToday,
-      viewsThisWeek,
-      viewsThisMonth,
+      totalViews: totalVisitors, // Renamed but keeping field for backward compatibility
+      totalVisitors,
+      viewsToday: visitorsToday,
+      viewsThisWeek: visitorsThisWeek,
+      viewsThisMonth: visitorsThisMonth,
       dau,
       wau,
       mau,
@@ -152,7 +147,7 @@ export const getSummary = query({
 });
 
 /**
- * Get views time-series data for charts
+ * Get unique visitors time-series data for charts
  */
 export const getViewsSeries = query({
   args: { interval: v.string() },
@@ -168,7 +163,8 @@ export const getViewsSeries = query({
         const dayEnd = getEndOfDay(date.getTime());
         const dayKey = getDayKey(date.getTime());
         
-        const count = await countPageViewsInRange(ctx, dayStart, dayEnd);
+        // Count unique visitors per day (not raw page views)
+        const count = await countUniqueVisitorsInRange(ctx, dayStart, dayEnd);
         
         points.push({
           name: date.toLocaleDateString("he-IL", { day: "numeric", month: "short" }),
@@ -183,7 +179,8 @@ export const getViewsSeries = query({
         const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
         const weekKey = getWeekKey(weekStart.getTime());
         
-        const count = await countPageViewsInRange(ctx, getStartOfDay(weekStart.getTime()), getEndOfDay(weekEnd.getTime()));
+        // Count unique visitors per week
+        const count = await countUniqueVisitorsInRange(ctx, getStartOfDay(weekStart.getTime()), getEndOfDay(weekEnd.getTime()));
         
         points.push({
           name: `שבוע ${weekKey.split("-W")[1]}`,
@@ -203,7 +200,8 @@ export const getViewsSeries = query({
         const endOfMonth = new Date(date);
         endOfMonth.setUTCMonth(endOfMonth.getUTCMonth() + 1, 0);
         
-        const count = await countPageViewsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
+        // Count unique visitors per month
+        const count = await countUniqueVisitorsInRange(ctx, startOfMonth.getTime(), endOfMonth.getTime());
         
         points.push({
           name: date.toLocaleDateString("he-IL", { month: "short" }),
