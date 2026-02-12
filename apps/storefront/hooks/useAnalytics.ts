@@ -3,20 +3,32 @@ import { useMutation } from "convex/react";
 import { api } from "@convex/api";
 import { useLocation } from "react-router-dom";
 
-const ANALYTICS_STORAGE_KEY = "purcari_anonymous_id";
+const ANALYTICS_STORAGE_KEY = "convex_anon_id";
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 /**
- * Generate a random anonymous ID
+ * Generate a UUID v4-like anonymous ID
+ * Uses crypto.randomUUID if available, falls back to manual generation
  */
 function generateAnonymousId(): string {
-  return `anon_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  if (typeof crypto !== "undefined" && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback for older browsers
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
 }
 
 /**
  * Get or create anonymous ID from localStorage
  */
 export function getAnonymousId(): string {
+  if (typeof localStorage === "undefined") {
+    return generateAnonymousId(); // SSR fallback
+  }
   let anonymousId = localStorage.getItem(ANALYTICS_STORAGE_KEY);
   if (!anonymousId) {
     anonymousId = generateAnonymousId();
@@ -29,20 +41,32 @@ export function getAnonymousId(): string {
  * Clear anonymous ID (call on logout)
  */
 export function clearAnonymousId(): void {
-  localStorage.removeItem(ANALYTICS_STORAGE_KEY);
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(ANALYTICS_STORAGE_KEY);
+  }
 }
 
 /**
- * Hook for tracking analytics events
+ * Hook for tracking analytics events with identity stitching support
+ * 
+ * Features:
+ * - track(): Log events with automatic anonymous ID management
+ * - identify(): Link anonymous events to authenticated user after login
+ * - trackEvent: Alias for track() (backwards compatibility)
  */
 export function useAnalytics() {
-  const trackEvent = useMutation(api.analytics.trackEvent);
+  const trackMutation = useMutation(api.analytics.trackEvent);
+  const linkIdentityMutation = useMutation(api.analytics.linkIdentity);
 
+  /**
+   * Track an analytics event
+   * Automatically attaches anonymous ID for guest-to-user stitching
+   */
   const track = useCallback(
-    async (event: string, properties?: Record<string, any>) => {
+    async (event: string, properties: Record<string, any> = {}) => {
       const anonymousId = getAnonymousId();
       try {
-        await trackEvent({
+        await trackMutation({
           event,
           properties,
           anonymousId,
@@ -52,10 +76,31 @@ export function useAnalytics() {
         console.warn("Analytics tracking failed:", error);
       }
     },
-    [trackEvent]
+    [trackMutation]
   );
 
-  return { trackEvent: track };
+  /**
+   * Link anonymous events to authenticated user (Identity Stitching)
+   * Call this AFTER successful login/registration
+   */
+  const identify = useCallback(async () => {
+    const anonymousId = getAnonymousId();
+    if (anonymousId) {
+      try {
+        const result = await linkIdentityMutation({ anonymousId });
+        return result;
+      } catch (error) {
+        console.warn("Identity linking failed:", error);
+        return { linked: 0 };
+      }
+    }
+    return { linked: 0 };
+  }, [linkIdentityMutation]);
+
+  // Backwards compatible alias
+  const trackEvent = track;
+
+  return { track, identify, trackEvent };
 }
 
 /**
@@ -64,7 +109,7 @@ export function useAnalytics() {
  */
 export function useTrackPageView() {
   const location = useLocation();
-  const { trackEvent } = useAnalytics();
+  const { track } = useAnalytics();
   const lastPath = useRef<string>("");
 
   useEffect(() => {
@@ -75,70 +120,135 @@ export function useTrackPageView() {
     lastPath.current = currentPath;
 
     // Track page view
-    trackEvent("page_viewed", {
+    track("page_viewed", {
       path: location.pathname,
       search: location.search,
       referrer: document.referrer,
     });
-  }, [location.pathname, location.search, trackEvent]);
+  }, [location.pathname, location.search, track]);
 }
 
 /**
  * Hook for tracking product views
  * Call this on product detail pages
  */
-export function useTrackProductView(productId: string, productName?: string) {
-  const { trackEvent } = useAnalytics();
+export function useTrackProductView(
+  productId: string,
+  productName?: string,
+  price?: number,
+  category?: string
+) {
+  const { track } = useAnalytics();
   const hasTracked = useRef(false);
 
   useEffect(() => {
     if (hasTracked.current) return;
     hasTracked.current = true;
 
-    trackEvent("product_viewed", {
+    track("product_viewed", {
       productId,
-      productName,
+      name: productName,
+      price,
+      category,
     });
-  }, [productId, productName, trackEvent]);
+  }, [productId, productName, price, category, track]);
 }
 
 /**
- * Hook for tracking add to cart events
+ * Hook for tracking add to cart events (cart_item_added)
  */
 export function useTrackAddToCart() {
-  const { trackEvent } = useAnalytics();
+  const { track } = useAnalytics();
 
   const trackAddToCart = useCallback(
-    (productId: string, productName: string, quantity: number, price: number) => {
-      trackEvent("added_to_cart", {
+    (
+      productId: string,
+      productName: string,
+      quantity: number,
+      price: number,
+      cartTotal?: number
+    ) => {
+      track("cart_item_added", {
         productId,
-        productName,
+        name: productName,
         quantity,
         price,
+        cartTotal,
       });
     },
-    [trackEvent]
+    [track]
   );
 
   return { trackAddToCart };
 }
 
 /**
- * Hook for tracking purchase events
+ * Hook for tracking purchase events (order_completed)
  */
 export function useTrackPurchase() {
-  const { trackEvent } = useAnalytics();
+  const { track } = useAnalytics();
 
   const trackPurchase = useCallback(
-    (orderId: string, total: number, itemCount: number) => {
-      trackEvent("purchase_completed", {
+    (
+      orderId: string,
+      total: number,
+      items: Array<{ productId: string; quantity: number; price: number }>,
+      paymentMethod?: string
+    ) => {
+      track("order_completed", {
         orderId,
         total,
-        itemCount,
+        items,
+        itemCount: items.length,
+        paymentMethod,
       });
     },
-    [trackEvent]
+    [track]
   );
 
   return { trackPurchase };
+}
+
+/**
+ * Hook for tracking checkout start events
+ */
+export function useTrackCheckoutStart() {
+  const { track } = useAnalytics();
+
+  const trackCheckoutStart = useCallback(
+    (cartId: string, itemCount: number, totalValue: number) => {
+      track("checkout_started", {
+        cartId,
+        itemCount,
+        totalValue,
+      });
+    },
+    [track]
+  );
+
+  return { trackCheckoutStart };
+}
+
+/**
+ * Hook for tracking search events
+ */
+export function useTrackSearch() {
+  const { track } = useAnalytics();
+
+  const trackSearch = useCallback(
+    (
+      query: string,
+      resultsCount: number,
+      filtersApplied?: Record<string, any>
+    ) => {
+      track("search_performed", {
+        query,
+        resultsCount,
+        filtersApplied,
+      });
+    },
+    [track]
+  );
+
+  return { trackSearch };
 }
