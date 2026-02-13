@@ -1,19 +1,24 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 13, 2026 (13:46 UTC)
+**Last updated:** February 13, 2026 (13:51 UTC)
 
 ---
 
 ## Current Position
 
 **Active phase:** Phase 02 - Fix TypeScript Errors (in progress)
-**Current plan:** 02-03 (ready to execute)
-**Plans completed:** 2 of 5
+**Current plan:** 02-04 (ready to execute)
+**Plans completed:** 3 of 5
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan 02-03: Fix TypeScript Errors in Admin Hooks and Pages
+  - Fixed useCartRuleEditor status type with 'as const' assertion
+  - Fixed handleSubmit type using wrapper pattern
+  - Added second argument to useQuery calls in CartRules, Coupons, Users
+  - Fixed Id generic constraint in Users.tsx and OrderDetails.tsx
 - Plan 02-02: Fix TypeScript Errors in Convex Backend Functions
   - Replaced ctx.session with ctx.auth.getUserIdentity() in analytics events
   - Added type assertions for unknown validator types in admin.ts and coupons.ts
@@ -50,6 +55,9 @@
 | Area | Current thinking |
 |------|------------------|
 | Event naming convention | Use past tense: `page_viewed`, `product_viewed`, `cart_item_added` |
+| react-hook-form handleSubmit | Use wrapper pattern `handleSubmit(async (data) => { await onSubmit(data); })` for better TypeScript compatibility |
+| Convex Id validation | Use `boolean` return type instead of type predicate for dynamic table name validation |
+| useQuery pattern | Always pass second argument (empty object `{}` when no args needed) |
 | Time bucketing | Daily granularity for MVP; hourly can be added later |
 | Anonymous ID storage | localStorage with `convex_anon_id` key |
 | Date handling | UTC for all aggregation to ensure consistent timezone behavior |
@@ -105,8 +113,8 @@
 
 ## Next Actions
 
-1. Phase 02 in progress: Fix TypeScript Errors (2 of 5 plans complete)
-2. Continue with Phase 02 Plan 03: Fix remaining TypeScript errors
+1. Phase 02 in progress: Fix TypeScript Errors (3 of 5 plans complete)
+2. Continue with Phase 02 Plan 04: Fix remaining TypeScript errors
 3. Test shared types integration with storefront and admin packages
 
 ---
