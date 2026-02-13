@@ -84,7 +84,7 @@ export default function NotificationItem({
   onMarkAsRead,
   onClick,
 }: NotificationItemProps) {
-  const style = getNotificationStyle(notification.type);
+  const style = getNotificationStyle(notification.type as NotificationType);
   const iconName = notification.icon || style.icon;
   const isCompact = variant === 'compact';
 
