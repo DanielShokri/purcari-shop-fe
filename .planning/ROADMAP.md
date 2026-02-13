@@ -9,6 +9,7 @@
 | Phase | Name | Status | Plans |
 |-------|------|--------|-------|
 | 01 | **Analytics Infrastructure** | ✓ Complete | 4/4 |
+| 02 | **Fix TypeScript Errors** | ○ Planned | 5/5 |
 
 ---
 
@@ -38,6 +39,35 @@
 ## Completed Phases
 
 *None yet*
+
+---
+
+## In Progress
+
+### Phase 02: Fix TypeScript Errors
+
+**Status:** ○ Planned (February 13, 2026)
+
+**Goal:** Fix all 37 TypeScript compilation errors across the monorepo to ensure type safety and enable clean builds.
+
+**Deliverables:**
+- Clean shared-types without duplicate declarations
+- Fixed Convex backend functions with proper types
+- Fixed admin hooks and pages with proper useQuery patterns
+- Fixed React components with proper type narrowing
+- Fixed CartRuleEditor form type consistency
+
+**Plans:**
+- [ ] 02-01-PLAN.md — Fix shared-types (duplicate declarations, bigint types)
+- [ ] 02-02-PLAN.md — Fix Convex backend (ctx.session, unknown types, bigint conversions)
+- [ ] 02-03-PLAN.md — Fix admin hooks and pages (useQuery args, Id types)
+- [ ] 02-04-PLAN.md — Fix React components (type narrowing, optional props)
+- [ ] 02-05-PLAN.md — Fix CartRuleEditor form types
+
+**Success criteria:**
+- [ ] `npx tsc --noEmit` passes with 0 errors
+- [ ] All 37 errors resolved
+- [ ] No type regressions introduced
 
 ---
 
