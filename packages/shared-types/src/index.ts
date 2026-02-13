@@ -350,20 +350,6 @@ export interface CartRule {
   updatedAt: string;
 }
 
-export interface CartRule {
-  _id: string;
-  name: string;
-  description?: string;
-  ruleType: CartRuleType;
-  status: CartRuleStatus;
-  config: CartRuleConfig;
-  priority?: number;
-  startDate?: string;
-  endDate?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface Address {
   _id: string;
   name: string;
