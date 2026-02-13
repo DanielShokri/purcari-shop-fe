@@ -146,9 +146,9 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
   };
 
   // Action handlers
-  const handleSave = () => {
-    handleSubmit(onSubmit)();
-  };
+  const handleSave = handleSubmit(async (data) => {
+    await onSubmit(data);
+  });
 
   const handleCancel = () => {
     navigate('/cart-rules');
