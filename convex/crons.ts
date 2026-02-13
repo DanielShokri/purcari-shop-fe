@@ -10,7 +10,7 @@ const crons = cronJobs();
 crons.daily(
   "prune analytics events",
   { hourUTC: 2, minuteUTC: 0 },
-  internal.analytics.events.pruneOldEvents
+  internal.analytics.events.pruneOldEvents as any
 );
 
 export default crons;
