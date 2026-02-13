@@ -10,7 +10,7 @@ import { CouponStatus, CouponDiscountType, Coupon } from '@shared/types';
 
 export default function Coupons() {
   const navigate = useNavigate();
-  const coupons = useQuery(api.coupons.list);
+  const coupons = useQuery(api.coupons.list, {});
   const deleteMutation = useMutation(api.coupons.remove);
 
   // Filter States

@@ -9,7 +9,7 @@ import { CartRulesFilterToolbar, CartRulesTable } from '../components/cart-rules
 
 export default function CartRules() {
   const navigate = useNavigate();
-  const cartRules = useQuery(api.cartRules.get);
+  const cartRules = useQuery(api.cartRules.get, {});
   const deleteCartRule = useMutation(api.cartRules.remove);
   const isLoading = cartRules === undefined;
 

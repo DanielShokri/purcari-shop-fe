@@ -38,7 +38,7 @@ const roleOptions = createListCollection({
 });
 
 export default function Users() {
-  const users = useQuery(api.users.listAll);
+  const users = useQuery(api.users.listAll, {});
   const isLoading = users === undefined;
   
   const deleteUserMutation = useMutation(api.users.remove);
