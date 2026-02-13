@@ -74,7 +74,7 @@ export const create = adminMutation({
     const now = new Date().toISOString();
     return await ctx.db.insert("coupons", {
       ...args,
-      code: args.code.toUpperCase(),
+      code: (args.code as string).toUpperCase(),
       usageCount: 0,
       createdAt: now,
       updatedAt: now,
