@@ -45,7 +45,7 @@ export function useCartRuleEditor({ id }: UseCartRuleEditorProps) {
     defaultValues: {
       name: '',
       description: '',
-      status: 'active',
+      status: 'active' as const,
       ruleType: 'buy_x_get_y',
       value: undefined,
       getQuantity: 1,
