@@ -110,7 +110,7 @@ export const create = mutation({
         productName: item.productName,
         productImage: item.productImage,
         price: item.price,
-        quantity: item.quantity,
+        quantity: Number(item.quantity),
         total: item.price * Number(item.quantity),
       });
     }

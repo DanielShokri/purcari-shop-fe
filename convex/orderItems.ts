@@ -28,7 +28,7 @@ export const create = mutation({
         productName: item.productName,
         productImage: item.productImage,
         variant: item.variant,
-        quantity: item.quantity,
+        quantity: Number(item.quantity),
         price: item.price,
         total: total,
       });
