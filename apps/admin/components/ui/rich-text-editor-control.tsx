@@ -99,11 +99,13 @@ export function createBooleanControl(config: BooleanControlConfig) {
       const variant =
         getVariant && !getProps ? getVariant(editor) : dynamicProps.variant
 
+      const IconComponent = Icon as React.ComponentType<any>
+
       return (
         <ButtonControl
           ref={ref}
           label={label}
-          icon={<Icon />}
+          icon={Icon ? <IconComponent /> : undefined}
           variant={variant}
           onClick={() => command(editor)}
           disabled={disabled}
@@ -255,6 +257,8 @@ export function createSwatchControl(config: SwatchControlConfig) {
       const disabled = isDisabled ? isDisabled(editor) : false
       const dynamicProps = getProps ? getProps(editor) : {}
 
+      const IconComponent = Icon as React.ComponentType<any>
+
       return (
         <Popover.Root
           open={open}
@@ -273,7 +277,7 @@ export function createSwatchControl(config: SwatchControlConfig) {
                 {...props}
               >
                 <VStack gap="1px">
-                  {Icon && <Icon />}
+                  {Icon && <IconComponent />}
                   <ColorSwatch value={currentValue} h="4px" w="100%" />
                 </VStack>
               </IconButton>
