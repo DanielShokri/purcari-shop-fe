@@ -22,7 +22,9 @@
     "paths": {
       "@shared/*": ["packages/shared-*/src"],
       "@convex/api": ["convex/_generated/api"],
-      "@convex/dataModel": ["convex/_generated/dataModel"]
+      "@convex/dataModel": ["convex/_generated/dataModel"],
+      "@/components/ui/color-mode": ["apps/admin/components/ui/color-mode.tsx"],
+      "@/components/notifications": ["apps/admin/components/notifications/index.ts"]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true,
