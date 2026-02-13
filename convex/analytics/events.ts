@@ -1,4 +1,5 @@
 import { mutation, internalMutation } from "../_generated/server";
+import type { Id } from "../_generated/dataModel";
 import { v } from "convex/values";
 import {
   dailyViewsAggregate,
@@ -18,7 +19,7 @@ export const trackEvent = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    const userId = identity?.subject;
+    const userId = identity?.subject as Id<"users"> | undefined;
     const timestamp = Date.now();
 
     // Insert the raw event
@@ -63,7 +64,7 @@ export const track = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    const userId = identity?.subject;
+    const userId = identity?.subject as Id<"users"> | undefined;
     const timestamp = Date.now();
 
     const eventDoc = await ctx.db.insert("analyticsEvents", {
@@ -101,7 +102,7 @@ export const identifyUser = mutation({
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    const userId = identity?.subject;
+    const userId = identity?.subject as Id<"users"> | undefined;
     if (!userId) {
       return { linked: 0 };
     }
@@ -130,7 +131,7 @@ export const linkIdentity = mutation({
   args: { anonymousId: v.string() },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
-    const userId = identity?.subject;
+    const userId = identity?.subject as Id<"users"> | undefined;
     if (!userId) return { linked: 0 };
 
     const guestEvents = await ctx.db
