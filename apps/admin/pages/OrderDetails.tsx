@@ -25,7 +25,7 @@ import { LoadingState, Breadcrumbs, StatusBadge, orderStatusConfig } from '../co
 import { toaster } from '../components/ui/toaster';
 
 // Helper to validate Convex ID format
-const isValidConvexId = (id: string, tableName: string): id is Id<typeof tableName> => {
+const isValidConvexId = (id: string, tableName: string): boolean => {
   return typeof id === 'string' && id.startsWith(`${tableName}:`) && id.length > tableName.length + 10;
 };
 
