@@ -83,18 +83,6 @@ export enum CouponStatus {
   SCHEDULED = 'scheduled',
 }
 
-export enum CartRuleType {
-  SHIPPING = 'shipping',
-  DISCOUNT = 'discount',
-  RESTRICTION = 'restriction',
-  BENEFIT = 'benefit',
-}
-
-export enum CartRuleStatus {
-  ACTIVE = 'active',
-  PAUSED = 'paused',
-}
-
 export enum NotificationType {
   SUCCESS = 'success',
   INFO = 'info',
