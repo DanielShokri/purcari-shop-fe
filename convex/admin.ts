@@ -45,8 +45,8 @@ export const globalSearch = adminQuery({
   },
   handler: async (ctx, args) => {
     const startTime = Date.now();
-    const limit = args.limit || 10;
-    const searchQuery = args.query.trim();
+    const limit = (args.limit as number | undefined) || 10;
+    const searchQuery = (args.query as string).trim();
     
     if (!searchQuery) {
       return {
