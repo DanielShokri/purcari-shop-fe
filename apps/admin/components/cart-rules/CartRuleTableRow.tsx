@@ -34,7 +34,7 @@ export default function CartRuleTableRow({
     const config = cartRule.config;
     if (!config) return '-';
 
-    switch (cartRule.ruleType) {
+    switch (config.type) {
       case 'shipping':
         return `מעל ₪${config.minOrderAmount}`;
       case 'bulk_discount':
