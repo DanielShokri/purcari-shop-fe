@@ -17,7 +17,8 @@ export const trackEvent = mutation({
     anonymousId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = ctx.session?.userId;
+    const identity = await ctx.auth.getUserIdentity();
+    const userId = identity?.subject;
     const timestamp = Date.now();
 
     // Insert the raw event
@@ -61,7 +62,8 @@ export const track = mutation({
     anonymousId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const userId = ctx.session?.userId;
+    const identity = await ctx.auth.getUserIdentity();
+    const userId = identity?.subject;
     const timestamp = Date.now();
 
     const eventDoc = await ctx.db.insert("analyticsEvents", {
@@ -98,7 +100,8 @@ export const identifyUser = mutation({
     anonymousId: v.string(),
   },
   handler: async (ctx, args) => {
-    const userId = ctx.session?.userId;
+    const identity = await ctx.auth.getUserIdentity();
+    const userId = identity?.subject;
     if (!userId) {
       return { linked: 0 };
     }
@@ -126,7 +129,8 @@ export const identifyUser = mutation({
 export const linkIdentity = mutation({
   args: { anonymousId: v.string() },
   handler: async (ctx, args) => {
-    const userId = ctx.session?.userId;
+    const identity = await ctx.auth.getUserIdentity();
+    const userId = identity?.subject;
     if (!userId) return { linked: 0 };
 
     const guestEvents = await ctx.db
