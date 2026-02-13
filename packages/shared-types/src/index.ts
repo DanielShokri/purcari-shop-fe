@@ -108,7 +108,7 @@ export interface Product {
   price: number;
   salePrice?: number;
   onSale?: boolean;
-  quantityInStock: number | bigint;
+  quantityInStock: number;
   sku: string;
   stockStatus?: StockStatus | 'in_stock' | 'out_of_stock' | 'low_stock';
   status?: ProductStatus | 'active' | 'draft' | 'hidden' | 'discontinued';
@@ -121,7 +121,7 @@ export interface Product {
   images?: string[];
   wineType?: WineType | 'Red' | 'White' | 'Rosé' | 'Sparkling';
   region?: string;
-  vintage?: number | bigint;
+  vintage?: number;
   alcoholContent?: number;
   volume?: string;
   grapeVariety?: string;
