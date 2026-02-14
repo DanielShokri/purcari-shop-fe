@@ -7,7 +7,7 @@ import { Id } from '@convex/dataModel';
 
 import { CartRuleType, CartRuleStatus } from '@shared/types';
 
-interface CartRuleForm {
+export interface CartRuleForm {
   name: string;
   description: string;
   status: CartRuleStatus;

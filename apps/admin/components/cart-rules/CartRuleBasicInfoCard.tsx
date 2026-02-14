@@ -14,23 +14,12 @@ import {
   Portal,
 } from '@chakra-ui/react';
 import { Control, Controller, FieldErrors, UseFormRegister } from 'react-hook-form';
-import { CartRuleStatus } from '@shared/types';
-import { SupportedRuleType } from '../../utils/cartRuleHelpers';
-
-interface CartRuleFormData {
-  name: string;
-  description?: string;
-  status: 'active' | 'paused' | 'draft';
-  ruleType: SupportedRuleType;
-  value?: number;
-  priority?: number;
-  config: any;
-}
+import { CartRuleForm } from '../../hooks/useCartRuleEditor';
 
 interface CartRuleBasicInfoCardProps {
-  register: UseFormRegister<CartRuleFormData>;
-  control: Control<CartRuleFormData>;
-  errors: FieldErrors<CartRuleFormData>;
+  register: UseFormRegister<CartRuleForm>;
+  control: Control<CartRuleForm>;
+  errors: FieldErrors<CartRuleForm>;
   typeOptions: any;
   statusOptions: any;
 }
