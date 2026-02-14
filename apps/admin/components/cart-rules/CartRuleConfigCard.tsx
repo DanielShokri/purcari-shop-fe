@@ -9,22 +9,12 @@ import {
   SimpleGrid,
 } from '@chakra-ui/react';
 import { FieldErrors, UseFormRegister } from 'react-hook-form';
+import { CartRuleForm } from '../../hooks/useCartRuleEditor';
 import { SupportedRuleType } from '../../utils/cartRuleHelpers';
 
-interface CartRuleFormData {
-  name: string;
-  description?: string;
-  status: 'active' | 'paused' | 'draft';
-  ruleType: SupportedRuleType;
-  value?: number;
-  getQuantity?: number;
-  priority?: number;
-  config: any;
-}
-
 interface CartRuleConfigCardProps {
-  register: UseFormRegister<CartRuleFormData>;
-  errors: FieldErrors<CartRuleFormData>;
+  register: UseFormRegister<CartRuleForm>;
+  errors: FieldErrors<CartRuleForm>;
   ruleType: SupportedRuleType | undefined;
   getValueLabel: (type: SupportedRuleType | undefined) => string;
 }
