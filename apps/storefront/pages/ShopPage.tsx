@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
@@ -7,6 +7,7 @@ import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/common/Breadcrumbs';
 import { Filter, ArrowUpDown, ChevronDown } from 'lucide-react';
 import { Product } from '@shared/types';
+import { useTrackCategoryViewed } from '../hooks/useAnalytics';
 
 type SortOption = 'newest' | 'price-asc' | 'price-desc' | 'on-sale' | 'name';
 
@@ -24,9 +25,26 @@ const ShopPage: React.FC = () => {
   
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const { trackCategoryViewed } = useTrackCategoryViewed();
   
   // Derive activeCategory directly from URL - single source of truth
   const activeCategory = categoryFromUrl || 'all';
+
+  // Define categories early for use in useEffect
+  const categories = [
+    { id: 'all', label: 'הכל' },
+    // If we have categories data from Convex, we would use it here
+    // For now, we use displayCategories fallback
+  ];
+
+  // If we have no categories from DB, use fallback wine categories
+  const displayCategories = categories.length > 1 ? categories : [
+    { id: 'all', label: 'הכל' },
+    { id: 'red-wine', label: 'יינות אדומים' },
+    { id: 'white-wine', label: 'יינות לבנים' },
+    { id: 'rose-wine', label: 'רוזה' },
+    { id: 'sparkling-wine', label: 'מבעבעים' },
+  ];
 
   // Update URL when category changes
   const handleCategoryChange = (categoryId: string) => {
@@ -44,6 +62,12 @@ const ShopPage: React.FC = () => {
 
   const isLoading = productsResult === undefined;
   const products = productsResult || [];
+
+  // Track category views when category changes
+  useEffect(() => {
+    const categoryLabel = displayCategories.find(c => c.id === activeCategory)?.label || 'כל המוצרים';
+    trackCategoryViewed(activeCategory, categoryLabel, products.length);
+  }, [activeCategory, products.length, trackCategoryViewed, displayCategories]);
 
   // Sort products based on selected option
   const sortedProducts = useMemo(() => {
@@ -77,21 +101,6 @@ const ShopPage: React.FC = () => {
   }, [products, sortBy]);
 
   const currentSortLabel = sortOptions.find(opt => opt.value === sortBy)?.label || 'מיון';
-
-  const categories = [
-    { id: 'all', label: 'הכל' },
-    // If we have categories data from Convex, we would use it here
-    // For now, we use displayCategories fallback
-  ];
-
-  // If we have no categories from DB, use fallback wine categories
-  const displayCategories = categories.length > 1 ? categories : [
-    { id: 'all', label: 'הכל' },
-    { id: 'red-wine', label: 'יינות אדומים' },
-    { id: 'white-wine', label: 'יינות לבנים' },
-    { id: 'rose-wine', label: 'רוזה' },
-    { id: 'sparkling-wine', label: 'מבעבעים' },
-  ];
 
   const currentCategoryLabel = displayCategories.find(c => c.id === activeCategory)?.label || 'הכל';
 

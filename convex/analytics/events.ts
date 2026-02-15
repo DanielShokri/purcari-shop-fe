@@ -1,6 +1,6 @@
 import { mutation, internalMutation } from "../_generated/server";
-import type { Id } from "../_generated/dataModel";
 import { v } from "convex/values";
+import { getAuthUserId } from "@convex-dev/auth/server";
 import {
   dailyViewsAggregate,
   activeUsersAggregate,
@@ -18,8 +18,7 @@ export const trackEvent = mutation({
     anonymousId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    const userId = identity?.subject as Id<"users"> | undefined;
+    const userId = await getAuthUserId(ctx);
     const timestamp = Date.now();
 
     // Insert the raw event
@@ -63,8 +62,7 @@ export const track = mutation({
     anonymousId: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    const userId = identity?.subject as Id<"users"> | undefined;
+    const userId = await getAuthUserId(ctx);
     const timestamp = Date.now();
 
     const eventDoc = await ctx.db.insert("analyticsEvents", {
@@ -101,8 +99,7 @@ export const identifyUser = mutation({
     anonymousId: v.string(),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    const userId = identity?.subject as Id<"users"> | undefined;
+    const userId = await getAuthUserId(ctx);
     if (!userId) {
       return { linked: 0 };
     }
@@ -130,8 +127,7 @@ export const identifyUser = mutation({
 export const linkIdentity = mutation({
   args: { anonymousId: v.string() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    const userId = identity?.subject as Id<"users"> | undefined;
+    const userId = await getAuthUserId(ctx);
     if (!userId) return { linked: 0 };
 
     const guestEvents = await ctx.db

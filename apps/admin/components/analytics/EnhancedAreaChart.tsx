@@ -1,23 +1,39 @@
-import React, { useState, useMemo } from 'react';
-import { Box, Flex, Heading, Card, Select, Portal, createListCollection, HStack, Button } from '@chakra-ui/react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import React, { useMemo } from 'react';
+import { Box, Flex, Heading, Card, Select, Portal, createListCollection } from '@chakra-ui/react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useColorModeValue } from '../ui/color-mode';
-import { TimeSeriesDataPoint, AnalyticsInterval } from '@shared/types';
+import { AnalyticsInterval } from '@shared/types';
 
-interface ViewsLineChartProps {
-  data: TimeSeriesDataPoint[];
+interface DataPoint {
+  name: string;
+  value: number;
+  timestamp: string;
+  [key: string]: any;
+}
+
+interface EnhancedAreaChartProps {
+  data: DataPoint[];
   title?: string;
   interval: AnalyticsInterval;
   onIntervalChange: (interval: AnalyticsInterval) => void;
+  color?: string;
+  secondaryDataKey?: string;
+  secondaryColor?: string;
+  valueFormatter?: (value: number) => string;
+  showGrid?: boolean;
 }
 
-export default function ViewsLineChart({ 
+export default function EnhancedAreaChart({ 
   data, 
-  title = 'צפיות לאורך זמן',
+  title = 'נתונים לאורך זמן',
   interval,
-  onIntervalChange
-}: ViewsLineChartProps) {
-  const chartStroke = useColorModeValue('#3b82f6', '#3B82F6');
+  onIntervalChange,
+  color = '#3b82f6',
+  secondaryDataKey,
+  secondaryColor = '#8b5cf6',
+  valueFormatter = (v) => v.toLocaleString('he-IL'),
+  showGrid = true,
+}: EnhancedAreaChartProps) {
   const chartGridStroke = useColorModeValue('#e2e8f0', '#374151');
   const chartAxisStroke = useColorModeValue('#94a3b8', '#9CA3AF');
   const tooltipBg = useColorModeValue('#fff', '#1F2937');
@@ -89,9 +105,29 @@ export default function ViewsLineChart({
             </Portal>
           </Select.Root>
         </Flex>
-        <Box h="64" w="full" style={{ direction: 'ltr' }}>
+        <Box h="72" w="full" style={{ direction: 'ltr' }}>
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id={`gradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor={color} stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor={color} stopOpacity={0.05}/>
+                </linearGradient>
+                {secondaryDataKey && (
+                  <linearGradient id={`gradient-${secondaryColor.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={secondaryColor} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={secondaryColor} stopOpacity={0.05}/>
+                  </linearGradient>
+                )}
+              </defs>
+              {showGrid && (
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  vertical={false} 
+                  stroke={chartGridStroke}
+                  opacity={0.5}
+                />
+              )}
               <XAxis 
                 dataKey="name" 
                 stroke={chartAxisStroke} 
@@ -104,12 +140,7 @@ export default function ViewsLineChart({
                 fontSize={12} 
                 tickLine={false}
                 axisLine={false}
-              />
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                vertical={false} 
-                stroke={chartGridStroke}
-                opacity={0.5}
+                tickFormatter={valueFormatter}
               />
               <Tooltip
                 contentStyle={{ 
@@ -119,16 +150,27 @@ export default function ViewsLineChart({
                   boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
                 }}
                 labelStyle={{ color: '#64748b' }}
+                formatter={(value: number) => [valueFormatter(value), '']}
               />
-              <Line 
+              <Area 
                 type="monotone" 
                 dataKey="value" 
-                stroke={chartStroke} 
+                stroke={color} 
                 strokeWidth={2}
-                dot={{ fill: chartStroke, r: 4 }}
-                activeDot={{ r: 6 }}
+                fill={`url(#gradient-${color.replace('#', '')})`}
+                activeDot={{ r: 6, fill: color }}
               />
-            </LineChart>
+              {secondaryDataKey && (
+                <Area 
+                  type="monotone" 
+                  dataKey={secondaryDataKey} 
+                  stroke={secondaryColor} 
+                  strokeWidth={2}
+                  fill={`url(#gradient-${secondaryColor.replace('#', '')})`}
+                  activeDot={{ r: 6, fill: secondaryColor }}
+                />
+              )}
+            </AreaChart>
           </ResponsiveContainer>
         </Box>
       </Card.Body>

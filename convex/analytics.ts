@@ -7,7 +7,13 @@ export {
   getViewsSeries,
   getNewUsersSeries,
   getTopProducts,
-  
+  getConversionMetrics,
+  getCheckoutFunnel,
+  getCartMetrics,
+  getCouponMetrics,
+  getSearchMetrics,
+  getSalesSeries,
+
   // Mutations
   trackEvent,
   track,

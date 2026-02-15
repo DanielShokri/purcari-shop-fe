@@ -21,4 +21,10 @@ export {
   getViewsSeries,
   getNewUsersSeries,
   getTopProducts,
+  getConversionMetrics,
+  getCheckoutFunnel,
+  getCartMetrics,
+  getCouponMetrics,
+  getSearchMetrics,
+  getSalesSeries,
 } from "./queries";

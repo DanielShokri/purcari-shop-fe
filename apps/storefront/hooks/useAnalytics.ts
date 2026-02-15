@@ -252,3 +252,191 @@ export function useTrackSearch() {
 
   return { trackSearch };
 }
+
+/**
+ * Hook for tracking cart view events (cart_viewed)
+ */
+export function useTrackCartViewed() {
+  const { track } = useAnalytics();
+
+  const trackCartViewed = useCallback(
+    (itemCount: number, cartTotal: number) => {
+      track("cart_viewed", {
+        itemCount,
+        cartTotal,
+      });
+    },
+    [track]
+  );
+
+  return { trackCartViewed };
+}
+
+/**
+ * Hook for tracking cart item removal events (cart_item_removed)
+ */
+export function useTrackCartItemRemoved() {
+  const { track } = useAnalytics();
+
+  const trackCartItemRemoved = useCallback(
+    (
+      productId: string,
+      productName: string,
+      quantity: number,
+      price: number,
+      remainingItems: number
+    ) => {
+      track("cart_item_removed", {
+        productId,
+        name: productName,
+        quantity,
+        price,
+        remainingItems,
+      });
+    },
+    [track]
+  );
+
+  return { trackCartItemRemoved };
+}
+
+/**
+ * Hook for tracking category view events (category_viewed)
+ */
+export function useTrackCategoryViewed() {
+  const { track } = useAnalytics();
+
+  const trackCategoryViewed = useCallback(
+    (
+      categoryId: string,
+      categoryName: string,
+      productCount: number,
+      filters?: Record<string, any>
+    ) => {
+      track("category_viewed", {
+        categoryId,
+        name: categoryName,
+        productCount,
+        filters,
+      });
+    },
+    [track]
+  );
+
+  return { trackCategoryViewed };
+}
+
+/**
+ * Hook for tracking checkout step events (checkout_step_viewed)
+ */
+export function useTrackCheckoutStep() {
+  const { track } = useAnalytics();
+
+  const trackCheckoutStep = useCallback(
+    (
+      step: "shipping" | "payment" | "review" | "confirmation",
+      stepNumber: number,
+      totalSteps: number,
+      cartValue: number,
+      itemCount: number
+    ) => {
+      track("checkout_step_viewed", {
+        step,
+        stepNumber,
+        totalSteps,
+        cartValue,
+        itemCount,
+      });
+    },
+    [track]
+  );
+
+  return { trackCheckoutStep };
+}
+
+/**
+ * Hook for tracking signup completion events (signup_completed)
+ */
+export function useTrackSignup() {
+  const { track } = useAnalytics();
+
+  const trackSignup = useCallback(
+    (method: "email" | "google" | "phone", hasPreviousSession: boolean) => {
+      track("signup_completed", {
+        method,
+        hasPreviousSession,
+      });
+    },
+    [track]
+  );
+
+  return { trackSignup };
+}
+
+/**
+ * Hook for tracking login completion events (login_completed)
+ */
+export function useTrackLogin() {
+  const { track } = useAnalytics();
+
+  const trackLogin = useCallback(
+    (method: "email" | "google" | "magic_link") => {
+      track("login_completed", {
+        method,
+      });
+    },
+    [track]
+  );
+
+  return { trackLogin };
+}
+
+/**
+ * Hook for tracking coupon application events (coupon_applied)
+ */
+export function useTrackCouponApplied() {
+  const { track } = useAnalytics();
+
+  const trackCouponApplied = useCallback(
+    (
+      couponCode: string,
+      discountAmount: number,
+      discountType: string,
+      orderTotal: number,
+      success: boolean,
+      failureReason?: string
+    ) => {
+      track("coupon_applied", {
+        couponCode,
+        discountAmount,
+        discountType,
+        orderTotal,
+        success,
+        failureReason,
+      });
+    },
+    [track]
+  );
+
+  return { trackCouponApplied };
+}
+
+/**
+ * Hook for tracking wishlist events (wishlist_item_added)
+ */
+export function useTrackWishlist() {
+  const { track } = useAnalytics();
+
+  const trackWishlistItemAdded = useCallback(
+    (productId: string, productName: string, price: number) => {
+      track("wishlist_item_added", {
+        productId,
+        name: productName,
+        price,
+      });
+    },
+    [track]
+  );
+
+  return { trackWishlistItemAdded };
+}

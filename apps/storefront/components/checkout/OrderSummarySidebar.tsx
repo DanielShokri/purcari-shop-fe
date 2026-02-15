@@ -129,7 +129,7 @@ const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                  <button
                    onClick={handleValidate}
                    disabled={validationState === 'validating' || !couponInput.trim()}
-                   className="px-4 py-2 bg-secondary text-white rounded-lg text-sm font-medium hover:bg-secondary-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 flex-shrink-0 whitespace-nowrap"
+                   className="px-4 py-2 bg-secondary text-white rounded-lg text-sm font-medium hover:bg-secondary-dark disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer flex items-center justify-center gap-2 flex-shrink-0 whitespace-nowrap"
                  >
                    {validationState === 'validating' && <Loader size={14} className="animate-spin" />}
                    בדוק
@@ -174,7 +174,7 @@ const OrderSummarySidebar: React.FC<OrderSummarySidebarProps> = ({
                </div>
                <button
                  onClick={handleRemove}
-                 className="text-xs text-green-700 hover:text-green-900 underline"
+                 className="text-xs text-green-700 hover:text-green-900 underline cursor-pointer transition-colors"
                >
                  הסר
                </button>

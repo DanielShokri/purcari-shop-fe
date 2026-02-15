@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppDispatch } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
 import { removeFromCart, updateQuantity, useCartSummaryWithRules } from '../store/slices/cartSlice';
 import { closeCartModal } from '../store/slices/uiSlice';
-import { useTrackCheckoutStart } from '../hooks/useAnalytics';
+import { useTrackCheckoutStart, useTrackCartViewed, useTrackCartItemRemoved } from '../hooks/useAnalytics';
 import { X, Trash2, Plus, Minus, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -14,8 +14,23 @@ const CartModal: React.FC = () => {
   const cartSummary = useCartSummaryWithRules();
   const { items, subtotal, discount, appliedBenefits } = cartSummary;
   const { trackCheckoutStart } = useTrackCheckoutStart();
+  const { trackCartViewed } = useTrackCartViewed();
+  const { trackCartItemRemoved } = useTrackCartItemRemoved();
 
-   const handleRemoveItem = (productId: string, title: string) => {
+  // Track cart viewed when modal opens
+  useEffect(() => {
+    trackCartViewed(items.length, subtotal);
+  }, []);
+
+   const handleRemoveItem = (productId: string, title: string, price: number, quantity: number) => {
+     // Track cart item removed
+     trackCartItemRemoved(
+       productId,
+       title,
+       quantity,
+       price,
+       items.length - 1
+     );
      dispatch(removeFromCart(productId));
      toast.info(`${title} הוסר מהסל`);
    };
@@ -106,12 +121,12 @@ const CartModal: React.FC = () => {
                         <Plus size={14} />
                       </button>
                     </div>
-                    <button 
-                      onClick={() => handleRemoveItem(item.productId, item.title)}
-                      className="text-gray-400 hover:text-red-500 cursor-pointer"
-                    >
-                      <Trash2 size={18} />
-                    </button>
+                    <button
+                       onClick={() => handleRemoveItem(item.productId, item.title, item.price, item.quantity)}
+                       className="text-gray-400 hover:text-red-500 cursor-pointer"
+                     >
+                       <Trash2 size={18} />
+                     </button>
                   </div>
                 </div>
               </div>

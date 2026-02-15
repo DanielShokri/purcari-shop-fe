@@ -7,7 +7,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, registerSchema, LoginInput, RegisterInput } from "../../schemas/validationSchemas";
 import { useAuth, SignUpInput, SignInInput } from "../../hooks/useAuth";
-import { useAnalytics } from "../../hooks/useAnalytics";
+import { useAnalytics, useTrackSignup, useTrackLogin } from "../../hooks/useAnalytics";
 
 type FormData = LoginInput | RegisterInput;
 
@@ -20,6 +20,8 @@ const AuthForm: React.FC = () => {
 
   const { signIn, signUp, isLoading, error, clearError } = useAuth();
   const { identify } = useAnalytics();
+  const { trackSignup } = useTrackSignup();
+  const { trackLogin } = useTrackLogin();
 
   const {
     register,
@@ -41,7 +43,10 @@ const AuthForm: React.FC = () => {
     if (isLogin) {
       const loginData: SignInInput = { email: data.email, password: data.password };
       success = await signIn(loginData);
-      if (success) toast.success("התחברת בהצלחה");
+      if (success) {
+        toast.success("התחברת בהצלחה");
+        trackLogin("email");
+      }
     } else {
       const registerData: SignUpInput = {
         email: data.email,
@@ -50,7 +55,10 @@ const AuthForm: React.FC = () => {
         phone: (data as RegisterInput).phone,
       };
       success = await signUp(registerData);
-      if (success) toast.success("ברוכים הבאים! החשבון נוצר בהצלחה");
+      if (success) {
+        toast.success("ברוכים הבאים! החשבון נוצר בהצלחה");
+        trackSignup("email", true);
+      }
     }
 
     if (success) {

@@ -5,7 +5,7 @@ import useToast from '../store/hooks/useToast';
 import { selectCartItems, clearCart, useCartSummaryWithRules, useCouponFlow } from '../store/slices/cartSlice';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { useTrackCheckoutStart } from '../hooks/useAnalytics';
+import { useTrackCheckoutStart, useTrackCheckoutStep } from '../hooks/useAnalytics';
 import { ShoppingBag } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useForm, FormProvider } from 'react-hook-form';
@@ -79,7 +79,9 @@ const CheckoutPage: React.FC = () => {
    const createOrder = useMutation(api.orders.create);
    const [isCreatingOrder, setIsCreatingOrder] = useState(false);
    const { trackCheckoutStart } = useTrackCheckoutStart();
+   const { trackCheckoutStep } = useTrackCheckoutStep();
    const hasTrackedCheckout = useRef(false);
+   const hasTrackedStep = useRef<number>(0);
 
    // Track checkout start when page loads with items
    useEffect(() => {
@@ -92,6 +94,26 @@ const CheckoutPage: React.FC = () => {
        );
      }
    }, [cartItems.length, subtotal, trackCheckoutStart]);
+
+   // Track checkout step changes
+   useEffect(() => {
+     if (cartItems.length > 0 && step !== hasTrackedStep.current) {
+       hasTrackedStep.current = step;
+       const stepNames: Record<number, "shipping" | "payment" | "review" | "confirmation"> = {
+         1: "shipping",
+         2: "payment",
+         3: "review",
+         4: "confirmation",
+       };
+       trackCheckoutStep(
+         stepNames[step],
+         step,
+         4,
+         subtotal,
+         cartItems.length
+       );
+     }
+   }, [step, cartItems.length, subtotal, trackCheckoutStep]);
 
    // Calculate total discount (automatic + applied coupon)
    const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;

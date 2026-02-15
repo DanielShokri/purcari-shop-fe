@@ -139,13 +139,6 @@ export const calculateCartTotals = (items: CartItem[], rules: CartRule[]): CartT
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
-  console.debug('[CartCalculation] Processing cart totals with rules:', {
-    itemCount,
-    subtotal,
-    rulesCount: rules.length,
-    rules: rules.map(r => ({ name: r.name, ruleType: r.ruleType, priority: r.priority }))
-  });
-
   let shippingCost = 29.90; // Default shipping cost
   let discount = 0;
   const validationErrors: string[] = [];
@@ -163,7 +156,6 @@ export const calculateCartTotals = (items: CartItem[], rules: CartRule[]): CartT
           discount += result.discount;
           appliedBenefits.push(result.benefit);
           freeItems.push(...result.freeItems);
-          console.debug('[CartCalculation] Applied Buy X Get Y rule:', rule.name, result);
         }
         break;
       }
@@ -173,7 +165,6 @@ export const calculateCartTotals = (items: CartItem[], rules: CartRule[]): CartT
         if (result.discount > 0) {
           discount += result.discount;
           appliedBenefits.push(result.benefit);
-          console.debug('[CartCalculation] Applied Bulk Discount rule:', rule.name, result);
         }
         break;
       }
@@ -183,13 +174,12 @@ export const calculateCartTotals = (items: CartItem[], rules: CartRule[]): CartT
         if (result.freeShipping) {
           shippingCost = 0;
           appliedBenefits.push(result.benefit);
-          console.debug('[CartCalculation] Applied Free Shipping rule:', rule.name);
         }
         break;
       }
 
       default:
-        console.warn('[CartCalculation] Unknown rule type:', (config as any).type);
+        break;
     }
   }
 
