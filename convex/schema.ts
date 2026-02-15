@@ -317,4 +317,24 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_userId_isRead", ["userId", "isRead"]),
+
+  // Rivhit Payment Transactions - tracks payment lifecycle for Israeli payment gateway
+  paymentTransactions: defineTable({
+    orderId: v.id("orders"),
+    rivhitPaymentUrl: v.optional(v.string()),
+    rivhitDocumentType: v.optional(v.number()),
+    rivhitDocumentNumber: v.optional(v.number()),
+    rivhitCustomerId: v.optional(v.number()),
+    rivhitDocumentLink: v.optional(v.string()),
+    rivhitConfirmationNumber: v.optional(v.number()),
+    status: v.string(), // RivhitPaymentStatus: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
+    amount: v.number(),
+    environment: v.string(), // 'test' | 'production'
+    ipnData: v.optional(v.string()),
+    errorMessage: v.optional(v.string()),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_orderId", ["orderId"])
+    .index("by_status", ["status"]),
 });

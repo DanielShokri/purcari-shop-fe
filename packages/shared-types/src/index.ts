@@ -482,5 +482,70 @@ export interface User extends AuthUser {
 }
 
 // ============================================================================
+// RIVHIT PAYMENT GATEWAY TYPES
+// ============================================================================
+
+// Rivhit Payment Gateway Types
+export type RivhitPaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+
+export type RivhitEnvironment = 'test' | 'production';
+
+export interface RivhitDocumentPageRequest {
+  api_token: string;
+  document_type: number; // Invoice-Receipt type ID from Rivhit
+  receipt_type?: number;
+  customer_id?: number;
+  last_name?: string;
+  first_name?: string;
+  address?: string;
+  city?: string;
+  zipcode?: number;
+  phone?: string;
+  email_to?: string;
+  comments?: string;
+  price_include_vat?: boolean;
+  items: Array<{
+    catalog_number?: string;
+    quantity: number;
+    price: number;
+    description: string;
+    item_id?: number;
+  }>;
+  redirect_url: string;
+  ipn_url: string;
+  ipn_data?: string;
+  create_customer?: boolean;
+  find_by_mail?: boolean;
+  find_by_phone?: boolean;
+  send_mail?: boolean;
+}
+
+export interface RivhitDocumentPageResponse {
+  error_code: number;
+  client_message: string | null;
+  debug_message: string | null;
+  data: {
+    page_url: string;
+  } | null;
+}
+
+export interface RivhitPaymentTransaction {
+  orderId: string;
+  rivhitPaymentUrl?: string;
+  rivhitDocumentType?: number;
+  rivhitDocumentNumber?: number;
+  rivhitCustomerId?: number;
+  rivhitDocumentLink?: string;
+  rivhitConfirmationNumber?: number;
+  status: RivhitPaymentStatus;
+  amount: number;
+  environment: RivhitEnvironment;
+  ipnData?: string;
+  errorMessage?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ============================================================================
 // END OF SHARED TYPES
 // ============================================================================
