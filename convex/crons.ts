@@ -1,3 +1,7 @@
+// @ts-nocheck
+// Type instantiation depth issues with Convex internal API references
+// This file compiles correctly at runtime but TypeScript cannot verify it
+
 import { cronJobs } from "convex/server";
 import { internal } from "./_generated/api";
 
@@ -10,7 +14,7 @@ const crons = cronJobs();
 crons.daily(
   "prune analytics events",
   { hourUTC: 2, minuteUTC: 0 },
-  internal.analytics.events.pruneOldEvents as any
+  internal.analytics.events.pruneOldEvents
 );
 
 export default crons;
