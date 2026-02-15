@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
 import { selectCartItems, clearCart, useCartSummaryWithRules, useCouponFlow } from '../store/slices/cartSlice';
-import { useMutation, useQuery } from 'convex/react';
+import { useMutation, useQuery, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useTrackCheckoutStart, useTrackCheckoutStep } from '../hooks/useAnalytics';
 import { ShoppingBag } from 'lucide-react';
@@ -15,7 +15,6 @@ import { checkoutSchema, CheckoutInput } from '../schemas/validationSchemas';
 import CheckoutProgressBar from '../components/checkout/CheckoutProgressBar';
 import ShippingStep from '../components/checkout/ShippingStep';
 import PaymentStep from '../components/checkout/PaymentStep';
-import ReviewStep from '../components/checkout/ReviewStep';
 import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
 
 const CheckoutPage: React.FC = () => {
@@ -29,37 +28,35 @@ const CheckoutPage: React.FC = () => {
   const user = useQuery(api.users.get);
   const addresses = useQuery(api.userAddresses.list, user ? { userId: user._id } : "skip");
   
-   const [step, setStep] = useState(1);
+  // Changed from 3 steps to 2 steps: 1 = Shipping, 2 = Review & Pay
+  const [step, setStep] = useState(1);
 
-   // Initialize coupon flow
-   const {
-     validationState,
-     validationError,
-     appliedCoupon,
-     handleValidateCoupon,
-     handleApplyCoupon,
-     handleRemoveCoupon,
-   } = useCouponFlow();
+  // Initialize coupon flow
+  const {
+    validationState,
+    validationError,
+    appliedCoupon,
+    handleValidateCoupon,
+    handleApplyCoupon,
+    handleRemoveCoupon,
+  } = useCouponFlow();
 
-   const methods = useForm<CheckoutInput>({
-     resolver: zodResolver(checkoutSchema),
-     defaultValues: {
-       name: '',
-       email: '',
-       phone: '',
-       street: '',
-       city: '',
-       postalCode: '',
-       country: 'Israel',
-       cardNumber: '',
-       expiryDate: '',
-       cvv: '',
-     }
-   });
+  const methods = useForm<CheckoutInput>({
+    resolver: zodResolver(checkoutSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      phone: '',
+      street: '',
+      city: '',
+      postalCode: '',
+      country: 'Israel',
+    }
+  });
 
-   const { watch, setValue, trigger, handleSubmit } = methods;
+  const { watch, setValue, trigger } = methods;
 
-   // Pre-fill form if user is logged in
+  // Pre-fill form if user is logged in
   useEffect(() => {
     if (user) {
       setValue('name', user.name || '');
@@ -76,117 +73,138 @@ const CheckoutPage: React.FC = () => {
     }
   }, [user, addresses, setValue]);
 
-   const createOrder = useMutation(api.orders.create);
-   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-   const { trackCheckoutStart } = useTrackCheckoutStart();
-   const { trackCheckoutStep } = useTrackCheckoutStep();
-   const hasTrackedCheckout = useRef(false);
-   const hasTrackedStep = useRef<number>(0);
+  const createOrder = useMutation(api.orders.create);
+  const createPaymentPage = useAction(api.rivhit.createPaymentPage);
+  
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  
+  const { trackCheckoutStart } = useTrackCheckoutStart();
+  const { trackCheckoutStep } = useTrackCheckoutStep();
+  const hasTrackedCheckout = useRef(false);
+  const hasTrackedStep = useRef<number>(0);
 
-   // Track checkout start when page loads with items
-   useEffect(() => {
-     if (cartItems.length > 0 && !hasTrackedCheckout.current) {
-       hasTrackedCheckout.current = true;
-       trackCheckoutStart(
-         `checkout_${Date.now()}`,
-         cartItems.length,
-         subtotal
-       );
-     }
-   }, [cartItems.length, subtotal, trackCheckoutStart]);
-
-   // Track checkout step changes
-   useEffect(() => {
-     if (cartItems.length > 0 && step !== hasTrackedStep.current) {
-       hasTrackedStep.current = step;
-       const stepNames: Record<number, "shipping" | "payment" | "review" | "confirmation"> = {
-         1: "shipping",
-         2: "payment",
-         3: "review",
-         4: "confirmation",
-       };
-       trackCheckoutStep(
-         stepNames[step],
-         step,
-         4,
-         subtotal,
-         cartItems.length
-       );
-     }
-   }, [step, cartItems.length, subtotal, trackCheckoutStep]);
-
-   // Calculate total discount (automatic + applied coupon)
-   const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-   const totalDiscount = automaticDiscount + couponDiscount;
-   const total = Math.max(0, subtotal + shipping - totalDiscount);
-
-    const nextStep = async () => {
-      if (validationErrors.length > 0) {
-        toast.error(validationErrors[0]);
-        return;
-      }
-
-    let fieldsToValidate: (keyof CheckoutInput)[] = [];
-    if (step === 1) {
-      fieldsToValidate = ['name', 'email', 'phone', 'street', 'city', 'postalCode'];
-    } else if (step === 2) {
-      fieldsToValidate = ['cardNumber', 'expiryDate', 'cvv'];
+  // Track checkout start when page loads with items
+  useEffect(() => {
+    if (cartItems.length > 0 && !hasTrackedCheckout.current) {
+      hasTrackedCheckout.current = true;
+      trackCheckoutStart(
+        `checkout_${Date.now()}`,
+        cartItems.length,
+        subtotal
+      );
     }
+  }, [cartItems.length, subtotal, trackCheckoutStart]);
+
+  // Track checkout step changes (now only 2 steps)
+  useEffect(() => {
+    if (cartItems.length > 0 && step !== hasTrackedStep.current) {
+      hasTrackedStep.current = step;
+      const stepNames: Record<number, "shipping" | "payment" | "review" | "confirmation"> = {
+        1: "shipping",
+        2: "review", // Review & Pay combined
+      };
+      trackCheckoutStep(
+        stepNames[step],
+        step,
+        2, // Total steps now 2
+        subtotal,
+        cartItems.length
+      );
+    }
+  }, [step, cartItems.length, subtotal, trackCheckoutStep]);
+
+  // Calculate total discount (automatic + applied coupon)
+  const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const totalDiscount = automaticDiscount + couponDiscount;
+  const total = Math.max(0, subtotal + shipping - totalDiscount);
+
+  const nextStep = async () => {
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
+      return;
+    }
+
+    // Step 1: Validate shipping fields
+    const fieldsToValidate: (keyof CheckoutInput)[] = ['name', 'email', 'phone', 'street', 'city', 'postalCode'];
 
     const isValid = await trigger(fieldsToValidate);
     if (isValid) {
-      setStep(s => s + 1);
+      setStep(2);
     }
   };
 
-  const prevStep = () => setStep(s => s - 1);
+  const prevStep = () => setStep(1);
 
-   const onSubmit = async (data: CheckoutInput) => {
-      try {
-        setIsCreatingOrder(true);
-        const orderId = await createOrder({
-          customerId: user?._id,
-          customerName: data.name,
-          customerEmail: data.email,
-          customerPhone: data.phone,
-          shippingAddress: {
-            street: data.street,
-            city: data.city,
-            postalCode: data.postalCode || '',
-            country: data.country,
-          },
-          payment: {
-            method: 'Credit Card',
-            transactionId: `mock_${Date.now()}`,
-            chargeDate: new Date().toISOString(),
-          },
-          items: cartItems.map(item => ({
-            productId: item.productId as any, // Convex IDs need proper casting if they come from strings
-            productName: item.title,
-            productImage: item.imgSrc,
-            quantity: BigInt(item.quantity),
-            price: item.price,
-          })),
-          // Add coupon snapshot if applied
-          ...(appliedCoupon && {
-            appliedCouponCode: appliedCoupon.code,
-            appliedCouponDiscount: appliedCoupon.discountAmount,
-          }),
-        });
+  /**
+   * Handle the payment flow:
+   * 1. Create the order with 'pending' payment status
+   * 2. Call Rivhit API to create payment page
+   * 3. Redirect to Rivhit hosted payment page
+   */
+  const handleProceedToPayment = async () => {
+    const formData = watch();
+    
+    try {
+      setIsProcessingPayment(true);
+      setPaymentError(null);
 
-         trackCheckoutStart(`checkout_complete_${Date.now()}`, cartItems.length, total);
-         dispatch(clearCart());
-          toast.success('בחזקת! ההזמנה בוצעה בהצלחה!');
-          navigate(`/order-confirmation/${orderId}`);
-        } catch (err) {
-          console.error('Failed to create order:', err);
-          toast.error('שגיאה ביצירת ההזמנה, נסה שוב');
-      } finally {
-        setIsCreatingOrder(false);
+      // 1. Create the order first (with pending payment status)
+      const orderId = await createOrder({
+        customerId: user?._id,
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        shippingAddress: {
+          street: formData.street,
+          city: formData.city,
+          postalCode: formData.postalCode || '',
+          country: formData.country,
+        },
+        payment: {
+          method: 'Rivhit',
+          transactionId: 'pending',
+          chargeDate: new Date().toISOString(),
+        },
+        items: cartItems.map(item => ({
+          productId: item.productId as any,
+          productName: item.title,
+          productImage: item.imgSrc,
+          quantity: BigInt(item.quantity),
+          price: item.price,
+        })),
+        // Add coupon snapshot if applied
+        ...(appliedCoupon && {
+          appliedCouponCode: appliedCoupon.code,
+          appliedCouponDiscount: appliedCoupon.discountAmount,
+        }),
+      });
+
+      // 2. Call Rivhit to create payment page
+      const result = await createPaymentPage({ orderId });
+
+      if (result.success && result.paymentUrl) {
+        // 3. Redirect to Rivhit hosted payment page
+        // The cart will be cleared when they return to confirmation page after successful payment
+        window.location.href = result.paymentUrl;
+      } else {
+        // Payment page creation failed
+        setPaymentError(result.error || 'שגיאה ביצירת עמוד התשלום');
       }
-   };
+    } catch (err) {
+      console.error('Failed to process payment:', err);
+      setPaymentError(err instanceof Error ? err.message : 'שגיאה בעיבוד התשלום');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
 
-  if (cartItems.length === 0 && step !== 4) {
+  const handleRetryPayment = () => {
+    setPaymentError(null);
+    handleProceedToPayment();
+  };
+
+  if (cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <ShoppingBag size={64} className="mx-auto text-gray-300 mb-6" />
@@ -229,7 +247,7 @@ const CheckoutPage: React.FC = () => {
           {/* Form Area */}
           <div className="lg:col-span-2 bg-white p-8 rounded-2xl shadow-sm">
             <FormProvider {...methods}>
-              <form onSubmit={handleSubmit(onSubmit)}>
+              <form onSubmit={(e) => e.preventDefault()}>
                 <AnimatePresence mode="wait">
                   {step === 1 && (
                     <ShippingStep 
@@ -241,20 +259,13 @@ const CheckoutPage: React.FC = () => {
 
                   {step === 2 && (
                     <PaymentStep 
-                      key="step2" 
-                      nextStep={nextStep} 
-                      prevStep={prevStep} 
-                    />
-                  )}
-
-                  {step === 3 && (
-                    <ReviewStep 
-                      key="step3" 
-                      formData={watch()} 
-                      cartItems={cartItems} 
-                      handleSubmit={() => handleSubmit(onSubmit)()} 
-                      prevStep={prevStep} 
-                      isCreatingOrder={isCreatingOrder} 
+                      key="step2"
+                      total={total}
+                      onProceedToPayment={handleProceedToPayment}
+                      prevStep={prevStep}
+                      isProcessingPayment={isProcessingPayment}
+                      paymentError={paymentError}
+                      onRetry={handleRetryPayment}
                     />
                   )}
                 </AnimatePresence>
@@ -262,19 +273,19 @@ const CheckoutPage: React.FC = () => {
             </FormProvider>
           </div>
 
-           <OrderSummarySidebar 
-             cartItems={cartItems}
-             subtotal={subtotal}
-             shipping={shipping}
-             discount={totalDiscount}
-             total={total}
-             appliedCoupon={appliedCoupon}
-             validationState={validationState}
-             validationError={validationError}
-             onValidateCoupon={handleValidateCoupon}
-             onApplyCoupon={handleApplyCoupon}
-             onRemoveCoupon={handleRemoveCoupon}
-           />
+          <OrderSummarySidebar 
+            cartItems={cartItems}
+            subtotal={subtotal}
+            shipping={shipping}
+            discount={totalDiscount}
+            total={total}
+            appliedCoupon={appliedCoupon}
+            validationState={validationState}
+            validationError={validationError}
+            onValidateCoupon={handleValidateCoupon}
+            onApplyCoupon={handleApplyCoupon}
+            onRemoveCoupon={handleRemoveCoupon}
+          />
         </div>
       </div>
     </div>

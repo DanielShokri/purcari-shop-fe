@@ -59,11 +59,12 @@ export const shippingSchema = z.object({
   country: z.string().min(1, 'מדינה היא שדה חובה'),
 });
 
-// Payment Schema
+// Payment Schema - DEPRECATED: Now using Rivhit hosted payment page
+// Keeping the schema for backward compatibility if needed
 export const paymentSchema = z.object({
-  cardNumber: z.string().min(16, 'מספר כרטיס לא תקין').max(19, 'מספר כרטיס לא תקין'),
-  expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'פורמט תוקף לא תקין (MM/YY)'),
-  cvv: z.string().min(3, 'CVV לא תקין').max(4, 'CVV לא תקין'),
+  cardNumber: z.string().optional(),
+  expiryDate: z.string().optional(),
+  cvv: z.string().optional(),
 });
 
 // Profile Schema
@@ -82,7 +83,7 @@ export const addressFormSchema = z.object({
   isDefault: z.boolean(),
 });
 
-// Checkout Schema (Combined)
+// Checkout Schema (Shipping only - payment handled by Rivhit hosted page)
 export const checkoutSchema = z.object({
   // Shipping
   name: nameSchema,
@@ -92,10 +93,6 @@ export const checkoutSchema = z.object({
   city: citySchema,
   postalCode: postalCodeSchema,
   country: z.string().min(1, 'מדינה היא שדה חובה'),
-  // Payment
-  cardNumber: z.string().min(16, 'מספר כרטיס לא תקין').max(19, 'מספר כרטיס לא תקין'),
-  expiryDate: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, 'פורמט תוקף לא תקין (MM/YY)'),
-  cvv: z.string().min(3, 'CVV לא תקין').max(4, 'CVV לא תקין'),
   // Coupon
   couponCode: z.string().optional(),
 });
