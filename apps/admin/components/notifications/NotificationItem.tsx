@@ -37,7 +37,7 @@ function getNotificationStyle(type: NotificationType) {
       };
     case NotificationType.INFO:
       return {
-        icon: 'person_add',
+        icon: 'info',
         iconBg: 'blue.100',
         iconBgDark: 'blue.900/30',
         iconColor: 'blue.600',
@@ -51,6 +51,14 @@ function getNotificationStyle(type: NotificationType) {
         iconColor: 'amber.600',
         iconColorDark: 'amber.500',
       };
+    case NotificationType.ERROR:
+      return {
+        icon: 'error',
+        iconBg: 'red.100',
+        iconBgDark: 'red.900/30',
+        iconColor: 'red.600',
+        iconColorDark: 'red.400',
+      };
     case NotificationType.ORDER:
       return {
         icon: 'shopping_cart',
@@ -58,6 +66,54 @@ function getNotificationStyle(type: NotificationType) {
         iconBgDark: 'purple.900/30',
         iconColor: 'purple.600',
         iconColorDark: 'purple.400',
+      };
+    case NotificationType.INVENTORY:
+      return {
+        icon: 'warehouse',
+        iconBg: 'cyan.100',
+        iconBgDark: 'cyan.900/30',
+        iconColor: 'cyan.600',
+        iconColorDark: 'cyan.400',
+      };
+    case NotificationType.USER_ACTION:
+      return {
+        icon: 'person_add',
+        iconBg: 'indigo.100',
+        iconBgDark: 'indigo.900/30',
+        iconColor: 'indigo.600',
+        iconColorDark: 'indigo.400',
+      };
+    case NotificationType.PAYMENT:
+      return {
+        icon: 'payment',
+        iconBg: 'emerald.100',
+        iconBgDark: 'emerald.900/30',
+        iconColor: 'emerald.600',
+        iconColorDark: 'emerald.400',
+      };
+    case NotificationType.PROMOTION:
+      return {
+        icon: 'sell',
+        iconBg: 'yellow.100',
+        iconBgDark: 'yellow.900/30',
+        iconColor: 'yellow.600',
+        iconColorDark: 'yellow.500',
+      };
+    case NotificationType.PRICE_CHANGE:
+      return {
+        icon: 'trending_up',
+        iconBg: 'lime.100',
+        iconBgDark: 'lime.900/30',
+        iconColor: 'lime.600',
+        iconColorDark: 'lime.400',
+      };
+    case NotificationType.SYSTEM_ERROR:
+      return {
+        icon: 'bug_report',
+        iconBg: 'rose.100',
+        iconBgDark: 'rose.900/30',
+        iconColor: 'rose.600',
+        iconColorDark: 'rose.400',
       };
     case NotificationType.SYSTEM:
     default:

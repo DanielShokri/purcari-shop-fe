@@ -297,8 +297,22 @@ export default defineSchema({
     userId: v.id("users"), 
     title: v.string(),
     message: v.string(),
-    type: v.union(v.literal("info"), v.literal("warning"), v.literal("error")),
+    type: v.union(
+      v.literal("info"),
+      v.literal("warning"),
+      v.literal("error"),
+      v.literal("success"),
+      v.literal("order"),
+      v.literal("system"),
+      v.literal("inventory"),
+      v.literal("user_action"),
+      v.literal("payment"),
+      v.literal("promotion"),
+      v.literal("price_change"),
+      v.literal("system_error")
+    ),
     isRead: v.boolean(),
+    icon: v.optional(v.string()),
     createdAt: v.string(),
   })
     .index("by_userId", ["userId"])

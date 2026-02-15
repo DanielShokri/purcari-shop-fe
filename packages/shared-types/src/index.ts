@@ -90,6 +90,12 @@ export enum NotificationType {
   ERROR = 'error',
   ORDER = 'order',
   SYSTEM = 'system',
+  INVENTORY = 'inventory',
+  USER_ACTION = 'user_action',
+  PAYMENT = 'payment',
+  PROMOTION = 'promotion',
+  PRICE_CHANGE = 'price_change',
+  SYSTEM_ERROR = 'system_error',
 }
 
 // ============================================================================
@@ -384,7 +390,7 @@ export interface Notification {
   _creationTime?: number;
   title: string;
   message: string;
-  type: NotificationType | 'info' | 'warning' | 'error' | 'success' | 'order' | 'system';
+  type: NotificationType | 'info' | 'warning' | 'error' | 'success' | 'order' | 'system' | 'inventory' | 'user_action' | 'payment' | 'promotion' | 'price_change' | 'system_error';
   isRead: boolean;
   icon?: string;
   createdAt?: string;
