@@ -1,22 +1,20 @@
 import React from 'react';
 import { Box, Flex, HStack, Text, Button, Card, Menu, Portal } from '@chakra-ui/react';
 import { SearchInput } from '../shared';
-import { CartRuleStatus, CartRuleType } from '@shared/types';
 
-// Type options
+// Type options - use string literals since CartRuleType is a type, not an enum
 const typeOptions = [
   { value: 'all', label: 'הכל' },
-  { value: CartRuleType.SHIPPING, label: 'משלוח' },
-  { value: CartRuleType.DISCOUNT, label: 'הנחה' },
-  { value: CartRuleType.RESTRICTION, label: 'הגבלות' },
-  { value: CartRuleType.BENEFIT, label: 'הטבה' },
+  { value: 'shipping', label: 'משלוח' },
+  { value: 'bulk_discount', label: 'הנחה כמותית' },
+  { value: 'buy_x_get_y', label: 'קנה X קבל Y' },
 ];
 
-// Status options
+// Status options - use string literals since CartRuleStatus is a type, not an enum
 const statusOptions = [
   { value: 'all', label: 'הכל' },
-  { value: CartRuleStatus.ACTIVE, label: 'פעיל' },
-  { value: CartRuleStatus.PAUSED, label: 'מושהה' },
+  { value: 'active', label: 'פעיל' },
+  { value: 'paused', label: 'מושהה' },
 ];
 
 interface CartRulesFilterToolbarProps {
