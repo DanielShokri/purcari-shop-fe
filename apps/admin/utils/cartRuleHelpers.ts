@@ -1,5 +1,4 @@
 import { createListCollection } from '@chakra-ui/react';
-import { CartRuleType, CartRuleStatus } from '@shared/types';
 
 export type SupportedRuleType = 'buy_x_get_y' | 'bulk_discount' | 'shipping';
 
@@ -12,11 +11,11 @@ export const typeOptions = createListCollection({
   ],
 });
 
-// Status options
+// Status options - use string literals since CartRuleStatus is a type, not an enum
 export const statusOptions = createListCollection({
   items: [
-    { label: 'פעיל', value: CartRuleStatus.ACTIVE },
-    { label: 'מושהה', value: CartRuleStatus.PAUSED },
+    { label: 'פעיל', value: 'active' as const },
+    { label: 'מושהה', value: 'paused' as const },
   ],
 });
 
