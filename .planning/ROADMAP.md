@@ -10,6 +10,31 @@
 |-------|------|--------|-------|
 | 01 | **Analytics Infrastructure** | ✓ Complete | 4/4 |
 | 02 | **Fix TypeScript Errors** | ✓ Complete | 5/5 |
+| 03 | **Rivhit Payment Integration** | In progress | 1/2 |
+
+---
+
+## In Progress
+
+### Phase 03: Rivhit Payment Integration
+
+**Status:** In progress (1/2 plans complete)
+
+**Goal:** Integrate Rivhit payment gateway for Israeli market payment processing and invoicing
+
+**Deliverables:**
+- ✓ paymentTransactions table with lifecycle tracking
+- ✓ Rivhit Document.Page API client action
+- ✓ IPN webhook endpoint for payment notifications
+- ✓ Post-payment redirect handler
+- [ ] Checkout flow integration (Plan 02)
+- [ ] Payment status UI in storefront
+
+**Plans:**
+- [x] 03-01-PLAN.md — Rivhit payment foundation (API client, schema, webhook)
+- [ ] 03-02-PLAN.md — Checkout flow integration
+
+**User setup required:** See `.planning/phases/03-rivhit-payment/03-USER-SETUP.md`
 
 ---
 
@@ -88,4 +113,6 @@ Phase 02 addressed TypeScript errors across the entire monorepo. Key fixes inclu
 | 2026-02-12 | Implement internal analytics alongside GA4 | Keep real-time dashboard in-house; use GA4 for marketing attribution |
 | 2026-02-12 | Track anonymous users | Wine purchases often happen in same session; need session tracking |
 | 2026-02-15 | Use @ts-nocheck for Convex type instantiation issues | Convex's generated types cause TS2589 errors; runtime is correct |
+| 2026-02-15 | Split Convex node/non-node code | Node actions for external APIs, helper files for mutations/queries |
+| 2026-02-15 | Use Invoice-Receipt (305) as default Rivhit doc type | Most common for Israeli e-commerce transactions |
 

@@ -1,51 +1,31 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 15, 2026 (10:05 UTC)
+**Last updated:** February 15, 2026 (17:10 UTC)
 
 ---
 
 ## Current Position
 
-**Active phase:** Phase 02 - Fix TypeScript Errors (complete)
-**Current plan:** 02-05 (completed)
-**Plans completed:** 5 of 5
+**Active phase:** Phase 03 - Rivhit Payment Integration
+**Current plan:** 03-01 (completed)
+**Plans completed:** 1 of 2
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan 03-01: Rivhit Payment Foundation
+  - Created paymentTransactions table with orderId and status indexes
+  - Added Rivhit payment types to shared-types package
+  - Built createPaymentPage action that calls Rivhit Document.Page API
+  - Implemented IPN webhook handler for payment notifications
+  - Added HTTP routes for /rivhit/ipn and /rivhit/redirect
+  - USER-SETUP.md created for Rivhit configuration
 - Plan 02-05: Fix CartRuleEditor Form Types
-  - Fixed cartRuleHelpers.ts to use string literals instead of CartRuleStatus enum
-  - Fixed CartRulesFilterToolbar.tsx to use correct CartRuleType/CartRuleStatus values
-  - Verified CartRuleEditor and child components use consistent CartRuleForm type
 - Plan 02-04: Fix TypeScript Errors in React Components
-  - Fixed CartRuleTableRow to use config.type for discriminated union narrowing
-  - Fixed NotificationItem NotificationType compatibility with type assertion
-  - Verified ProductTableRow and ProductCard have no bigint errors after shared-types fix
-  - Verified Analytics.tsx correctly handles optional retention property
 - Plan 02-03: Fix TypeScript Errors in Admin Hooks and Pages
-  - Fixed useCartRuleEditor status type with 'as const' assertion
-  - Fixed handleSubmit type using wrapper pattern
-  - Added second argument to useQuery calls in CartRules, Coupons, Users
-  - Fixed Id generic constraint in Users.tsx and OrderDetails.tsx
 - Plan 02-02: Fix TypeScript Errors in Convex Backend Functions
-  - Replaced ctx.session with ctx.auth.getUserIdentity() in analytics events
-  - Added type assertions for unknown validator types in admin.ts and coupons.ts
-  - Converted bigint quantities to Number() in orderItems.ts and orders.ts
-  - Fixed type instantiation error in crons.ts
-  - Added Id<"users"> type casts for proper type safety
 - Plan 02-01: Fix TypeScript Errors in Shared Types
-  - Removed duplicate CartRuleType and CartRuleStatus enum declarations
-  - Changed Product.quantityInStock and Product.vintage to number (removed bigint)
-  - Removed duplicate CartRule interface declaration
-  - TypeScript compilation now passes without errors
-- Plan 01-analytics-05: Identity Stitching & Standard Event Tracking
-  - Added by_anon_id and by_userId_event indexes for efficient identity queries
-  - track and linkIdentity mutations for unified tracking API
-  - Enhanced useAnalytics hook with identify() function and UUID generation
-  - Standard event tracking across storefront (product_viewed, cart_item_added, etc.)
-  - 180-day data retention via daily cron job at 2:00 AM UTC
-  - AuthForm integration calling identify() after login/registration
 
 ---
 
@@ -58,25 +38,17 @@
 | Use @convex-dev/aggregate component | Prevents unbounded table scans | 2026-02-12 |
 | Maintain RTL Hebrew UI | Business requirement | Existing |
 | Use Convex for all backend | Architecture decision | Existing |
-- [Phase 02-fix-ts-errors]: CartRuleStatus and CartRuleType are type aliases (string unions), not enums - use string literals
+| CartRuleStatus and CartRuleType are type aliases | Use string literals | Phase 02 |
+| Split Convex node/non-node code | Rivhit action in rivhit.ts, helpers in rivhitHelpers.ts | Phase 03-01 |
 
 ### Claude's Discretion
 
 | Area | Current thinking |
 |------|------------------|
 | Event naming convention | Use past tense: `page_viewed`, `product_viewed`, `cart_item_added` |
-| react-hook-form handleSubmit | Use wrapper pattern `handleSubmit(async (data) => { await onSubmit(data); })` for better TypeScript compatibility |
-| Convex Id validation | Use `boolean` return type instead of type predicate for dynamic table name validation |
-| useQuery pattern | Always pass second argument (empty object `{}` when no args needed) |
-| Time bucketing | Daily granularity for MVP; hourly can be added later |
-| Anonymous ID storage | localStorage with `convex_anon_id` key |
-| Date handling | UTC for all aggregation to ensure consistent timezone behavior |
-| Aggregate keys | Composite [date, dimension] keys enable multi-dimensional queries |
-| Aggregate query pattern | Use `{ namespace: undefined, bounds: {...} }` for count() API |
-| Identity stitching | Link anon events to user on auth via by_anon_id index |
-| Data retention | 180 days, pruned daily at 2:00 AM UTC |
-| Discriminated union narrowing | Use the discriminant property (e.g., `config.type`) for type narrowing, not the parent property |
-| Enum/string literal compatibility | Use type assertion when enum values match string literals |
+| Rivhit document type | Use Invoice-Receipt (305) as default for e-commerce |
+| IPN data storage | Store raw body as string for debugging |
+| Node action pattern | External API calls in "use node" action files, mutations in separate helper files |
 
 ### Deferred
 
@@ -90,18 +62,12 @@
 
 ## Pending Todos
 
-- [x] Install @convex-dev/aggregate package
-- [x] Create convex.config.ts with aggregate definitions
-- [x] Set up TableAggregate instances
-- [x] Create trackEvent mutation
-- [x] Implement useAnalytics hook
-- [x] Wire up dashboard queries
-- [x] Test with real page views
-- [x] Identity stitching indexes
-- [x] track and linkIdentity mutations
-- [x] Standard event tracking across storefront
-- [x] 180-day retention cron job
-- [x] AuthForm identify() integration
+- [x] Rivhit payment types and schema
+- [x] createPaymentPage action
+- [x] IPN webhook handler
+- [x] HTTP routes for Rivhit callbacks
+- [ ] Checkout flow integration (Plan 03-02)
+- [ ] Payment status UI in storefront
 
 ---
 
@@ -112,33 +78,27 @@
 - Convex backend with reactive queries
 - React + Vite frontend
 - Chakra UI v3 with RTL Hebrew support
-- Recharts for visualizations
-- Analytics system complete with aggregates and real-time dashboard
+- Rivhit payment gateway for Israeli market
+- Analytics system complete with aggregates
 
 ### Business Context
 - Wine e-commerce for Israeli market
 - Admin dashboard for store management
-- Need visibility into product performance
+- Rivhit integration for Israeli payment processing and invoicing
 - Conversion tracking important for ROI
 
 ---
 
 ## Next Actions
 
-1. Phase 02 complete: All 5 TypeScript error fix plans completed
-2. Phase 03 ready: Plan next phase of development
-3. Remaining TypeScript errors (Analytics.tsx, Convex) documented but out of scope
-4. Ready to transition to feature development
+1. Configure Rivhit API token via `npx convex env set` (see 03-USER-SETUP.md)
+2. Continue with Plan 03-02: Checkout flow integration
+3. Test payment flow end-to-end
 
 ---
 
-## Phase 01 Completion Summary
+## Performance Metrics
 
-All 5 plans completed:
-- Plan 01: Convex aggregate component installation and configuration
-- Plan 02: TableAggregate instances with date bucketing utilities
-- Plan 03: Event tracking system with automatic page view tracking
-- Plan 04: Dashboard queries wired to display real-time data
-- Plan 05: Identity stitching, standard event tracking, and data retention
-
-**Result:** Complete analytics infrastructure with identity resolution, event tracking, and 180-day retention.
+| Phase-Plan | Duration | Tasks | Files |
+|------------|----------|-------|-------|
+| 03-01      | 3 min    | 2     | 5     |
