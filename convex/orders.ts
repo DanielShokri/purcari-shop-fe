@@ -7,10 +7,9 @@ import { mutation, query } from "./_generated/server";
 import { api } from "./_generated/api";
 import { adminMutation, adminQuery } from "./authHelpers";
 
-// Israeli business logic constants
-const VAT_RATE = 0.17;
-const FREE_SHIPPING_THRESHOLD = 300;
-const STANDARD_SHIPPING_COST = 29.90;
+// Note: Product prices already include VAT. Shipping and discounts are calculated
+// by the frontend cart rules engine and passed in to the order creation mutation.
+// Do NOT recalculate shipping/tax here — it would double-count.
 
 /**
  * Create a new order.
@@ -24,7 +23,7 @@ export const create = mutation({
     customerPhone: v.optional(v.string()),
     customerAvatar: v.optional(v.string()),
     
-    // Items are needed for total calculations
+    // Items
     items: v.array(v.object({
       productId: v.id("products"),
       productName: v.string(),
@@ -32,6 +31,13 @@ export const create = mutation({
       price: v.float64(),
       quantity: v.int64(),
     })),
+
+    // Pre-calculated totals from the cart rules engine
+    // Prices already include VAT; shipping and discounts are calculated by cart rules
+    subtotal: v.float64(),
+    shippingCost: v.float64(),
+    discount: v.float64(),
+    total: v.float64(),
 
     // Shipping address (to be denormalized)
     shippingAddress: v.object({
@@ -55,20 +61,12 @@ export const create = mutation({
     appliedCouponDiscount: v.optional(v.float64()),
   },
   handler: async (ctx, args) => {
-    // 1. Calculate Subtotal
-    const subtotal = args.items.reduce(
-      (sum, item) => sum + item.price * Number(item.quantity),
-      0
-    );
+    // Use the pre-calculated totals from the cart rules engine
+    // Product prices already include VAT; shipping/discount are calculated by cart rules on the frontend
+    const { subtotal, shippingCost, discount, total } = args;
 
-    // 2. Calculate Shipping Cost (Free over threshold)
-    const shippingCost = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : STANDARD_SHIPPING_COST;
-
-    // 3. Calculate Tax (17% VAT)
-    const tax = Math.round(subtotal * VAT_RATE * 100) / 100;
-
-    // 4. Calculate Total
-    const total = Math.round((subtotal + shippingCost + tax) * 100) / 100;
+    // Tax is already included in product prices (Israeli standard: מחיר כולל מע"מ)
+    const tax = 0;
 
     const now = new Date().toISOString();
 
@@ -83,6 +81,7 @@ export const create = mutation({
       subtotal,
       tax,
       shippingCost,
+      discount,
       total,
 
       // Denormalized address

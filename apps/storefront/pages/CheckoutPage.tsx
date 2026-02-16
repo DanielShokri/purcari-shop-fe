@@ -11,9 +11,11 @@ import { AnimatePresence } from 'framer-motion';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { checkoutSchema, CheckoutInput } from '../schemas/validationSchemas';
+import { Id } from '../../../convex/_generated/dataModel';
 
 import CheckoutProgressBar from '../components/checkout/CheckoutProgressBar';
 import ShippingStep from '../components/checkout/ShippingStep';
+import ReviewStep from '../components/checkout/ReviewStep';
 import PaymentStep from '../components/checkout/PaymentStep';
 import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
 
@@ -28,8 +30,14 @@ const CheckoutPage: React.FC = () => {
   const user = useQuery(api.users.get);
   const addresses = useQuery(api.userAddresses.list, user ? { userId: user._id } : "skip");
   
-  // Changed from 3 steps to 2 steps: 1 = Shipping, 2 = Review & Pay
+  // 3 steps: 1 = Shipping, 2 = Review, 3 = Payment (iframe)
   const [step, setStep] = useState(1);
+
+  // Payment state
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [currentOrderId, setCurrentOrderId] = useState<Id<"orders"> | null>(null);
 
   // Initialize coupon flow
   const {
@@ -76,8 +84,7 @@ const CheckoutPage: React.FC = () => {
   const createOrder = useMutation(api.orders.create);
   const createPaymentPage = useAction(api.rivhit.createPaymentPage);
   
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   
   const { trackCheckoutStart } = useTrackCheckoutStart();
   const { trackCheckoutStep } = useTrackCheckoutStep();
@@ -96,18 +103,19 @@ const CheckoutPage: React.FC = () => {
     }
   }, [cartItems.length, subtotal, trackCheckoutStart]);
 
-  // Track checkout step changes (now only 2 steps)
+  // Track checkout step changes (now 3 steps)
   useEffect(() => {
     if (cartItems.length > 0 && step !== hasTrackedStep.current) {
       hasTrackedStep.current = step;
       const stepNames: Record<number, "shipping" | "payment" | "review" | "confirmation"> = {
         1: "shipping",
-        2: "review", // Review & Pay combined
+        2: "review",
+        3: "payment",
       };
       trackCheckoutStep(
         stepNames[step],
         step,
-        2, // Total steps now 2
+        3, // Total steps now 3
         subtotal,
         cartItems.length
       );
@@ -119,13 +127,13 @@ const CheckoutPage: React.FC = () => {
   const totalDiscount = automaticDiscount + couponDiscount;
   const total = Math.max(0, subtotal + shipping - totalDiscount);
 
+  // Step 1 -> Step 2: Validate shipping fields
   const nextStep = async () => {
     if (validationErrors.length > 0) {
       toast.error(validationErrors[0]);
       return;
     }
 
-    // Step 1: Validate shipping fields
     const fieldsToValidate: (keyof CheckoutInput)[] = ['name', 'email', 'phone', 'street', 'city', 'postalCode'];
 
     const isValid = await trigger(fieldsToValidate);
@@ -134,19 +142,27 @@ const CheckoutPage: React.FC = () => {
     }
   };
 
-  const prevStep = () => setStep(1);
+  const prevStep = () => {
+    if (step === 3) {
+      // Going back from payment to review
+      setStep(2);
+      // Reset payment state
+      setPaymentUrl(null);
+      setPaymentError(null);
+    } else if (step === 2) {
+      setStep(1);
+    }
+  };
 
   /**
-   * Handle the payment flow:
-   * 1. Create the order with 'pending' payment status
-   * 2. Call Rivhit API to create payment page
-   * 3. Redirect to Rivhit hosted payment page
+   * Step 2 -> Step 3: Create order and get payment URL
+   * Called when user clicks "Proceed to Payment" on the Review step
    */
   const handleProceedToPayment = async () => {
     const formData = watch();
     
     try {
-      setIsProcessingPayment(true);
+      setIsCreatingOrder(true);
       setPaymentError(null);
 
       // 1. Create the order first (with pending payment status)
@@ -173,6 +189,11 @@ const CheckoutPage: React.FC = () => {
           quantity: BigInt(item.quantity),
           price: item.price,
         })),
+        // Pre-calculated totals from the cart rules engine
+        subtotal,
+        shippingCost: shipping,
+        discount: totalDiscount,
+        total,
         // Add coupon snapshot if applied
         ...(appliedCoupon && {
           appliedCouponCode: appliedCoupon.code,
@@ -180,13 +201,17 @@ const CheckoutPage: React.FC = () => {
         }),
       });
 
-      // 2. Call Rivhit to create payment page
+      setCurrentOrderId(orderId);
+      setIsCreatingOrder(false);
+      setIsLoadingPayment(true);
+
+      // 2. Call iCredit to create payment page
       const result = await createPaymentPage({ orderId });
 
       if (result.success && result.paymentUrl) {
-        // 3. Redirect to Rivhit hosted payment page
-        // The cart will be cleared when they return to confirmation page after successful payment
-        window.location.href = result.paymentUrl;
+        // Success - show payment iframe
+        setPaymentUrl(result.paymentUrl);
+        setStep(3);
       } else {
         // Payment page creation failed
         setPaymentError(result.error || 'שגיאה ביצירת עמוד התשלום');
@@ -195,14 +220,69 @@ const CheckoutPage: React.FC = () => {
       console.error('Failed to process payment:', err);
       setPaymentError(err instanceof Error ? err.message : 'שגיאה בעיבוד התשלום');
     } finally {
-      setIsProcessingPayment(false);
+      setIsCreatingOrder(false);
+      setIsLoadingPayment(false);
     }
   };
 
-  const handleRetryPayment = () => {
-    setPaymentError(null);
-    handleProceedToPayment();
+  const handleRetryPayment = async () => {
+    if (!currentOrderId) {
+      // No order exists yet, retry from order creation
+      handleProceedToPayment();
+      return;
+    }
+
+    // Order exists, just retry getting payment URL
+    try {
+      setPaymentError(null);
+      setIsLoadingPayment(true);
+
+      const result = await createPaymentPage({ orderId: currentOrderId });
+
+      if (result.success && result.paymentUrl) {
+        setPaymentUrl(result.paymentUrl);
+        setStep(3);
+      } else {
+        setPaymentError(result.error || 'שגיאה ביצירת עמוד התשלום');
+      }
+    } catch (err) {
+      console.error('Failed to retry payment:', err);
+      setPaymentError(err instanceof Error ? err.message : 'שגיאה בעיבוד התשלום');
+    } finally {
+      setIsLoadingPayment(false);
+    }
   };
+
+  // Listen for payment completion via postMessage from iCredit iframe
+  // Note: iCredit typically uses URL redirect, not postMessage, so this is a backup
+  useEffect(() => {
+    const handlePaymentMessage = (event: MessageEvent) => {
+      // Only handle messages from iCredit domains (test and production)
+      const isIcreditOrigin = event.origin.includes('icredit.rivhit.co.il') || 
+                              event.origin.includes('testicredit.rivhit.co.il');
+      
+      if (!isIcreditOrigin) return;
+      
+      console.log('[iCredit] Payment message received:', event.data);
+      
+      // Only redirect if we receive a specific payment completion message
+      // Check for explicit success indicators in the message data
+      const data = event.data;
+      const isPaymentComplete = data && (
+        data.status === 'success' || 
+        data.Status === 0 || 
+        data.type === 'payment_complete'
+      );
+      
+      if (isPaymentComplete && currentOrderId) {
+        dispatch(clearCart());
+        navigate(`/order-confirmation/${currentOrderId}`);
+      }
+    };
+
+    window.addEventListener('message', handlePaymentMessage);
+    return () => window.removeEventListener('message', handlePaymentMessage);
+  }, [currentOrderId, dispatch, navigate]);
 
   if (cartItems.length === 0) {
     return (
@@ -258,14 +338,27 @@ const CheckoutPage: React.FC = () => {
                   )}
 
                   {step === 2 && (
-                    <PaymentStep 
+                    <ReviewStep 
                       key="step2"
-                      total={total}
-                      onProceedToPayment={handleProceedToPayment}
+                      formData={watch()}
+                      cartItems={cartItems}
+                      handleSubmit={handleProceedToPayment}
                       prevStep={prevStep}
-                      isProcessingPayment={isProcessingPayment}
+                      isCreatingOrder={isCreatingOrder || isLoadingPayment}
                       paymentError={paymentError}
                       onRetry={handleRetryPayment}
+                    />
+                  )}
+
+                  {step === 3 && (
+                    <PaymentStep 
+                      key="step3"
+                      paymentUrl={paymentUrl}
+                      isLoadingUrl={isLoadingPayment}
+                      paymentError={paymentError}
+                      onRetry={handleRetryPayment}
+                      prevStep={prevStep}
+                      total={total}
                     />
                   )}
                 </AnimatePresence>

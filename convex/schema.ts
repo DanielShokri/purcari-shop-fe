@@ -150,6 +150,7 @@ export default defineSchema({
     subtotal: v.float64(),
     tax: v.float64(),
     shippingCost: v.float64(),
+    discount: v.optional(v.float64()),
     total: v.float64(),
 
     shippingStreet: v.string(),

@@ -225,6 +225,31 @@ const OrderConfirmationPage: React.FC = () => {
                   <span className="font-bold">₪{item.total}</span>
                 </div>
               ))}
+              
+              {/* Subtotal */}
+              <div className="pt-4 border-t flex justify-between text-sm text-gray-600">
+                <span>סכום ביניים</span>
+                <span>₪{orderData.subtotal}</span>
+              </div>
+              
+              {/* Shipping */}
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>משלוח</span>
+                <span>{orderData.shippingCost === 0 ? 'חינם' : `₪${orderData.shippingCost}`}</span>
+              </div>
+              
+              {/* Discount (if any) */}
+              {((orderData.discount && orderData.discount > 0) || (orderData.appliedCouponDiscount && orderData.appliedCouponDiscount > 0)) && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>
+                    הנחה
+                    {orderData.appliedCouponCode && ` (${orderData.appliedCouponCode})`}
+                  </span>
+                  <span>-₪{orderData.discount || orderData.appliedCouponDiscount}</span>
+                </div>
+              )}
+              
+              {/* Total */}
               <div className="pt-4 border-t flex justify-between font-bold text-lg">
                 <span>סה"כ לתשלום</span>
                 <span>₪{orderData.total}</span>

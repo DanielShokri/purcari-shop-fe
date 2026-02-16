@@ -5,25 +5,35 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Id } from "./_generated/dataModel";
 
-// Rivhit API Configuration
-const RIVHIT_API_BASE = "https://api.rivhit.co.il/online/RivhitOnlineAPI.svc";
+// iCredit API Configuration
+// CRITICAL: iCredit uses SEPARATE servers for test and production.
+// Test tokens only work on the test server, production tokens only on production.
+const ICREDIT_BASE_URLS = {
+  test: "https://testicredit.rivhit.co.il/API/PaymentPageRequest.svc",
+  production: "https://icredit.rivhit.co.il/API/PaymentPageRequest.svc",
+} as const;
 
-// Standard Israeli document types for Rivhit
-const RIVHIT_DOCUMENT_TYPES = {
-  INVOICE_RECEIPT: 305, // חשבונית מס / קבלה (Tax Invoice + Receipt - most common for e-commerce)
-  INVOICE: 300,         // חשבונית מס (Tax Invoice only)
-  RECEIPT: 400,         // קבלה (Receipt only)
-  ORDER: 100,           // הזמנה (Order/Quote)
+function getIcreditApiUrl(environment: "test" | "production", endpoint: string): string {
+  return `${ICREDIT_BASE_URLS[environment]}/${endpoint}`;
+}
+
+// iCredit API Response status codes
+const ICREDIT_STATUS = {
+  SUCCESS: 0,
+  // Other status codes indicate errors
 } as const;
 
 /**
- * Create a Rivhit hosted payment page for an order.
+ * Create an iCredit hosted payment page for an order.
  * 
  * This action:
  * 1. Reads the order from the database
- * 2. Calls Rivhit Document.Page API to create a hosted payment page
+ * 2. Calls iCredit GetUrl API to create a hosted payment page
  * 3. Creates a paymentTransactions record to track the payment
  * 4. Returns the payment page URL for redirect
+ * 
+ * iCredit uses the Rivhit infrastructure but has a different API format.
+ * API docs: https://icredit.rivhit.co.il/API/PaymentPageRequest.svc/help
  */
 export const createPaymentPage = action({
   args: {
@@ -35,9 +45,10 @@ export const createPaymentPage = action({
     paymentTransactionId?: Id<"paymentTransactions">;
     error?: string;
   }> => {
-    // 1. Get Rivhit API token from environment
-    const apiToken = process.env.RIVHIT_API_TOKEN;
-    if (!apiToken) {
+    // 1. Get iCredit GroupPrivateToken (Payment Page ID) from environment
+    // This is the "מזהה דף תשלום" from the iCredit dashboard
+    const groupPrivateToken = process.env.RIVHIT_API_TOKEN;
+    if (!groupPrivateToken) {
       return {
         success: false,
         error: "RIVHIT_API_TOKEN environment variable is not set",
@@ -55,6 +66,9 @@ export const createPaymentPage = action({
         error: "CONVEX_SITE_URL environment variable is not set",
       };
     }
+
+    // Get storefront URL for redirect after payment
+    const storefrontUrl = process.env.STOREFRONT_URL || "http://localhost:3000";
 
     // 4. Read the order from the database
     const order = await ctx.runQuery(internal.rivhitHelpers.getOrderById, {
@@ -85,40 +99,101 @@ export const createPaymentPage = action({
     );
 
     // 7. Build callback URLs
-    const redirectUrl = `${siteUrl}/rivhit/redirect?orderId=${args.orderId}`;
+    // For iframe mode, we use an intermediary redirect handler that breaks out of the iframe
+    // The final destination is the order confirmation page
+    const finalDestination = `${storefrontUrl}/order-confirmation/${args.orderId}`;
+    const finalFailDestination = `${storefrontUrl}/order-confirmation/${args.orderId}?status=failed`;
+    
+    // RedirectURL points to our iframe-redirect handler which will redirect the parent window
+    const redirectUrl = `${siteUrl}/rivhit/iframe-redirect?finalUrl=${encodeURIComponent(finalDestination)}`;
+    const failRedirectUrl = `${siteUrl}/rivhit/iframe-redirect?finalUrl=${encodeURIComponent(finalFailDestination)}`;
+    
+    // IPNURL - webhook for payment notifications (server-to-server)
     const ipnUrl = `${siteUrl}/rivhit/ipn`;
-    const ipnData = JSON.stringify({
-      orderId: args.orderId,
-      paymentTransactionId,
-    });
+    
+    console.log("[iCredit] Order total:", order.total, "Items total:", order.subtotal, "Shipping:", order.shippingCost, "Tax:", order.tax);
 
-    // 8. Build the Rivhit Document.Page request
+    // 8. Build the iCredit GetUrl request
+    // API docs: https://icredit.rivhit.co.il/API/PaymentPageRequest.svc/help/operations/GetUrl
+    
+    // Build items array - prices already include tax
+    const items = orderItems.map((item) => ({
+      Description: item.productName,
+      Quantity: item.quantity,
+      UnitPrice: item.price,
+    }));
+    
+    // Add shipping as a line item if non-zero
+    if (order.shippingCost > 0) {
+      items.push({
+        Description: "משלוח",
+        Quantity: 1,
+        UnitPrice: order.shippingCost,
+      });
+    }
+    
+    // Add discount as a negative line item if applicable
+    if (order.discount && order.discount > 0) {
+      items.push({
+        Description: "הנחה",
+        Quantity: 1,
+        UnitPrice: -order.discount,
+      });
+    }
+    
+    console.log("[iCredit] Sending items:", items.length, "items, total:", order.total);
+    console.log("[iCredit] Callback URLs:", { redirectUrl, failRedirectUrl, ipnUrl });
+    
     const requestBody = {
-      api_token: apiToken,
-      document_type: RIVHIT_DOCUMENT_TYPES.INVOICE_RECEIPT,
-      receipt_type: RIVHIT_DOCUMENT_TYPES.RECEIPT,
-      last_name: order.customerName,
-      email_to: order.customerEmail,
-      phone: order.customerPhone || undefined,
-      address: order.shippingStreet,
-      city: order.shippingCity,
-      price_include_vat: true,
-      items: orderItems.map((item) => ({
-        description: item.productName,
-        quantity: item.quantity,
-        price: item.price,
-      })),
-      redirect_url: redirectUrl,
-      ipn_url: ipnUrl,
-      ipn_data: ipnData,
-      create_customer: true,
-      find_by_mail: true,
-      send_mail: true,
+      // Required: Payment Page ID (GroupPrivateToken)
+      GroupPrivateToken: groupPrivateToken,
+      
+      // Items (PascalCase field names for iCredit API)
+      Items: items,
+      
+      // Callback URLs
+      RedirectURL: redirectUrl,
+      FailRedirectURL: failRedirectUrl,
+      IPNURL: ipnUrl,
+      IPNMethod: 1, // 1 = POST (recommended), 2 = GET
+      
+      // Custom data to identify the order in IPN callback
+      // Using Custom1 field to pass our order context
+      Custom1: JSON.stringify({
+        orderId: args.orderId,
+        paymentTransactionId,
+      }),
+      
+      // Customer information
+      CustomerLastName: order.customerName,
+      CustomerFirstName: "", // Hebrew names often don't split well
+      EmailAddress: order.customerEmail,
+      PhoneNumber: order.customerPhone || undefined,
+      Address: order.shippingStreet,
+      City: order.shippingCity,
+      
+      // Payment settings
+      PriceIncludeVAT: true,
+      Currency: 1, // 1 = ILS (Israeli Shekel)
+      MaxPayments: 12, // Allow up to 12 installments
+      
+      // Customer management
+      CreateCustomer: true,
+      FindByMail: true,
+      SendMail: true,
+      
+      // UI settings
+      DocumentLanguage: "he", // Hebrew
+      DisplayBackButton: true,
     };
 
-    // 9. Call Rivhit Document.Page API
+    // 9. Call iCredit GetUrl API
     try {
-      const response = await fetch(`${RIVHIT_API_BASE}/Document.Page`, {
+      const apiUrl = getIcreditApiUrl(environment, "GetUrl");
+      console.log(`[iCredit] Calling GetUrl API (${environment}) for order:`, args.orderId);
+      console.log(`[iCredit] URL: ${apiUrl}`);
+      
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -127,28 +202,38 @@ export const createPaymentPage = action({
       });
 
       const result = await response.json() as {
-        error_code: number;
-        client_message: string | null;
-        debug_message: string | null;
-        data: { page_url: string } | null;
+        Status: number;
+        DebugMessage: string | null;
+        URL: string | null;
+        PrivateSaleToken: string | null;
+        PublicSaleToken: string | null;
       };
 
+      console.log("[iCredit] API Response:", JSON.stringify(result));
+
       // 10. Process response
-      if (result.error_code === 0 && result.data?.page_url) {
-        // Success - update payment transaction with URL
+      if (result.Status === ICREDIT_STATUS.SUCCESS && result.URL) {
+        // Success - update payment transaction with URL and tokens
         await ctx.runMutation(internal.rivhitHelpers.updatePaymentTransaction, {
           paymentTransactionId,
-          rivhitPaymentUrl: result.data.page_url,
+          rivhitPaymentUrl: result.URL,
+          // Store the sale tokens for later verification
+          ipnData: JSON.stringify({
+            privateSaleToken: result.PrivateSaleToken,
+            publicSaleToken: result.PublicSaleToken,
+          }),
         });
 
         return {
           success: true,
-          paymentUrl: result.data.page_url,
+          paymentUrl: result.URL,
           paymentTransactionId,
         };
       } else {
         // Error - update payment transaction with error
-        const errorMessage = result.client_message || result.debug_message || "Unknown Rivhit error";
+        const errorMessage = result.DebugMessage || `iCredit error (Status: ${result.Status})`;
+        console.error("[iCredit] API Error:", errorMessage);
+        
         await ctx.runMutation(internal.rivhitHelpers.updatePaymentTransaction, {
           paymentTransactionId,
           status: "failed",
@@ -164,6 +249,8 @@ export const createPaymentPage = action({
     } catch (error) {
       // Network or parsing error
       const errorMessage = error instanceof Error ? error.message : "Network error";
+      console.error("[iCredit] Network error:", errorMessage);
+      
       await ctx.runMutation(internal.rivhitHelpers.updatePaymentTransaction, {
         paymentTransactionId,
         status: "failed",
