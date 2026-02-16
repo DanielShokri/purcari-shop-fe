@@ -134,8 +134,9 @@ export const create = mutation({
 
 /**
  * Get a single order with its items joined.
+ * Admin-only query - order details include sensitive payment and customer information.
  */
-export const get = query({
+export const get = adminQuery({
   args: { orderId: v.id("orders") },
   handler: async (ctx, args) => {
     const order = await ctx.db.get(args.orderId);
