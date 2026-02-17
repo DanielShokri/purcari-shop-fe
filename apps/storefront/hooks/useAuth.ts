@@ -124,38 +124,9 @@ export function useAuth() {
   const signInWithGoogle = async (): Promise<boolean> => {
     setIsGoogleLoading(true);
     setError(null);
-    
     try {
-      // Open popup FIRST (must be synchronous with user click)
-      const popup = window.open('about:blank', 'google-oauth', 'width=500,height=600,scrollbars=yes');
-      
-      if (!popup) {
-        setError("אנא אפשרו חלונות קופצים (pop-ups) עבור אתר זה");
-        setIsGoogleLoading(false);
-        return false;
-      }
-      
-      // Now get the OAuth URL
-      const result = await convexSignIn("google");
-      
-      // If there's a redirect URL, navigate the already-open popup to it
-      if (result?.redirect) {
-        popup.location.href = result.redirect.toString();
-        
-        // Listen for the OAuth callback to complete
-        const checkPopup = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkPopup);
-            setIsGoogleLoading(false);
-          }
-        }, 500);
-        
-        return true;
-      }
-      
-      // If no redirect (immediate success), close popup and clear loading
-      popup.close();
-      setIsGoogleLoading(false);
+      await convexSignIn("google");
+      // OAuth will redirect the page to Google, then back to the app
       return true;
     } catch (err) {
       console.error("Google sign in error:", err);
