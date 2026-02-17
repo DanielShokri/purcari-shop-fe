@@ -44,10 +44,7 @@ export const { auth, signIn, signOut, store } = convexAuth({
         };
       },
     }),
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID,
-      clientSecret: process.env.AUTH_GOOGLE_SECRET,
-    }),
+    Google,
   ],
   callbacks: {
     async createOrUpdateUser(ctx, args) {
