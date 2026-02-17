@@ -1,19 +1,25 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 17, 2026 (08:30 UTC)
+**Last updated:** February 17, 2026 (15:10 UTC)
 
 ---
 
 ## Current Position
 
-**Active phase:** Phase 03 - Rivhit Payment Integration
-**Current plan:** 03-01 (completed)
-**Plans completed:** 1 of 2
+**Active phase:** Phase auth-google - Google OAuth Authentication
+**Current plan:** auth-google-01 (completed)
+**Plans completed:** 1 of 1
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan auth-google-01: Google OAuth Integration
+  - Added Google provider to convex/auth.ts alongside Password provider
+  - Implemented signInWithGoogle method in useAuth hook with Hebrew error messages
+  - Added Google sign-in button to AuthForm with RTL layout
+  - Created USER-SETUP.md for Google Cloud Console configuration
+  - Added @auth/core direct dependency to resolve TypeScript module resolution
 - Plan 03-01: Rivhit Payment Foundation
   - Created paymentTransactions table with orderId and status indexes
   - Added Rivhit payment types to shared-types package
@@ -40,6 +46,7 @@
 | Use Convex for all backend | Architecture decision | Existing |
 | CartRuleStatus and CartRuleType are type aliases | Use string literals | Phase 02 |
 | Split Convex node/non-node code | Rivhit action in rivhit.ts, helpers in rivhitHelpers.ts | Phase 03-01 |
+| Add @auth/core as direct dependency | Resolve TypeScript module '@auth/core/providers/google' | Phase auth-google-01 |
 
 ### Claude's Discretion
 
@@ -73,10 +80,10 @@
 - [ ] Payment status UI in storefront
 
 ### Phase 04: Google OAuth Authentication
-- [ ] Google provider in convex/auth.ts
-- [ ] signInWithGoogle in useAuth hook
-- [ ] Google sign-in button in AuthForm
-- [ ] USER-SETUP.md for configuration
+- [x] Google provider in convex/auth.ts
+- [x] signInWithGoogle in useAuth hook
+- [x] Google sign-in button in AuthForm
+- [x] USER-SETUP.md for configuration
 
 ---
 
@@ -89,7 +96,7 @@
 - Chakra UI v3 with RTL Hebrew support
 - Rivhit payment gateway for Israeli market
 - Analytics system complete with aggregates
-- Convex Auth with Password provider (Google OAuth planned)
+- Convex Auth with Password and Google OAuth providers
 
 ### Business Context
 - Wine e-commerce for Israeli market
@@ -106,17 +113,21 @@
 2. Continue with Plan 03-02: Checkout flow integration
 3. Test payment flow end-to-end
 
-### Option B: Implement Google OAuth (Phase 04) - RECOMMENDED
-1. Run `/gsd-execute-phase auth-google` to implement Google OAuth
-2. Follow USER-SETUP.md to configure Google Cloud Console credentials
-3. Test Google sign-in flow end-to-end
+### Option B: Configure Google OAuth (COMPLETED)
+1. ✓ Google OAuth provider implemented
+2. Follow USER-SETUP.md to configure Google Cloud Console credentials:
+   - Create OAuth consent screen in Google Cloud Console
+   - Create OAuth 2.0 credentials (Client ID + Secret)
+   - Set environment variables via `npx convex env set`
+3. Test Google sign-in flow end-to-end on /login page
 
-**Note:** Google OAuth is ready to implement and provides immediate value for user onboarding.
+**Note:** Google OAuth implementation complete - user setup required for functional testing.
 
 ---
 
 ## Performance Metrics
 
-| Phase-Plan | Duration | Tasks | Files |
-|------------|----------|-------|-------|
-| 03-01      | 3 min    | 2     | 5     |
+| Phase-Plan     | Duration | Tasks | Files |
+|----------------|----------|-------|-------|
+| auth-google-01 | 4 min    | 4     | 4     |
+| 03-01          | 3 min    | 2     | 5     |

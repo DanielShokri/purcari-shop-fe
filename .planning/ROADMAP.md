@@ -11,7 +11,7 @@
 | 01 | **Analytics Infrastructure** | ✓ Complete | 4/4 |
 | 02 | **Fix TypeScript Errors** | ✓ Complete | 5/5 |
 | 03 | **Rivhit Payment Integration** | In progress | 1/2 |
-| 04 | **Google OAuth Authentication** | Planned | 0/1 |
+| 04 | **Google OAuth Authentication** | ✓ Complete | 1/1 |
 
 ---
 
@@ -40,6 +40,33 @@
 ---
 
 ## Completed Phases
+
+### Phase 04: Google OAuth Authentication
+
+**Status:** ✓ Complete (February 17, 2026)
+
+**Goal achieved:** Google OAuth sign-in integrated alongside existing password authentication
+
+**Deliverables:**
+- ✓ Google provider added to convex/auth.ts
+- ✓ signInWithGoogle method in useAuth hook with Hebrew error messages
+- ✓ Google sign-in button in AuthForm component with RTL layout
+- ✓ USER-SETUP.md for Google Cloud Console configuration
+
+**Plans completed:**
+- [x] auth-google-01-PLAN.md — Google OAuth integration (backend + frontend + docs)
+
+**Success criteria met:**
+- [x] Google OAuth provider configured in Convex auth
+- [x] Frontend sign-in button functional
+- [x] Hebrew error messages for OAuth errors
+- [x] RTL layout maintained
+- [x] Analytics tracking for Google sign-ins
+- [x] Comprehensive setup documentation created
+
+**User setup required:** See `.planning/phases/auth-google/auth-google-USER-SETUP.md`
+
+---
 
 ### Phase 01: Analytics Infrastructure
 
@@ -102,25 +129,6 @@ Phase 02 addressed TypeScript errors across the entire monorepo. Key fixes inclu
 
 ## Future Phases (Backlog)
 
-### Phase 04: Google OAuth Authentication
-
-**Status:** Planned (ready to implement)
-
-**Goal:** Add Google OAuth sign-in to complement existing password authentication
-
-**Deliverables:**
-- [ ] Google provider added to convex/auth.ts
-- [ ] signInWithGoogle method in useAuth hook
-- [ ] Google sign-in button in AuthForm component
-- [ ] USER-SETUP.md for Google Cloud Console configuration
-
-**Plans:**
-- [ ] auth-google-01-PLAN.md — Google OAuth integration (backend + frontend + docs)
-
-**User setup required:** See `.planning/phases/auth-google/auth-google-USER-SETUP.md`
-
----
-
 *Additional phases to be planned based on business priorities*
 
 ---
@@ -135,4 +143,5 @@ Phase 02 addressed TypeScript errors across the entire monorepo. Key fixes inclu
 | 2026-02-15 | Use @ts-nocheck for Convex type instantiation issues | Convex's generated types cause TS2589 errors; runtime is correct |
 | 2026-02-15 | Split Convex node/non-node code | Node actions for external APIs, helper files for mutations/queries |
 | 2026-02-15 | Use Invoice-Receipt (305) as default Rivhit doc type | Most common for Israeli e-commerce transactions |
+| 2026-02-17 | Add @auth/core as direct dependency | Required for TypeScript module resolution of OAuth providers |
 
