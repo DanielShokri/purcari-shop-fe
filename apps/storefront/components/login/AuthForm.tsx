@@ -9,6 +9,7 @@ import { loginSchema, registerSchema, LoginInput, RegisterInput } from "../../sc
 import { useAuth, SignUpInput, SignInInput } from "../../hooks/useAuth";
 import { useAnalytics, useTrackSignup, useTrackLogin } from "../../hooks/useAnalytics";
 import { Authenticated } from "convex/react";
+import { useAuthActions } from "@convex-dev/auth/react";
 
 // Google icon component for sign-in button
 const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -41,7 +42,8 @@ const AuthForm: React.FC = () => {
   const toast = useToast();
   const [isLogin, setIsLogin] = useState(true);
 
-  const { signIn, signUp, signInWithGoogle, isLoading, isGoogleLoading, error, clearError } = useAuth();
+  const { signIn, signUp, isLoading, error, clearError } = useAuth();
+  const { signIn: convexSignIn } = useAuthActions();
   const { identify } = useAnalytics();
   const { trackSignup } = useTrackSignup();
   const { trackLogin } = useTrackLogin();
@@ -59,21 +61,6 @@ const AuthForm: React.FC = () => {
     reset();
     clearError();
   }, [isLogin]);
-
-  // Disable "leave page" confirmation dialog for this component
-  // OAuth redirects are intentional navigation, not data loss
-  useEffect(() => {
-    const disableUnloadWarning = (e: BeforeUnloadEvent) => {
-      // Don't show confirmation - OAuth redirect is intentional
-      delete e['returnValue'];
-    };
-    
-    window.addEventListener('beforeunload', disableUnloadWarning);
-    
-    return () => {
-      window.removeEventListener('beforeunload', disableUnloadWarning);
-    };
-  }, []);
 
   // Redirect authenticated users away from login page
   useEffect(() => {
@@ -115,31 +102,10 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  const handleGoogleSignIn = async (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    // Forcefully allow navigation by resetting form dirty state
-    reset({}, { keepValues: false });
-    
-    // Also ensure no beforeunload handlers block us
-    const originalHandler = window.onbeforeunload;
-    window.onbeforeunload = null;
-    
+  const handleGoogleSignIn = () => {
     trackLogin("google");
-    const success = await signInWithGoogle();
-    
-    // Restore handler in case sign-in fails
-    if (!success) {
-      window.onbeforeunload = originalHandler;
-    }
-    
-    if (success) {
-      // OAuth redirect will happen
-      toast.success("מתחברים עם Google...");
-    } else if (error) {
-      toast.error(error);
-    }
+    // Call Convex signIn directly without async wrapper - like in examples
+    void convexSignIn("google");
   };
 
   // Component to handle redirect for authenticated users
@@ -299,16 +265,11 @@ const AuthForm: React.FC = () => {
         <button
           type="button"
           onClick={handleGoogleSignIn}
-          disabled={isGoogleLoading}
           aria-label="המשיכו עם Google"
-          className="mt-4 w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed cursor-pointer"
+          className="mt-4 w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center justify-center gap-3 cursor-pointer"
         >
-          {isGoogleLoading ? (
-            <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-          ) : (
-            <GoogleIcon className="w-5 h-5" />
-          )}
-          <span>{isGoogleLoading ? "מתחברים..." : "המשיכו עם Google"}</span>
+          <GoogleIcon className="w-5 h-5" />
+          <span>המשיכו עם Google</span>
         </button>
       </div>
 
