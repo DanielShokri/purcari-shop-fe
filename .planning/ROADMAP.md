@@ -11,6 +11,7 @@
 | 01 | **Analytics Infrastructure** | ✓ Complete | 4/4 |
 | 02 | **Fix TypeScript Errors** | ✓ Complete | 5/5 |
 | 03 | **Rivhit Payment Integration** | In progress | 1/2 |
+| 04 | **Google OAuth Authentication** | Planned | 0/1 |
 
 ---
 
@@ -101,7 +102,26 @@ Phase 02 addressed TypeScript errors across the entire monorepo. Key fixes inclu
 
 ## Future Phases (Backlog)
 
-*To be planned based on business priorities*
+### Phase 04: Google OAuth Authentication
+
+**Status:** Planned (ready to implement)
+
+**Goal:** Add Google OAuth sign-in to complement existing password authentication
+
+**Deliverables:**
+- [ ] Google provider added to convex/auth.ts
+- [ ] signInWithGoogle method in useAuth hook
+- [ ] Google sign-in button in AuthForm component
+- [ ] USER-SETUP.md for Google Cloud Console configuration
+
+**Plans:**
+- [ ] auth-google-01-PLAN.md — Google OAuth integration (backend + frontend + docs)
+
+**User setup required:** See `.planning/phases/auth-google/auth-google-USER-SETUP.md`
+
+---
+
+*Additional phases to be planned based on business priorities*
 
 ---
 

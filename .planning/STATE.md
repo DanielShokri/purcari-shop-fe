@@ -1,6 +1,6 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 15, 2026 (17:10 UTC)
+**Last updated:** February 17, 2026 (08:30 UTC)
 
 ---
 
@@ -49,6 +49,8 @@
 | Rivhit document type | Use Invoice-Receipt (305) as default for e-commerce |
 | IPN data storage | Store raw body as string for debugging |
 | Node action pattern | External API calls in "use node" action files, mutations in separate helper files |
+| Google OAuth provider | Use @auth/core/providers/google for standard OAuth flow |
+| OAuth UX | Place Google button below email form with "או" divider, maintain RTL layout |
 
 ### Deferred
 
@@ -62,12 +64,19 @@
 
 ## Pending Todos
 
+### Phase 03: Rivhit Payment Integration
 - [x] Rivhit payment types and schema
 - [x] createPaymentPage action
 - [x] IPN webhook handler
 - [x] HTTP routes for Rivhit callbacks
 - [ ] Checkout flow integration (Plan 03-02)
 - [ ] Payment status UI in storefront
+
+### Phase 04: Google OAuth Authentication
+- [ ] Google provider in convex/auth.ts
+- [ ] signInWithGoogle in useAuth hook
+- [ ] Google sign-in button in AuthForm
+- [ ] USER-SETUP.md for configuration
 
 ---
 
@@ -80,6 +89,7 @@
 - Chakra UI v3 with RTL Hebrew support
 - Rivhit payment gateway for Israeli market
 - Analytics system complete with aggregates
+- Convex Auth with Password provider (Google OAuth planned)
 
 ### Business Context
 - Wine e-commerce for Israeli market
@@ -91,9 +101,17 @@
 
 ## Next Actions
 
+### Option A: Complete Rivhit Payment (Phase 03)
 1. Configure Rivhit API token via `npx convex env set` (see 03-USER-SETUP.md)
 2. Continue with Plan 03-02: Checkout flow integration
 3. Test payment flow end-to-end
+
+### Option B: Implement Google OAuth (Phase 04) - RECOMMENDED
+1. Run `/gsd-execute-phase auth-google` to implement Google OAuth
+2. Follow USER-SETUP.md to configure Google Cloud Console credentials
+3. Test Google sign-in flow end-to-end
+
+**Note:** Google OAuth is ready to implement and provides immediate value for user onboarding.
 
 ---
 
