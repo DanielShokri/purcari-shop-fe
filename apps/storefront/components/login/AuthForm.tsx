@@ -243,6 +243,7 @@ const AuthForm: React.FC = () => {
         </div>
 
         <button
+          type="button"
           onClick={handleGoogleSignIn}
           disabled={isGoogleLoading}
           aria-label="המשיכו עם Google"
