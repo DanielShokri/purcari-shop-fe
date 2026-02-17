@@ -125,17 +125,41 @@ export function useAuth() {
     setIsGoogleLoading(true);
     setError(null);
     try {
-      await convexSignIn("google");
-      // Note: On success, the page will redirect to Google OAuth flow
-      // and then back to the callback URL. This function returns before
-      // the OAuth flow completes because it triggers a redirect.
+      const result = await convexSignIn("google");
+      
+      // If there's a redirect URL, open it in a popup instead of redirecting the page
+      if (result?.redirect) {
+        const popup = window.open(
+          result.redirect.toString(),
+          "google-oauth",
+          "width=500,height=600,scrollbars=yes"
+        );
+        
+        if (!popup) {
+          setError("אנא אפשרו חלונות קופצים (pop-ups) עבור אתר זה");
+          setIsGoogleLoading(false);
+          return false;
+        }
+        
+        // Listen for the OAuth callback to complete
+        const checkPopup = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkPopup);
+            setIsGoogleLoading(false);
+          }
+        }, 500);
+        
+        return true;
+      }
+      
+      // If no redirect (immediate success), clear loading
+      setIsGoogleLoading(false);
       return true;
     } catch (err) {
       console.error("Google sign in error:", err);
       setError(parseGoogleError(err));
-      return false;
-    } finally {
       setIsGoogleLoading(false);
+      return false;
     }
   };
 
