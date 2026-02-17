@@ -103,6 +103,14 @@ const AuthForm: React.FC = () => {
   };
 
   const handleGoogleSignIn = () => {
+    // Clear ALL form inputs in the DOM to prevent "unsaved changes" dialog
+    const formElement = document.querySelector('form');
+    if (formElement) {
+      formElement.reset();
+      // Mark form as submitted to prevent dialog
+      Object.defineProperty(formElement, 'changed', { value: false, writable: false });
+    }
+    
     trackLogin("google");
     // Call Convex signIn directly without async wrapper - like in examples
     void convexSignIn("google");
