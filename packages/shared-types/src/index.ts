@@ -214,6 +214,7 @@ export interface OrderItem {
 export interface Order {
   _id: string;
   _creationTime?: number;
+  orderNumber?: number;
   customerName: string;
   customerEmail: string;
   customerPhone?: string;

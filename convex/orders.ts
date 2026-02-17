@@ -11,6 +11,30 @@ import { adminMutation, adminQuery } from "./authHelpers";
 // by the frontend cart rules engine and passed in to the order creation mutation.
 // Do NOT recalculate shipping/tax here — it would double-count.
 
+// Starting order number (e.g., 1000 -> Order #1000)
+const STARTING_ORDER_NUMBER = 1000;
+
+/**
+ * Get the next sequential order number.
+ * Finds the highest existing orderNumber and increments by 1.
+ * Starts at STARTING_ORDER_NUMBER if no orders exist.
+ */
+async function getNextOrderNumber(ctx: any): Promise<number> {
+  // Get the most recent orders with orderNumber set
+  const recentOrders = await ctx.db
+    .query("orders")
+    .withIndex("by_orderNumber")
+    .order("desc")
+    .take(1);
+
+  if (recentOrders.length > 0 && recentOrders[0].orderNumber !== undefined) {
+    return recentOrders[0].orderNumber + 1;
+  }
+
+  // If no orders with orderNumber exist, start from the beginning
+  return STARTING_ORDER_NUMBER;
+}
+
 /**
  * Create a new order.
  * This is the first step of checkout, creating the primary order document.
@@ -70,6 +94,9 @@ export const create = mutation({
 
     const now = new Date().toISOString();
 
+    // Generate the next sequential order number
+    const orderNumber = await getNextOrderNumber(ctx);
+
     // 5. Create Order Document
     const orderId = await ctx.db.insert("orders", {
       customerId: args.customerId,
@@ -77,6 +104,8 @@ export const create = mutation({
       customerEmail: args.customerEmail,
       customerPhone: args.customerPhone,
       customerAvatar: args.customerAvatar,
+      
+      orderNumber,
       
       subtotal,
       tax,
@@ -170,6 +199,32 @@ export const listByCustomer = query({
 });
 
 /**
+ * Get an order by its orderNumber (short ID like 1001).
+ * Admin-only query.
+ */
+export const getByOrderNumber = adminQuery({
+  args: { orderNumber: v.number() },
+  handler: async (ctx, args) => {
+    const order = await ctx.db
+      .query("orders")
+      .withIndex("by_orderNumber", (q) => q.eq("orderNumber", args.orderNumber))
+      .unique();
+
+    if (!order) return null;
+
+    const items = await ctx.db
+      .query("orderItems")
+      .withIndex("by_orderId", (q) => q.eq("orderId", order._id))
+      .collect();
+
+    return {
+      ...order,
+      items,
+    };
+  },
+});
+
+/**
  * List all orders for admin.
  * Supports status filtering.
  * Admin-only query.
@@ -192,6 +247,38 @@ export const listAll = adminQuery({
     }
     
     return await q.order("desc").collect();
+  },
+});
+
+/**
+ * Backfill orderNumber for existing orders that don't have one.
+ * Assigns sequential numbers starting from STARTING_ORDER_NUMBER.
+ * Admin-only mutation - run once to migrate existing orders.
+ */
+export const backfillOrderNumbers = adminMutation({
+  args: {},
+  handler: async (ctx) => {
+    // Get all orders without an orderNumber, sorted by createdAt
+    const ordersWithoutNumber = await ctx.db
+      .query("orders")
+      .order("asc")
+      .collect();
+
+    let nextNumber = STARTING_ORDER_NUMBER;
+    let updatedCount = 0;
+
+    for (const order of ordersWithoutNumber) {
+      if (order.orderNumber === undefined) {
+        await ctx.db.patch(order._id, {
+          orderNumber: nextNumber,
+          updatedAt: new Date().toISOString(),
+        });
+        nextNumber++;
+        updatedCount++;
+      }
+    }
+
+    return { updatedCount, nextOrderNumber: nextNumber };
   },
 });
 

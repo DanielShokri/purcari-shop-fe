@@ -28,11 +28,6 @@ import {
 import { LoadingState, Breadcrumbs, StatusBadge, orderStatusConfig } from '../components/shared';
 import { toaster } from '../components/ui/toaster';
 
-// Helper to validate Convex ID format
-const isValidConvexId = (id: string, tableName: string): boolean => {
-  return typeof id === 'string' && id.startsWith(`${tableName}:`) && id.length > tableName.length + 10;
-};
-
 // Helper to format date in Hebrew locale
 const formatDate = (dateStr: string) => {
   const date = new Date(dateStr);
@@ -74,9 +69,8 @@ export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
-  // Safely cast the orderId with validation
-  const orderId = id && isValidConvexId(id, "orders") ? id as Id<"orders"> : null;
-  const order = useQuery(orderId ? api.orders.get : undefined, orderId ? { orderId } : "skip");
+  const orderId = id ? id as Id<"orders"> : null;
+  const order = useQuery(api.orders.get, orderId ? { orderId } : "skip");
   const isLoading = order === undefined;
   const updateStatus = useMutation(api.orders.updateStatus);
   const [isUpdating, setIsUpdating] = React.useState(false);
@@ -152,9 +146,9 @@ export default function OrderDetails() {
         py="6"
       >
          <Box>
-            <Text fontSize="2xl" fontWeight="bold" color="fg" letterSpacing="tight">
-              הזמנה #{order._id}
-            </Text>
+             <Text fontSize="2xl" fontWeight="bold" color="fg" letterSpacing="tight">
+               הזמנה #{order.orderNumber || order._id.slice(-6)}
+             </Text>
             <HStack gap="2" fontSize="sm" color="fg.muted" mt="1">
               <Text>נוצרה ב-{formatDate(order.createdAt)}</Text>
               <Text>•</Text>

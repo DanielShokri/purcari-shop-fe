@@ -37,11 +37,11 @@ export default function Sidebar({ currentPath, onLogout }: SidebarProps) {
           _dark={{ bg: 'blue.900', color: 'blue.400' }}
         >
           <Text as="span" className="material-symbols-outlined" fontSize="20px">
-            dashboard
+            wine_bar
           </Text>
         </Flex>
         <Text fontSize="xl" fontWeight="bold" color="fg">
-          Admin<Text as="span" color="blue.500">Panel</Text>
+          פורקרי<Text as="span" color="blue.500"> אדמין</Text>
         </Text>
       </HStack>
 

@@ -147,6 +147,9 @@ export default defineSchema({
     customerPhone: v.optional(v.string()),
     customerAvatar: v.optional(v.string()),
 
+    // Short human-readable order number (e.g., 1001, 1002)
+    orderNumber: v.optional(v.number()),
+
     subtotal: v.float64(),
     tax: v.float64(),
     shippingCost: v.float64(),
@@ -181,6 +184,7 @@ export default defineSchema({
     .index("by_customerEmail", ["customerEmail"])
     .index("by_customerId", ["customerId"])
     .index("by_status", ["status"])
+    .index("by_orderNumber", ["orderNumber"])
     .searchIndex("search_orders", { searchField: "customerEmail", filterFields: ["status"] }),
 
   orderItems: defineTable({

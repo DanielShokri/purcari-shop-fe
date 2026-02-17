@@ -5,13 +5,20 @@ interface CheckoutProgressBarProps {
   currentStep: number;
 }
 
-const stepLabels = ['משלוח', 'סיכום ותשלום'];
+const stepLabels = ['משלוח', 'סיכום', 'תשלום'];
 
 const CheckoutProgressBar: React.FC<CheckoutProgressBarProps> = ({ currentStep }) => {
   return (
-    <div className="flex justify-between mb-12 relative max-w-md mx-auto">
-      <div className="absolute top-1/2 start-0 end-0 h-0.5 bg-gray-200 -translate-y-1/2 z-0"></div>
-      {[1, 2].map((s) => (
+    <div className="flex justify-between mb-12 relative max-w-lg mx-auto">
+      {/* Progress line background */}
+      <div className="absolute top-5 start-0 end-0 h-0.5 bg-gray-200 z-0"></div>
+      {/* Progress line filled */}
+      <div 
+        className="absolute top-5 start-0 h-0.5 bg-secondary z-0 transition-all duration-300"
+        style={{ width: `${((currentStep - 1) / 2) * 100}%` }}
+      ></div>
+      
+      {[1, 2, 3].map((s) => (
         <div key={s} className="relative z-10 flex flex-col items-center">
           <div 
             className={`flex items-center justify-center w-10 h-10 rounded-full font-bold transition-colors ${

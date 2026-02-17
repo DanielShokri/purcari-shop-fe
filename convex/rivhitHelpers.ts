@@ -122,11 +122,17 @@ export const updatePaymentTransaction = internalMutation({
 });
 
 /**
- * Handle IPN (Instant Payment Notification) from Rivhit.
+ * Handle IPN (Instant Payment Notification) from iCredit.
+ * 
+ * iCredit sends IPN data containing:
+ * - Status: 0 = success, other = error
+ * - Custom1: Our order context JSON (orderId, paymentTransactionId)
+ * - Token: Sale token for verification
+ * - DocumentNum, DocumentURL, ReceiptNum, ReceiptURL: Invoice/receipt info
  * 
  * This internal mutation:
  * 1. Parses the raw IPN body
- * 2. Extracts order and payment info
+ * 2. Extracts order and payment info from Custom1
  * 3. Updates the payment transaction status
  * 4. Updates the order status if payment is successful
  */
@@ -135,10 +141,10 @@ export const handleIpnNotification = internalMutation({
     rawBody: v.string(),
   },
   handler: async (ctx, args) => {
-    console.log("[Rivhit IPN] Processing notification:", args.rawBody);
+    console.log("[iCredit IPN] Processing notification:", args.rawBody);
 
     try {
-      // Parse the IPN data - Rivhit sends form-urlencoded or JSON
+      // Parse the IPN data - iCredit sends JSON or form-urlencoded
       let ipnData: Record<string, unknown>;
       
       // Try JSON first
@@ -150,15 +156,16 @@ export const handleIpnNotification = internalMutation({
         ipnData = Object.fromEntries(params.entries());
       }
 
-      console.log("[Rivhit IPN] Parsed data:", JSON.stringify(ipnData));
+      console.log("[iCredit IPN] Parsed data:", JSON.stringify(ipnData));
 
-      // Extract our custom ipn_data that contains orderId and paymentTransactionId
+      // Extract our custom data from Custom1 field (contains orderId and paymentTransactionId)
       let orderContext: { orderId?: string; paymentTransactionId?: string } = {};
-      if (ipnData.ipn_data && typeof ipnData.ipn_data === "string") {
+      const custom1 = ipnData.Custom1 || ipnData.custom1;
+      if (custom1 && typeof custom1 === "string") {
         try {
-          orderContext = JSON.parse(ipnData.ipn_data);
+          orderContext = JSON.parse(custom1);
         } catch {
-          console.error("[Rivhit IPN] Failed to parse ipn_data");
+          console.error("[iCredit IPN] Failed to parse Custom1");
         }
       }
 
@@ -166,33 +173,42 @@ export const handleIpnNotification = internalMutation({
       const paymentTransactionId = orderContext.paymentTransactionId as Id<"paymentTransactions"> | undefined;
 
       if (!paymentTransactionId) {
-        console.error("[Rivhit IPN] No paymentTransactionId in IPN data");
+        console.error("[iCredit IPN] No paymentTransactionId in Custom1 data");
         return { success: false, error: "Missing paymentTransactionId" };
       }
 
       // Get the payment transaction
       const paymentTransaction = await ctx.db.get(paymentTransactionId);
       if (!paymentTransaction) {
-        console.error("[Rivhit IPN] Payment transaction not found:", paymentTransactionId);
+        console.error("[iCredit IPN] Payment transaction not found:", paymentTransactionId);
         return { success: false, error: "Payment transaction not found" };
       }
 
-      // Determine payment status from Rivhit response
-      // Rivhit typically sends error_code (0 = success) and document info on success
-      const errorCode = Number(ipnData.error_code ?? ipnData.ErrorCode ?? -1);
-      const isSuccess = errorCode === 0;
+      // Determine payment status from iCredit response
+      // iCredit uses TransactionStatus field: 0 = success, other values = error codes
+      const rawStatus = ipnData.TransactionStatus ?? ipnData.transactionStatus ?? ipnData.Status ?? ipnData.status;
+      const status = Number(rawStatus ?? -1);
+      const isSuccess = status === 0;
+      
+      console.log("[iCredit IPN] Raw TransactionStatus:", rawStatus, "Parsed Status:", status, "isSuccess:", isSuccess);
+      console.log("[iCredit IPN] All IPN fields:", Object.keys(ipnData).join(", "));
+      
+      // Get error message if present
+      const errorMsg = ipnData.ErrorMessage ?? ipnData.ErrorDescription ?? ipnData.errorMessage;
 
       const now = new Date().toISOString();
 
       if (isSuccess) {
-        // Payment successful - update transaction
+        // Payment successful - update transaction with iCredit document info
         await ctx.db.patch(paymentTransactionId, {
           status: "completed",
           ipnData: args.rawBody,
-          rivhitDocumentNumber: Number(ipnData.document_number ?? ipnData.DocumentNumber) || undefined,
-          rivhitDocumentLink: (ipnData.document_link ?? ipnData.DocumentLink) as string | undefined,
-          rivhitCustomerId: Number(ipnData.customer_id ?? ipnData.CustomerId) || undefined,
-          rivhitConfirmationNumber: Number(ipnData.confirmation_number ?? ipnData.ConfirmationNumber) || undefined,
+          // iCredit document fields (PascalCase)
+          rivhitDocumentNumber: Number(ipnData.DocumentNum ?? ipnData.ReceiptNum) || undefined,
+          rivhitDocumentLink: (ipnData.DocumentURL ?? ipnData.ReceiptURL) as string | undefined,
+          rivhitCustomerId: Number(ipnData.CustomerId) || undefined,
+          // Store the sale token for future reference (refunds, etc.)
+          rivhitConfirmationNumber: undefined, // Not used in iCredit
           updatedAt: now,
         });
 
@@ -204,11 +220,11 @@ export const handleIpnNotification = internalMutation({
           });
         }
 
-        console.log("[Rivhit IPN] Payment completed successfully for order:", orderId);
+        console.log("[iCredit IPN] Payment completed successfully for order:", orderId);
         return { success: true };
       } else {
         // Payment failed
-        const errorMessage = (ipnData.client_message ?? ipnData.ClientMessage ?? "Payment failed") as string;
+        const errorMessage = (errorMsg ?? ipnData.client_message ?? ipnData.debug_message ?? "Payment failed") as string;
         await ctx.db.patch(paymentTransactionId, {
           status: "failed",
           ipnData: args.rawBody,
@@ -216,11 +232,11 @@ export const handleIpnNotification = internalMutation({
           updatedAt: now,
         });
 
-        console.log("[Rivhit IPN] Payment failed for order:", orderId, "Error:", errorMessage);
+        console.log("[iCredit IPN] Payment failed for order:", orderId, "Error:", errorMessage);
         return { success: false, error: errorMessage };
       }
     } catch (error) {
-      console.error("[Rivhit IPN] Error processing notification:", error);
+      console.error("[iCredit IPN] Error processing notification:", error);
       return { success: false, error: error instanceof Error ? error.message : "Unknown error" };
     }
   },

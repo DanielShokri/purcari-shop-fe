@@ -61,7 +61,7 @@ export default function OrderTableRow({
 
       <Table.Cell px="6" py="4">
         <Text fontWeight="semibold" color="fg">
-          #{order._id}
+          #{order.orderNumber || order._id.slice(-6)}
         </Text>
       </Table.Cell>
 
