@@ -93,11 +93,13 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
     trackLogin("google");
     const success = await signInWithGoogle();
     if (success) {
-      // OAuth redirect will happen, so this code may not execute immediately
+      // OAuth popup opened
       toast.success("מתחברים עם Google...");
     } else if (error) {
       toast.error(error);
