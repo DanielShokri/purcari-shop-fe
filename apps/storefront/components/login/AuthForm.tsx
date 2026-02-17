@@ -60,6 +60,21 @@ const AuthForm: React.FC = () => {
     clearError();
   }, [isLogin]);
 
+  // Disable "leave page" confirmation dialog for this component
+  // OAuth redirects are intentional navigation, not data loss
+  useEffect(() => {
+    const disableUnloadWarning = (e: BeforeUnloadEvent) => {
+      // Don't show confirmation - OAuth redirect is intentional
+      delete e['returnValue'];
+    };
+    
+    window.addEventListener('beforeunload', disableUnloadWarning);
+    
+    return () => {
+      window.removeEventListener('beforeunload', disableUnloadWarning);
+    };
+  }, []);
+
   // Redirect authenticated users away from login page
   useEffect(() => {
     // This effect will only run when the component mounts
@@ -103,10 +118,15 @@ const AuthForm: React.FC = () => {
   const handleGoogleSignIn = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    // Reset form to prevent "leave page" confirmation
+    // This tells the browser the form is pristine
+    reset();
+    
     trackLogin("google");
     const success = await signInWithGoogle();
     if (success) {
-      // OAuth popup opened
+      // OAuth redirect will happen
       toast.success("מתחברים עם Google...");
     } else if (error) {
       toast.error(error);
