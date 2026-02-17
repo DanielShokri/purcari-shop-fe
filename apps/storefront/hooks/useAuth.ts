@@ -18,6 +18,7 @@ export interface SignInInput {
 export function useAuth() {
   const { signIn: convexSignIn, signOut: convexSignOut } = useAuthActions();
   const createUserProfile = useMutation(api.users.createOrUpdateUserProfile);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,6 +45,23 @@ export function useAuth() {
     return isLogin
       ? "שגיאה בהתחברות. אנא בדקו את הפרטים ונסו שוב."
       : "שגיאה בהרשמה. אנא נסו שוב מאוחר יותר.";
+  };
+
+  const parseGoogleError = (err: unknown): string => {
+    const message = (err as Error)?.message || "";
+
+    // OAuth specific errors
+    if (message.includes("popup_closed") || message.includes("closed")) {
+      return "ההתחברות בוטלה";
+    }
+    if (message.includes("popup_blocked") || message.includes("blocked")) {
+      return "חלון ההתחברות נחסם. אנא אפשרו חלונות קופצים לאתר זה.";
+    }
+    if (message.includes("access_denied")) {
+      return "ההתחברות נדחתה. אנא אשרו את הגישה המבוקשת.";
+    }
+
+    return "שגיאה בהתחברות עם Google. אנא נסו שוב.";
   };
 
   const signUp = async (data: SignUpInput): Promise<boolean> => {
@@ -103,13 +121,33 @@ export function useAuth() {
     await convexSignOut();
   };
 
+  const signInWithGoogle = async (): Promise<boolean> => {
+    setIsGoogleLoading(true);
+    setError(null);
+    try {
+      await convexSignIn("google");
+      // Note: On success, the page will redirect to Google OAuth flow
+      // and then back to the callback URL. This function returns before
+      // the OAuth flow completes because it triggers a redirect.
+      return true;
+    } catch (err) {
+      console.error("Google sign in error:", err);
+      setError(parseGoogleError(err));
+      return false;
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   const clearError = () => setError(null);
 
   return {
     signUp,
     signIn,
     signOut,
+    signInWithGoogle,
     isLoading,
+    isGoogleLoading,
     error,
     clearError,
   };
