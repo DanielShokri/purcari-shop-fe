@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, registerSchema, LoginInput, RegisterInput } from "../../schemas/validationSchemas";
 import { useAuth, SignUpInput, SignInInput } from "../../hooks/useAuth";
 import { useAnalytics, useTrackSignup, useTrackLogin } from "../../hooks/useAnalytics";
+import { Authenticated } from "convex/react";
 
 // Google icon component for sign-in button
 const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -59,6 +60,12 @@ const AuthForm: React.FC = () => {
     clearError();
   }, [isLogin]);
 
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    // This effect will only run when the component mounts
+    // The Authenticated component below will handle the actual redirect
+  }, []);
+
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     let success = false;
 
@@ -106,12 +113,28 @@ const AuthForm: React.FC = () => {
     }
   };
 
+  // Component to handle redirect for authenticated users
+  const AuthenticatedRedirect: React.FC = () => {
+    useEffect(() => {
+      // Redirect to the specified redirect param, or default to home
+      const destination = redirect || "/";
+      navigate(destination, { replace: true });
+    }, []);
+
+    return null;
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md"
-    >
+    <>
+      <Authenticated>
+        <AuthenticatedRedirect />
+      </Authenticated>
+      
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md"
+      >
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold mb-2">{isLogin ? "ברוכים השבים" : "הצטרפו אלינו"}</h1>
         <p className="text-gray-500">
@@ -270,6 +293,7 @@ const AuthForm: React.FC = () => {
         </button>
       </div>
     </motion.div>
+    </>
   );
 };
 
