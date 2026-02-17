@@ -1,5 +1,6 @@
 import { convexAuth } from "@convex-dev/auth/server";
 import { Password } from "@convex-dev/auth/providers/Password";
+import Google from "@auth/core/providers/google";
 import { ConvexError } from "convex/values";
 import { z } from "zod";
 import { DataModel } from "./_generated/dataModel";
@@ -42,6 +43,10 @@ export const { auth, signIn, signOut, store } = convexAuth({
           phone: phone || undefined,
         };
       },
+    }),
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
     }),
   ],
   callbacks: {
