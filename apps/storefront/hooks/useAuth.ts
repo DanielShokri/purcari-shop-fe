@@ -125,8 +125,12 @@ export function useAuth() {
     setIsGoogleLoading(true);
     setError(null);
     try {
-      await convexSignIn("google");
-      // OAuth will redirect the page to Google, then back to the app
+      const result = await convexSignIn("google");
+      // If there's a redirect URL, navigate to it directly
+      // This bypasses the form's "unsaved changes" detection
+      if (result?.redirect) {
+        window.location.href = result.redirect.toString();
+      }
       return true;
     } catch (err) {
       console.error("Google sign in error:", err);

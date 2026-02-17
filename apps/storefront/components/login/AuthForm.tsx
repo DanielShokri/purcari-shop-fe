@@ -119,12 +119,21 @@ const AuthForm: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    // Reset form to prevent "leave page" confirmation
-    // This tells the browser the form is pristine
-    reset();
+    // Forcefully allow navigation by resetting form dirty state
+    reset({}, { keepValues: false });
+    
+    // Also ensure no beforeunload handlers block us
+    const originalHandler = window.onbeforeunload;
+    window.onbeforeunload = null;
     
     trackLogin("google");
     const success = await signInWithGoogle();
+    
+    // Restore handler in case sign-in fails
+    if (!success) {
+      window.onbeforeunload = originalHandler;
+    }
+    
     if (success) {
       // OAuth redirect will happen
       toast.success("מתחברים עם Google...");
