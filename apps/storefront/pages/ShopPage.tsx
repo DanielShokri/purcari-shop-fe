@@ -38,12 +38,13 @@ const ShopPage: React.FC = () => {
   ];
 
   // If we have no categories from DB, use fallback wine categories
+  // These slugs must match the 'slug' field in the database categories table
   const displayCategories = categories.length > 1 ? categories : [
     { id: 'all', label: 'הכל' },
-    { id: 'red-wine', label: 'יינות אדומים' },
-    { id: 'white-wine', label: 'יינות לבנים' },
-    { id: 'rose-wine', label: 'רוזה' },
-    { id: 'sparkling-wine', label: 'מבעבעים' },
+    { id: 'red-wines', label: 'יינות אדומים' },
+    { id: 'white-wines', label: 'יינות לבנים' },
+    { id: 'rose-wines', label: 'רוזה' },
+    { id: 'sparkling-wines', label: 'מבעבעים' },
   ];
 
   // Update URL when category changes

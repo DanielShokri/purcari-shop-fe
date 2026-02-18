@@ -168,7 +168,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
       <div className="p-4 text-center flex-grow flex flex-col justify-end">
         <div className="flex items-center justify-center gap-2 text-xs text-gray-500 mb-1">
-          <span>{getWineTypeLabel(product.category)}</span>
+          <span>{getWineTypeLabel(product.wineType)}</span>
           {product.vintage && (
             <>
               <span className="text-gray-300">|</span>

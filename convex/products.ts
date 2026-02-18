@@ -33,12 +33,22 @@ export const list = query({
     let results;
 
     if (args.category) {
-      // Cast string to Id<"categories"> for index query
-      const categoryId = args.category as Id<"categories">;
-      results = await ctx.db
-        .query("products")
-        .withIndex("by_category", (idx) => idx.eq("category", categoryId))
-        .collect();
+      // First look up the category by slug to get its ID
+      const category = await ctx.db
+        .query("categories")
+        .withIndex("by_slug", (q) => q.eq("slug", args.category!))
+        .unique();
+
+      if (category) {
+        // Use the actual category ID to filter products
+        results = await ctx.db
+          .query("products")
+          .withIndex("by_category", (idx) => idx.eq("category", category._id))
+          .collect();
+      } else {
+        // Category not found - return empty array
+        results = [];
+      }
     } else {
       results = await ctx.db.query("products").collect();
     }

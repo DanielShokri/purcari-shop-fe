@@ -103,16 +103,21 @@ const AuthForm: React.FC = () => {
   };
 
   const handleGoogleSignIn = () => {
-    // Clear ALL form inputs in the DOM to prevent "unsaved changes" dialog
-    const formElement = document.querySelector('form');
-    if (formElement) {
-      formElement.reset();
-      // Mark form as submitted to prevent dialog
-      Object.defineProperty(formElement, 'changed', { value: false, writable: false });
-    }
+    // Suppress the "Leave page?" dialog caused by @convex-dev/auth's beforeunload
+    // listener. The library sets isRefreshingToken=true during token refresh, and
+    // its beforeunload handler fires e.preventDefault() + e.returnValue=true when
+    // that flag is set. If a refresh is in-flight when we navigate for OAuth,
+    // the browser shows a confirmation dialog.
+    //
+    // Fix: register a capture-phase listener that calls stopImmediatePropagation()
+    // to prevent the library's listener from running. This is safe because we're
+    // intentionally navigating away for OAuth — there's nothing to "save".
+    const suppressBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.stopImmediatePropagation();
+    };
+    window.addEventListener("beforeunload", suppressBeforeUnload, { capture: true });
     
     trackLogin("google");
-    // Call Convex signIn directly without async wrapper - like in examples
     void convexSignIn("google");
   };
 

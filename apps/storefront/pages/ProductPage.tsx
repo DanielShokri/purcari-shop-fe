@@ -34,7 +34,7 @@ const ProductPage: React.FC = () => {
     id || '',
     product?.productNameHe || product?.productName,
     product?.onSale && product?.salePrice ? product?.salePrice : product?.price,
-    getWineTypeLabel(product?.category)
+    getWineTypeLabel(product?.wineType)
   );
 
   // Track add to cart events
@@ -196,7 +196,7 @@ const ProductPage: React.FC = () => {
 
           {/* Details */}
           <div>
-            <div className="mb-2 text-secondary font-medium tracking-wide text-sm uppercase">{getWineTypeLabel(product.category)}</div>
+            <div className="mb-2 text-secondary font-medium tracking-wide text-sm uppercase">{getWineTypeLabel(product.wineType)}</div>
             <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4">{product.productNameHe || product.productName}</h1>
             
             <div className="flex items-center gap-4 mb-6">
@@ -313,10 +313,6 @@ const ProductPage: React.FC = () => {
                <div className="flex items-center gap-3">
                  <Shield size={18} />
                  <span>אחריות על איכות היין</span>
-               </div>
-               <div className="flex items-center gap-3">
-                 <RotateCcw size={18} />
-                 <span>החזרות עד 14 יום</span>
                </div>
             </div>
           </div>

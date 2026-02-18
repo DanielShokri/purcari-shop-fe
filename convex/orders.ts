@@ -184,6 +184,28 @@ export const get = adminQuery({
 });
 
 /**
+ * Get order details for storefront (order confirmation page).
+ * Public access - no admin required. The order ID acts as a capability.
+ */
+export const getPublic = query({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) return null;
+
+    const items = await ctx.db
+      .query("orderItems")
+      .withIndex("by_orderId", (q) => q.eq("orderId", args.orderId))
+      .collect();
+
+    return {
+      ...order,
+      items,
+    };
+  },
+});
+
+/**
  * List orders for a specific customer email.
  * Used for storefront order history.
  */

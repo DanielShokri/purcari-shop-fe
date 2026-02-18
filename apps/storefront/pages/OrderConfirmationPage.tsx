@@ -53,7 +53,7 @@ const OrderConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const orderData = useQuery(api.orders.get, id ? { orderId: id as Id<"orders"> } : "skip");
+  const orderData = useQuery(api.orders.getPublic, id ? { orderId: id as Id<"orders"> } : "skip");
   
   // Get payment transaction for this order (reactive - will auto-update when IPN arrives)
   const payment = useQuery(

@@ -43,8 +43,8 @@ const CategoriesGrid: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
             <div className="absolute inset-0 flex items-end justify-center p-8">
-              <Link 
-                to="/products?category=red-wine"
+              <Link
+                to="/products?category=red-wines"
                 className="bg-white/95 backdrop-blur-sm text-gray-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary hover:text-white transition-all transform group-hover:-translate-y-2"
               >
                 יינות אדומים
@@ -66,8 +66,8 @@ const CategoriesGrid: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
               <div className="absolute inset-0 flex items-end justify-center p-8">
-                <Link 
-                  to="/products?category=sparkling-wine"
+                <Link
+                  to="/products?category=sparkling-wines"
                   className="bg-white/95 backdrop-blur-sm text-gray-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary hover:text-white transition-all transform group-hover:-translate-y-2"
                 >
                   מבעבעים
@@ -87,8 +87,8 @@ const CategoriesGrid: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
               <div className="absolute inset-0 flex items-end justify-center p-8">
-                <Link 
-                  to="/products?category=rose-wine"
+                <Link
+                  to="/products?category=rose-wines"
                   className="bg-white/95 backdrop-blur-sm text-gray-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary hover:text-white transition-all transform group-hover:-translate-y-2"
                 >
                   רוזה
@@ -109,8 +109,8 @@ const CategoriesGrid: React.FC = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
             <div className="absolute inset-0 flex items-end justify-center p-8">
-              <Link 
-                to="/products?category=white-wine"
+              <Link
+                to="/products?category=white-wines"
                 className="bg-white/95 backdrop-blur-sm text-gray-900 px-8 py-3 rounded-full font-bold shadow-lg hover:bg-secondary hover:text-white transition-all transform group-hover:-translate-y-2"
               >
                 יינות לבנים

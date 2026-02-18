@@ -192,7 +192,7 @@ const SearchModal: React.FC = () => {
                           {/* Product Info */}
                           <div className="flex-1 min-w-0">
                             <p className="text-xs text-secondary font-medium mb-1">
-                              {getWineTypeLabel(product.category)}
+                              {getWineTypeLabel(product.wineType)}
                               {product.vintage && ` · ${product.vintage}`}
                             </p>
                             <h4 className="font-bold text-gray-800 group-hover:text-secondary transition-colors truncate">
