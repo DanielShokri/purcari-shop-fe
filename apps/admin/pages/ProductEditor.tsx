@@ -1,565 +1,81 @@
 // @ts-nocheck
 // Type instantiation depth issues with Convex useQuery API
-// This file compiles correctly at runtime but TypeScript cannot fully verify it
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { useQuery, useMutation } from 'convex/react';
-import { api } from '@convex/api';
-import { Id } from '@convex/dataModel';
-import { Product, ProductStatus, StockStatus, WineType } from '@shared/types';
-import {
-  Box,
-  Flex,
-  VStack,
-  HStack,
-  Heading,
-  Text,
-  Input,
-  Textarea,
-  Button,
-  Card,
-  Badge,
-  SimpleGrid,
-} from '@chakra-ui/react';
+import React from 'react';
+import { useParams } from 'react-router-dom';
+import { Box, Flex, VStack, HStack, Heading, Text, Input, Card, Badge, SimpleGrid, Button } from '@chakra-ui/react';
 import { LoadingState, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
-import {
-  PublishCard,
-  CategoriesCard,
-  TagsCard,
-  FeaturedImageCard,
-  EditorFooter,
-  PricingCard,
-  InventoryCard,
-  RelatedProductsCard,
-  WineDetailsCard,
-} from '../components/post-editor';
-import { useEditor } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import TextAlign from '@tiptap/extension-text-align';
-import Placeholder from '@tiptap/extension-placeholder';
+import { PublishCard, CategoriesCard, TagsCard, FeaturedImageCard, EditorFooter, PricingCard, InventoryCard, RelatedProductsCard, WineDetailsCard } from '../components/post-editor';
 import { RichTextEditor, Control } from '../components/ui/rich-text-editor';
-import { toaster } from '../components/ui/toaster';
+import { useProductEditor } from '../hooks/useProductEditor';
 
 export default function ProductEditor() {
   const { id } = useParams<{ id?: string }>();
-  const navigate = useNavigate();
-  const isEditMode = !!id;
-  
-  const existingProduct = useQuery(api.products.getById, isEditMode ? { productId: id as Id<"products"> } : "skip");
-  const allProducts = useQuery(api.products.list, {});
-  const categoriesData = useQuery(api.categories.list, { includeInactive: true });
-  
-  const createProduct = useMutation(api.products.create);
-  const updateProduct = useMutation(api.products.update);
-  const deleteProduct = useMutation(api.products.remove);
+  const { form, editor, state, handlers } = useProductEditor({ id });
+  const { register, control, watch, setValue } = form;
+  const { isEditMode, isLoading, isSaving, isDeleting, deleteDialogOpen, saveError, tagInput, categories, availableProducts, relatedProducts } = state;
+  const { handleSave, handleCancel, handleDelete, handleConfirmDelete, setDeleteDialogOpen, handleAddTag, handleRemoveTag, setTagInput, handleCategoryToggle, handleAddRelatedProduct, handleRemoveRelatedProduct } = handlers;
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const { register, handleSubmit, formState: { errors }, setValue, control, reset } = useForm<Partial<Product>>({
-    defaultValues: {
-      productName: '',
-      description: '',
-      status: ProductStatus.DRAFT,
-    },
-  });
-
-  // Transform categories from Convex to the format expected by CategoriesCard
-  const categories = (categoriesData || []).map(cat => ({
-    id: cat._id,
-    name: cat.nameHe || cat.name,
-  }));
-
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [tags, setTags] = useState<string[]>([]);
-  const [tagInput, setTagInput] = useState('');
-
-  // Wine-specific state
-  // Wine type mapping between frontend enum and Convex schema
-  const wineTypeToConvex = (type: WineType): "Red" | "White" | "Rosé" | "Sparkling" => {
-    const mapping: Record<WineType, "Red" | "White" | "Rosé" | "Sparkling"> = {
-      [WineType.RED]: "Red",
-      [WineType.WHITE]: "White",
-      [WineType.ROSE]: "Rosé",
-      [WineType.SPARKLING]: "Sparkling",
-    };
-    return mapping[type] || "Red";
-  };
-
-  const convexToWineType = (value: string | undefined): WineType => {
-    if (!value) return WineType.RED;
-    const mapping: Record<string, WineType> = {
-      "Red": WineType.RED,
-      "White": WineType.WHITE,
-      "Rosé": WineType.ROSE,
-      "Sparkling": WineType.SPARKLING,
-      // Also handle lowercase for backward compatibility
-      "red": WineType.RED,
-      "white": WineType.WHITE,
-      "rose": WineType.ROSE,
-      "sparkling": WineType.SPARKLING,
-    };
-    return mapping[value] || WineType.RED;
-  };
-  
-  const [wineType, setWineType] = useState<WineType>(WineType.RED);
-  const [volume, setVolume] = useState<string>('750 מ"ל');
-  const [grapeVariety, setGrapeVariety] = useState<string>('');
-  const [vintage, setVintage] = useState<number>(new Date().getFullYear());
-  const [servingTemperature, setServingTemperature] = useState<string>('');
-
-  // Short description state
-  const [shortDescription, setShortDescription] = useState<string>('');
-
-  // Pricing state
-  const [price, setPrice] = useState<number>(0);
-  const [onSale, setOnSale] = useState<boolean>(false);
-  const [salePrice, setSalePrice] = useState<number>(0);
-
-  // Inventory state
-  const [sku, setSku] = useState<string>('');
-  const [quantityInStock, setQuantityInStock] = useState<number>(0);
-  const [stockStatus, setStockStatus] = useState<StockStatus>(StockStatus.IN_STOCK);
-  const [isFeatured, setIsFeatured] = useState<boolean>(false);
-  const [featuredImage, setFeaturedImage] = useState<string>('');
-
-  // Related products state
-  const [relatedProductIds, setRelatedProductIds] = useState<string[]>([]);
-
-  // Delete Dialog State
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-
-  // Available products for related products selector (excluding current product)
-  const availableProducts = allProducts?.filter(p => p._id !== id).map(p => ({
-    id: p._id,
-    name: p.productName
-  })) || [];
-
-  // Get related products with names
-  const relatedProducts = relatedProductIds.map(rpId => {
-    const product = allProducts?.find(p => p._id === rpId);
-    return { id: rpId, name: product?.productName || 'מוצר לא נמצא' };
-  });
-
-  // Initialize Tiptap editor
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      Placeholder.configure({
-        placeholder: 'התחל לכתוב את תיאור המוצר...',
-      }),
-    ],
-    content: '',
-    onUpdate: ({ editor }) => {
-      setValue('description', editor.getHTML());
-    },
-  });
-
-  // Update editor content when existingProduct changes
-  useEffect(() => {
-    if (editor && existingProduct?.description) {
-      editor.commands.setContent(existingProduct.description);
-    }
-  }, [editor, existingProduct?.description]);
-
-  // Update all state when existingProduct changes (for edit mode)
-  useEffect(() => {
-    if (existingProduct) {
-      // Reset form values with existing product data
-      reset({
-        productName: existingProduct.productName,
-        description: existingProduct.description || '',
-        status: (existingProduct.status as ProductStatus) || ProductStatus.DRAFT,
-      });
-      
-      // Category is now an ID reference
-      setSelectedCategory(existingProduct.category || '');
-      setTags(existingProduct.tags || []);
-      setShortDescription(existingProduct.shortDescription || '');
-      setPrice(existingProduct.price || 0);
-      setOnSale(existingProduct.onSale || false);
-      setSalePrice(existingProduct.salePrice || 0);
-      setSku(existingProduct.sku || '');
-      setQuantityInStock(Number(existingProduct.quantityInStock) || 0);
-      setIsFeatured(existingProduct.isFeatured || false);
-      setFeaturedImage(existingProduct.featuredImage || '');
-      setRelatedProductIds((existingProduct.relatedProducts as string[]) || []);
-      
-      // Update wine specific fields
-      setWineType(convexToWineType(existingProduct.wineType));
-      setVolume(existingProduct.volume || '750 מ"ל');
-      setGrapeVariety(existingProduct.grapeVariety || '');
-      setVintage(Number(existingProduct.vintage) || new Date().getFullYear());
-      setServingTemperature(existingProduct.servingTemperature || '');
-    }
-  }, [existingProduct, reset]);
-
-  if (isEditMode && existingProduct === undefined) {
-    return <LoadingState message="טוען מוצר..." />;
-  }
-
-  if (categoriesData === undefined) {
-    return <LoadingState message="טוען קטגוריות..." />;
-  }
-
-  const onSubmit = async (data: Partial<Product>) => {
-    try {
-      setIsSaving(true);
-      const description = editor?.getHTML() || '';
-      
-      // Validate category is selected
-      if (!selectedCategory) {
-        setSaveError('יש לבחור קטגוריה');
-        setIsSaving(false);
-        return;
-      }
-      
-      const commonData = {
-        productName: data.productName!,
-        price,
-        quantityInStock: BigInt(quantityInStock),
-        sku,
-        category: selectedCategory as Id<"categories">,
-        description,
-        shortDescription: shortDescription || undefined,
-        salePrice: onSale ? salePrice : undefined,
-        onSale,
-        tags: tags.length > 0 ? tags : undefined,
-        relatedProducts: relatedProductIds.length > 0 
-          ? relatedProductIds as Id<"products">[] 
-          : undefined,
-        isFeatured,
-        featuredImage: featuredImage || undefined,
-        status: (data.status as "draft" | "active" | "hidden" | "discontinued") || "draft",
-        wineType: wineTypeToConvex(wineType),
-        volume: volume || undefined,
-        grapeVariety: grapeVariety || undefined,
-        vintage: vintage || undefined,
-        servingTemperature: servingTemperature || undefined,
-      };
-
-      if (isEditMode && id) {
-        await updateProduct({ 
-          id: id as Id<"products">, 
-          ...commonData 
-        });
-        toaster.create({
-          title: "המוצר עודכן בהצלחה",
-          type: "success",
-        });
-      } else {
-        await createProduct(commonData);
-        toaster.create({
-          title: "המוצר נוצר בהצלחה",
-          type: "success",
-        });
-      }
-      
-      setSaveError(null);
-      navigate('/products');
-    } catch (error: any) {
-      setSaveError(error?.message || 'שגיאה בשמירת המוצר. וודא שכל השדות תקינים.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleSave = () => {
-    handleSubmit(onSubmit)();
-  };
-
-  const handleCancel = () => {
-    navigate('/products');
-  };
-
-  const handleDelete = () => {
-    if (!id) return;
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!id) return;
-    try {
-      setIsDeleting(true);
-      await deleteProduct({ id: id as Id<"products"> });
-      toaster.create({
-        title: "המוצר נמחק בהצלחה",
-        type: "success",
-      });
-      navigate('/products');
-    } catch (error: any) {
-      setSaveError(error?.message || 'שגיאה במחיקת המוצר');
-      setDeleteDialogOpen(false);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleAddTag = () => {
-    if (tagInput.trim() && !tags.includes(tagInput.trim())) {
-      setTags([...tags, tagInput.trim()]);
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter(tag => tag !== tagToRemove));
-  };
-
-  const handleCategoryToggle = (categoryId: string) => {
-    // Single category selection - toggle or set
-    if (selectedCategory === categoryId) {
-      setSelectedCategory(''); // Deselect if clicking same category
-    } else {
-      setSelectedCategory(categoryId);
-    }
-  };
-
-  const handleAddRelatedProduct = (productId: string) => {
-    if (!relatedProductIds.includes(productId)) {
-      setRelatedProductIds([...relatedProductIds, productId]);
-    }
-  };
-
-  const handleRemoveRelatedProduct = (productId: string) => {
-    setRelatedProductIds(relatedProductIds.filter(id => id !== productId));
-  };
+  if (isLoading) return <LoadingState message="טוען מוצר..." />;
 
   return (
     <Box h="full" display="flex" flexDirection="column">
       <Box flex="1" overflowY="auto" css={{ scrollBehavior: 'smooth' }}>
         <Box maxW="1200px" mx="auto" w="full" pb="24">
-          <Breadcrumbs 
-            items={[
-              { label: 'ראשי', href: '#' },
-              { label: 'מוצרים', href: '#/products' },
-              { label: isEditMode ? (existingProduct?.productName || 'עריכת מוצר') : 'יצירת מוצר' }
-            ]} 
-          />
-
-          {/* Header */}
-          <Flex
-            direction={{ base: 'column', sm: 'row' }}
-            justify="space-between"
-            align={{ base: 'start', sm: 'center' }}
-            gap="4"
-            mb="8"
-          >
+          <Breadcrumbs items={[{ label: 'ראשי', href: '#' }, { label: 'מוצרים', href: '#/products' }, { label: isEditMode ? watch('productName') || 'עריכת מוצר' : 'יצירת מוצר' }]} />
+          <Flex direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'start', sm: 'center' }} gap="4" mb="8">
             <Box>
-              <Heading size="2xl" color="fg" mb="1" letterSpacing="tight">
-                {isEditMode ? (existingProduct?.productName || 'עריכת מוצר') : 'יצירת מוצר'}
-              </Heading>
-              <Text color="fg.muted" fontSize="sm">
-                {isEditMode ? 'ערוך את פרטי המוצר, התיאור וההגדרות' : 'צור מוצר חדש עם תיאור והגדרות'}
-              </Text>
+              <Heading size="2xl" color="fg" mb="1" letterSpacing="tight">{isEditMode ? watch('productName') || 'עריכת מוצר' : 'יצירת מוצר'}</Heading>
+              <Text color="fg.muted" fontSize="sm">{isEditMode ? 'ערוך את פרטי המוצר, התיאור וההגדרות' : 'צור מוצר חדש עם תיאור והגדרות'}</Text>
             </Box>
-            
             {saveError && (
               <Box bg="red.500/10" borderLeftWidth="4px" borderColor="red.500" p="4" my="4" rounded="md" w="full">
-                <HStack>
-                  <Text as="span" className="material-symbols-outlined" color="red.500">error</Text>
-                  <Text color="red.600" fontWeight="medium">{saveError}</Text>
-                </HStack>
+                <HStack><Text as="span" className="material-symbols-outlined" color="red.500">error</Text><Text color="red.600" fontWeight="medium">{saveError}</Text></HStack>
               </Box>
             )}
-
-            <Button variant="outline" size="sm" bg="bg.panel" borderColor="border">
-              <Text as="span" className="material-symbols-outlined" fontSize="lg">
-                visibility
-              </Text>
-              תצוגה מקדימה
-            </Button>
+            <Button variant="outline" size="sm" bg="bg.panel" borderColor="border"><Text as="span" className="material-symbols-outlined" fontSize="lg">visibility</Text>תצוגה מקדימה</Button>
           </Flex>
-
-          <form id="product-form" onSubmit={handleSubmit(onSubmit)}>
+          <form id="product-form" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
             <SimpleGrid columns={{ base: 1, lg: 12 }} gap={{ base: 6, lg: 8 }} alignItems="start">
-              {/* Main Content Column */}
               <VStack gap="6" gridColumn={{ lg: 'span 8' }} align="stretch">
-                {/* Title */}
-                <Card.Root>
-                  <Card.Body p="6">
-                    <Text fontSize="sm" fontWeight="bold" color="fg" mb="3">
-                      שם המוצר
-                    </Text>
-                    <Input
-                      {...register('productName', { required: 'שדה חובה' })}
-                      size="lg"
-                      fontSize="lg"
-                      fontWeight="medium"
-                      placeholder="הוסף שם מוצר כאן..."
-                      bg="bg.subtle"
-                      borderColor="border"
-                      _focus={{ ring: 4, ringColor: 'blue.500/10', borderColor: 'blue.500' }}
-                    />
-                    {errors.productName && (
-                      <Text fontSize="xs" color="red.500" mt="1">{errors.productName.message}</Text>
-                    )}
-                  </Card.Body>
-                </Card.Root>
-
-                {/* Rich Text Editor */}
-                <RichTextEditor.Root 
-                  editor={editor}
-                  css={{
-                    "--content-min-height": "400px",
-                  }}
-                >
+                <Card.Root><Card.Body p="6">
+                  <Text fontSize="sm" fontWeight="bold" color="fg" mb="3">שם המוצר</Text>
+                  <Input {...register('productName', { required: 'שדה חובה' })} size="lg" fontSize="lg" fontWeight="medium" placeholder="הוסף שם מוצר כאן..." bg="bg.subtle" borderColor="border" _focus={{ ring: 4, ringColor: 'blue.500/10', borderColor: 'blue.500' }} />
+                </Card.Body></Card.Root>
+                <RichTextEditor.Root editor={editor} css={{ '--content-min-height': '400px' }}>
                   <RichTextEditor.Toolbar>
-                    <RichTextEditor.ControlGroup>
-                      <Control.TextStyle />
-                    </RichTextEditor.ControlGroup>
-                    <RichTextEditor.ControlGroup>
-                      <Control.Bold />
-                      <Control.Italic />
-                      <Control.Strikethrough />
-                    </RichTextEditor.ControlGroup>
-                    <RichTextEditor.ControlGroup>
-                      <Control.AlignRight />
-                      <Control.AlignCenter />
-                      <Control.AlignLeft />
-                    </RichTextEditor.ControlGroup>
-                    <RichTextEditor.ControlGroup>
-                      <Control.BulletList />
-                      <Control.OrderedList />
-                      <Control.Blockquote />
-                    </RichTextEditor.ControlGroup>
-                    <RichTextEditor.ControlGroup>
-                      <Control.Undo />
-                      <Control.Redo />
-                    </RichTextEditor.ControlGroup>
+                    <RichTextEditor.ControlGroup><Control.TextStyle /></RichTextEditor.ControlGroup>
+                    <RichTextEditor.ControlGroup><Control.Bold /><Control.Italic /><Control.Strikethrough /></RichTextEditor.ControlGroup>
+                    <RichTextEditor.ControlGroup><Control.AlignRight /><Control.AlignCenter /><Control.AlignLeft /></RichTextEditor.ControlGroup>
+                    <RichTextEditor.ControlGroup><Control.BulletList /><Control.OrderedList /><Control.Blockquote /></RichTextEditor.ControlGroup>
+                    <RichTextEditor.ControlGroup><Control.Undo /><Control.Redo /></RichTextEditor.ControlGroup>
                   </RichTextEditor.Toolbar>
                   <RichTextEditor.Content />
                 </RichTextEditor.Root>
-
-                {/* Short Description */}
-                <Card.Root>
-                  <Card.Body p="6">
-                    <Flex justify="space-between" align="center" mb="3">
-                      <Text fontSize="sm" fontWeight="bold" color="fg">
-                        תיאור קצר
-                      </Text>
-                      <Badge fontSize="xs" bg="bg.subtle" px="2" py="1" rounded="md">
-                        אופציונלי
-                      </Badge>
-                    </Flex>
-                    <Textarea
-                      value={shortDescription}
-                      onChange={(e) => setShortDescription(e.target.value)}
-                      placeholder="כתוב תיאור קצר שיופיע ברשימת המוצרים..."
-                      minH="80px"
-                      maxLength={500}
-                      bg="bg.subtle"
-                      borderColor="border"
-                      fontSize="sm"
-                      _focus={{ ring: 4, ringColor: 'blue.500/10', borderColor: 'blue.500' }}
-                    />
-                    <Text fontSize="xs" color="fg.muted" mt="2" textAlign="left" dir="ltr">
-                      {shortDescription.length}/500
-                    </Text>
-                  </Card.Body>
-                </Card.Root>
-
-                {/* Related Products */}
-                <RelatedProductsCard
-                  relatedProducts={relatedProducts}
-                  availableProducts={availableProducts}
-                  onAddProduct={handleAddRelatedProduct}
-                  onRemoveProduct={handleRemoveRelatedProduct}
-                />
+                <Card.Root><Card.Body p="6">
+                  <Flex justify="space-between" align="center" mb="3">
+                    <Text fontSize="sm" fontWeight="bold" color="fg">תיאור קצר</Text>
+                    <Badge fontSize="xs" bg="bg.subtle" px="2" py="1" rounded="md">אופציונלי</Badge>
+                  </Flex>
+                  <textarea {...register('shortDescription')} placeholder="כתוב תיאור קצר שיופיע ברשימת המוצרים..." style={{ width: '100%', minHeight: '80px', padding: '12px', fontSize: '14px', borderRadius: '6px', border: '1px solid var(--chakra-colors-border)', background: 'var(--chakra-colors-bg-subtle)', resize: 'vertical' }} maxLength={500} />
+                  <Text fontSize="xs" color="fg.muted" mt="2" textAlign="left" dir="ltr">{(watch('shortDescription') || '').length}/500</Text>
+                </Card.Body></Card.Root>
+                <RelatedProductsCard relatedProducts={relatedProducts} availableProducts={availableProducts} onAddProduct={handleAddRelatedProduct} onRemoveProduct={handleRemoveRelatedProduct} />
               </VStack>
-
-              {/* Sidebar Column */}
               <VStack gap="6" gridColumn={{ lg: 'span 4' }} align="stretch">
-                <PublishCard
-                  control={control}
-                  isEditMode={isEditMode}
-                  isCreating={isSaving && !isEditMode}
-                  isUpdating={isSaving && isEditMode}
-                  isDeleting={isDeleting}
-                  onDelete={handleDelete}
-                />
-
-                <PricingCard
-                  price={price}
-                  onPriceChange={setPrice}
-                  onSale={onSale}
-                  onSaleChange={setOnSale}
-                  salePrice={salePrice}
-                  onSalePriceChange={setSalePrice}
-                />
-
-                <WineDetailsCard
-                  wineType={wineType}
-                  onWineTypeChange={setWineType}
-                  volume={volume}
-                  onVolumeChange={setVolume}
-                  grapeVariety={grapeVariety}
-                  onGrapeVarietyChange={setGrapeVariety}
-                  vintage={vintage}
-                  onVintageChange={setVintage}
-                  servingTemperature={servingTemperature}
-                  onServingTemperatureChange={setServingTemperature}
-                />
-
-                <InventoryCard
-                  sku={sku}
-                  onSkuChange={setSku}
-                  quantityInStock={quantityInStock}
-                  onQuantityChange={setQuantityInStock}
-                  stockStatus={stockStatus}
-                  onStockStatusChange={setStockStatus}
-                  isFeatured={isFeatured}
-                  onFeaturedChange={setIsFeatured}
-                />
-
-                <CategoriesCard
-                  categories={categories}
-                  selectedCategories={selectedCategory ? [selectedCategory] : []}
-                  onCategoryToggle={handleCategoryToggle}
-                />
-
-                <TagsCard
-                  tags={tags}
-                  tagInput={tagInput}
-                  onTagInputChange={setTagInput}
-                  onAddTag={handleAddTag}
-                  onRemoveTag={handleRemoveTag}
-                />
-
-                <FeaturedImageCard 
-                  imageUrl={featuredImage}
-                  onImageUrlChange={setFeaturedImage}
-                />
+                <PublishCard control={control} isEditMode={isEditMode} isCreating={isSaving && !isEditMode} isUpdating={isSaving && isEditMode} isDeleting={isDeleting} onDelete={handleDelete} />
+                <PricingCard price={watch('price') || 0} onPriceChange={(p) => setValue('price', p)} onSale={watch('onSale') || false} onSaleChange={(s) => setValue('onSale', s)} salePrice={watch('salePrice') || 0} onSalePriceChange={(p) => setValue('salePrice', p)} />
+                <WineDetailsCard wineType={watch('wineType')} onWineTypeChange={(t) => setValue('wineType', t)} volume={watch('volume') || ''} onVolumeChange={(v) => setValue('volume', v)} grapeVariety={watch('grapeVariety') || ''} onGrapeVarietyChange={(g) => setValue('grapeVariety', g)} vintage={watch('vintage') || new Date().getFullYear()} onVintageChange={(v) => setValue('vintage', v)} servingTemperature={watch('servingTemperature') || ''} onServingTemperatureChange={(t) => setValue('servingTemperature', t)} />
+                <InventoryCard sku={watch('sku') || ''} onSkuChange={(s) => setValue('sku', s)} quantityInStock={watch('quantityInStock') || 0} onQuantityChange={(q) => setValue('quantityInStock', q)} stockStatus={watch('stockStatus') || 'in_stock'} onStockStatusChange={(s) => setValue('stockStatus', s)} isFeatured={watch('isFeatured') || false} onFeaturedChange={(f) => setValue('isFeatured', f)} />
+                <CategoriesCard categories={categories} selectedCategories={watch('category') ? [watch('category')] : []} onCategoryToggle={handleCategoryToggle} />
+                <TagsCard tags={watch('tags') || []} tagInput={tagInput} onTagInputChange={setTagInput} onAddTag={handleAddTag} onRemoveTag={handleRemoveTag} />
+                <FeaturedImageCard imageUrl={watch('featuredImage')} onImageUrlChange={(u) => setValue('featuredImage', u)} />
               </VStack>
             </SimpleGrid>
           </form>
         </Box>
       </Box>
-
-      <EditorFooter
-        isEditMode={isEditMode}
-        isCreating={isSaving && !isEditMode}
-        isUpdating={isSaving && isEditMode}
-        isDeleting={isDeleting}
-        onSave={handleSave}
-        onCancel={handleCancel}
-        onDelete={handleDelete}
-      />
-
-      <DeleteConfirmationDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title="מחיקת מוצר"
-        message="האם אתה בטוח שברצונך למחוק מוצר זה? פעולה זו לא ניתנת לביטול."
-        isDeleting={isDeleting}
-      />
+      <EditorFooter isEditMode={isEditMode} isCreating={isSaving && !isEditMode} isUpdating={isSaving && isEditMode} isDeleting={isDeleting} onSave={handleSave} onCancel={handleCancel} onDelete={handleDelete} />
+      <DeleteConfirmationDialog isOpen={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} onConfirm={handleConfirmDelete} title="מחיקת מוצר" message="האם אתה בטוח שברצונך למחוק מוצר זה? פעולה זו לא ניתנת לביטול." isDeleting={isDeleting} />
     </Box>
   );
 }
