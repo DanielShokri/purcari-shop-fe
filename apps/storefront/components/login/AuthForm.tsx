@@ -10,6 +10,7 @@ import { useAuth, SignUpInput, SignInInput } from "../../hooks/useAuth";
 import { useAnalytics, useTrackSignup, useTrackLogin } from "../../hooks/useAnalytics";
 import { Authenticated } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { suppressAllBeforeunloadListeners } from "../../lib/beforeunloadGuard";
 
 // Google icon component for sign-in button
 const GoogleIcon: React.FC<{ className?: string }> = ({ className }) => (
@@ -41,6 +42,7 @@ const AuthForm: React.FC = () => {
   const redirect = searchParams.get("redirect");
   const toast = useToast();
   const [isLogin, setIsLogin] = useState(true);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const { signIn, signUp, isLoading, error, clearError } = useAuth();
   const { signIn: convexSignIn } = useAuthActions();
@@ -61,12 +63,6 @@ const AuthForm: React.FC = () => {
     reset();
     clearError();
   }, [isLogin]);
-
-  // Redirect authenticated users away from login page
-  useEffect(() => {
-    // This effect will only run when the component mounts
-    // The Authenticated component below will handle the actual redirect
-  }, []);
 
   const onSubmit: SubmitHandler<FormData> = async (data) => {
     let success = false;
@@ -102,29 +98,29 @@ const AuthForm: React.FC = () => {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    // Suppress the "Leave page?" dialog caused by @convex-dev/auth's beforeunload
-    // listener. The library sets isRefreshingToken=true during token refresh, and
-    // its beforeunload handler fires e.preventDefault() + e.returnValue=true when
-    // that flag is set. If a refresh is in-flight when we navigate for OAuth,
-    // the browser shows a confirmation dialog.
-    //
-    // Fix: register a capture-phase listener that calls stopImmediatePropagation()
-    // to prevent the library's listener from running. This is safe because we're
-    // intentionally navigating away for OAuth — there's nothing to "save".
-    const suppressBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.stopImmediatePropagation();
-    };
-    window.addEventListener("beforeunload", suppressBeforeUnload, { capture: true });
-    
+  const handleGoogleSignIn = async () => {
     trackLogin("google");
-    void convexSignIn("google");
+    setIsGoogleLoading(true);
+
+    // Remove all beforeunload listeners before OAuth redirect.
+    // Firefox ignores stopImmediatePropagation() for beforeunload, so the only
+    // reliable fix is to detach every listener (including @convex-dev/auth's)
+    // before the navigation occurs. They are auto-restored on pagehide.
+    const restore = suppressAllBeforeunloadListeners();
+
+    try {
+      await convexSignIn("google");
+    } catch (err) {
+      // Error means no navigation is happening — restore listeners immediately.
+      restore();
+    } finally {
+      setIsGoogleLoading(false);
+    }
   };
 
   // Component to handle redirect for authenticated users
   const AuthenticatedRedirect: React.FC = () => {
     useEffect(() => {
-      // Redirect to the specified redirect param, or default to home
       const destination = redirect || "/";
       navigate(destination, { replace: true });
     }, []);
@@ -278,11 +274,19 @@ const AuthForm: React.FC = () => {
         <button
           type="button"
           onClick={handleGoogleSignIn}
+          disabled={isGoogleLoading}
           aria-label="המשיכו עם Google"
-          className="mt-4 w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center justify-center gap-3 cursor-pointer"
+          className="mt-4 w-full bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-400 transition-colors flex items-center justify-center gap-3 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          <GoogleIcon className="w-5 h-5" />
-          <span>המשיכו עם Google</span>
+          {isGoogleLoading ? (
+            <svg className="w-5 h-5 animate-spin text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          ) : (
+            <GoogleIcon className="w-5 h-5" />
+          )}
+          <span>{isGoogleLoading ? "מתחבר..." : "המשיכו עם Google"}</span>
         </button>
       </div>
 

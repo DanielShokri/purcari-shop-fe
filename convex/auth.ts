@@ -5,6 +5,8 @@ import { ConvexError } from "convex/values";
 import { z } from "zod";
 import { DataModel } from "./_generated/dataModel";
 
+
+
 const emailSchema = z.string().min(1, "אימייל הוא שדה חובה").email("כתובת אימייל לא תקינה");
 
 const passwordSchema = z.string().min(4, "הסיסמה חייבת להכיל לפחות 4 תווים");
@@ -44,7 +46,10 @@ export const { auth, signIn, signOut, store } = convexAuth({
         };
       },
     }),
-    Google,
+    Google({
+      clientId: process.env.AUTH_GOOGLE_ID,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    }),
   ],
   callbacks: {
     async createOrUpdateUser(ctx, args) {

@@ -1,3 +1,4 @@
+import './lib/beforeunloadGuard'; // must be first — patches window.addEventListener
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
