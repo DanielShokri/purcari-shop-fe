@@ -44,12 +44,12 @@ export enum StockStatus {
   LOW_STOCK = 'low_stock',
 }
 
-// Wine type enum
+// Wine type enum - matches Convex schema exactly
 export enum WineType {
-  RED = 'red',
-  WHITE = 'white',
-  ROSE = 'rose',
-  SPARKLING = 'sparkling',
+  RED = 'Red',
+  WHITE = 'White',
+  ROSE = 'Rosé',
+  SPARKLING = 'Sparkling',
 }
 
 // Category status enum
