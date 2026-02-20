@@ -7,13 +7,18 @@
 ## Current Position
 
 **Active phase:** 07-optimize-loading
-**Current plan:** 07-01-PLAN.md (completed)
-**Plans completed:** 1 of 3
+**Current plan:** 07-02-PLAN.md (completed)
+**Plans completed:** 2 of 3
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan 07-02: Cache-Aware Loading States
+  - Enhanced LoadingState component with variant prop ('full'/'subtle')
+  - Updated all 6 admin list pages to use hasEverLoaded pattern
+  - Return visits now show data instantly from Convex cache without spinner
+
 - Plan 07-01: Cache-Aware Loading Hooks
   - Created useCachedQuery hook that tracks if data has ever been loaded
   - Exports: data, isLoading, hasEverLoaded, isRefreshing
@@ -111,6 +116,7 @@
 | Split Convex node/non-node code | Rivhit action in rivhit.ts, helpers in rivhitHelpers.ts | Phase 03-01 |
 | Add @auth/core as direct dependency | Resolve TypeScript module '@auth/core/providers/google' | Phase auth-google-01 |
 | useCachedQuery hook pattern | Track hasEverLoaded and isRefreshing for cache-aware loading | Phase 07-01 |
+| Cache-aware loading pattern | Only show spinner when isLoading AND !hasEverLoaded | Phase 07-02 |
 
 ### Claude's Discretion
 
@@ -215,6 +221,8 @@ All 4 plans completed:
 
 | Phase-Plan           | Duration | Tasks | Files |
 |----------------------|----------|-------|-------|
+| 07-02 | 5 min    | 7     | 7     |
+| 07-01 | 4 min    | 5     | 5     |
 | refactor-admin-hooks-04 | 4 min    | 4     | 4     |
 | refactor-admin-hooks-03 | 5 min    | 2     | 2     |
 | refactor-product-editor-01 | 10 min   | 3     | 3     |
@@ -229,5 +237,5 @@ All 4 plans completed:
 
 ## Last session
 
-**Stopped At:** Completed 07-01-PLAN.md (Phase 07: Optimize Loading - Plan 01)
+**Stopped At:** Completed 07-02-PLAN.md (Phase 07: Optimize Loading - Plan 02)
 **Resume file:** None
