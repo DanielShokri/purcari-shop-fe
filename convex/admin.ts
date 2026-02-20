@@ -17,9 +17,16 @@ export const getStats = query({
     // Get all users
     const users = await ctx.db.query("users").collect();
 
-    // Calculate total revenue (completed orders only)
-    const completedOrders = orders.filter(o => o.status === "completed");
-    const totalRevenue = completedOrders.reduce((sum, o) => sum + o.total, 0);
+    // Calculate total revenue - include all non-cancelled orders since they were paid
+    // (pending orders haven't been processed yet, but if they exist they may be paid)
+    // For safety, we'll include: pending, processing, completed, shipped
+    const paidOrders = orders.filter(o => 
+      o.status === "completed" || 
+      o.status === "processing" || 
+      o.status === "shipped" ||
+      o.status === "pending"
+    );
+    const totalRevenue = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
 
     // Calculate current month stats
     const now = new Date();
@@ -85,7 +92,7 @@ export const getStats = query({
       : 0;
 
     return {
-      totalSales: completedOrders.length,
+      totalSales: paidOrders.length,
       totalRevenue,
       revenueChange,
       orderCount: orders.length,
@@ -94,7 +101,7 @@ export const getStats = query({
       customerCount: users.length,
       totalUsers: users.length,
       usersChange,
-      averageOrderValue: completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0,
+      averageOrderValue: paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0,
       salesGrowth: revenueChange,
       orderGrowth: ordersChange,
       customerGrowth: usersChange,
@@ -120,12 +127,13 @@ export const getMonthlySales = query({
       month: index,
     }));
 
-    // Aggregate orders by month
+    // Aggregate orders by month - include all non-cancelled orders
     for (const order of orders) {
       const orderDate = new Date(order.createdAt);
-      if (orderDate.getFullYear() === targetYear && order.status === "completed") {
+      // Include all orders except cancelled ones
+      if (orderDate.getFullYear() === targetYear && order.status !== "cancelled") {
         const month = orderDate.getMonth();
-        monthlyData[month].value += order.total;
+        monthlyData[month].value += (order.total || 0);
       }
     }
 
