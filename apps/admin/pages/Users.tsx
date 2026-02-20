@@ -29,7 +29,7 @@ const roleOptions = createListCollection({
 });
 
 export default function Users() {
-  const { users, isLoading, state, handlers } = useUsers();
+  const { users, isLoading, hasEverLoaded, state, handlers } = useUsers();
   const { create, edit, delete: deleteDialog } = useUserDialogs();
 
   const {
@@ -52,7 +52,8 @@ export default function Users() {
     clearSelection,
   } = handlers;
 
-  if (isLoading) {
+  // Only show spinner on first load (cold cache), not on return visits
+  if (isLoading && !hasEverLoaded) {
     return <LoadingState message="טוען משתמשים..." />;
   }
 
