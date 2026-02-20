@@ -5,6 +5,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { Id } from '@convex/dataModel';
+import { useCachedQuery } from './useCachedQuery';
 
 /**
  * Filter configuration for entity lists
@@ -152,9 +153,11 @@ export function useEntityList<T extends { _id: string }>(
     return args;
   }, [staticQueryArgs, filters, filterValues]);
 
-  // Data fetching with dynamic query args
-  const items = useQuery(query, dynamicQueryArgs);
-  const isLoading = items === undefined;
+  // Data fetching with dynamic query args and cache detection
+  const { data: items, isLoading, hasEverLoaded, isRefreshing } = useCachedQuery({
+    query,
+    args: dynamicQueryArgs,
+  });
 
   // Get search config (client-side only)
   const searchConfig = useMemo(() => {
@@ -297,6 +300,8 @@ export function useEntityList<T extends { _id: string }>(
   return {
     items,
     isLoading,
+    hasEverLoaded,
+    isRefreshing,
     state: {
       filteredItems,
       paginatedItems,
