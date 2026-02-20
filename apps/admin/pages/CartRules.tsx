@@ -13,7 +13,7 @@ import { CartRule } from '@shared/types';
 export default function CartRules() {
   const navigate = useNavigate();
   const deleteMutation = useMutation(api.cartRules.remove);
-  const { items: cartRules, isLoading, state, handlers } = useEntityList<CartRule>({
+  const { items: cartRules, isLoading, hasEverLoaded, state, handlers } = useEntityList<CartRule>({
     query: api.cartRules.get,
     filters: [
       { key: 'search', type: 'search' },
@@ -26,7 +26,8 @@ export default function CartRules() {
   const { paginatedItems, totalPages, currentPage, itemsPerPage, filters, selectedItems, deleteDialog } = state;
   const { setFilter, setPage, toggleSelection, selectAll, clearSelection, openDeleteDialog, closeDeleteDialog, confirmDelete } = handlers;
 
-  if (isLoading) return <LoadingState message="טוען חוקי עגלה..." />;
+  // Only show spinner on first load (cold cache), not on return visits
+  if (isLoading && !hasEverLoaded) return <LoadingState message="טוען חוקי עגלה..." />;
 
   return (
     <VStack gap="0" align="stretch" h="full">
