@@ -2,7 +2,7 @@
 // Type instantiation depth issues with Convex useQuery API
 // This file compiles correctly at runtime but TypeScript cannot fully verify it
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/api';
@@ -80,6 +80,7 @@ function formatRelativeTime(dateStr: string): string {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
+  const [hasEverLoaded, setHasEverLoaded] = useState(false);
 
   const stats = useQuery(api.admin.getStats);
   const recentOrders = useQuery(api.orders.listAll, {});
@@ -87,20 +88,29 @@ export default function Dashboard() {
   const monthlySales = useQuery(api.admin.getMonthlySales, { year: parseInt(selectedYear) });
   const recentActivities = useQuery(api.activities.getLatest);
 
-   // Map API orders to dashboard Order type
-   const dashboardOrders: DashboardOrder[] = useMemo(() => {
-     if (!recentOrders) return [];
-     // Take only first 5 for dashboard
-     return recentOrders.slice(0, 5).map((order) => ({
-       id: `#${order._id.substring(0, 8)}`,
-       customer: order.customerName,
-       initials: getInitials(order.customerName),
-       color: getAvatarColor(order.customerName),
-       date: formatDate(order.createdAt),
-       amount: formatCurrency(order.total),
-       status: order.status,
-     }));
-   }, [recentOrders]);
+  // Track when all queries have loaded for the first time
+  const allLoaded = stats !== undefined && recentOrders !== undefined && availableYears !== undefined && monthlySales !== undefined && recentActivities !== undefined;
+  useEffect(() => {
+    if (allLoaded) setHasEverLoaded(true);
+  }, [allLoaded]);
+
+  // Only show spinner on first load (cold cache), show data instantly on return visits
+  const isLoading = !hasEverLoaded && !allLoaded;
+
+  // Map API orders to dashboard Order type
+  const dashboardOrders: DashboardOrder[] = useMemo(() => {
+    if (!recentOrders) return [];
+    // Take only first 5 for dashboard
+    return recentOrders.slice(0, 5).map((order) => ({
+      id: `#${order._id.substring(0, 8)}`,
+      customer: order.customerName,
+      initials: getInitials(order.customerName),
+      color: getAvatarColor(order.customerName),
+      date: formatDate(order.createdAt),
+      amount: formatCurrency(order.total),
+      status: order.status,
+    }));
+  }, [recentOrders]);
 
   // Use chart data from API or fallback to empty
   const chartData = monthlySales || [];
@@ -114,8 +124,6 @@ export default function Dashboard() {
       color: activity.color,
     }));
   }, [recentActivities]);
-
-  const isLoading = stats === undefined || recentOrders === undefined || monthlySales === undefined || recentActivities === undefined || availableYears === undefined;
 
   if (isLoading) {
     return <LoadingState message="טוען נתונים..." />;
