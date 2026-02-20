@@ -14,6 +14,7 @@
 | 04 | **Google OAuth Authentication** | ✓ Complete | 1/1 |
 | 05 | **Refactor Product Editor** | ✓ Complete | 1/1 |
 | 06 | **Refactor Admin Hooks** | ✓ Complete | 4/4 |
+| 07 | **Optimize Admin Loading** | Planning | 3/3 |
 
 ---
 
@@ -224,6 +225,26 @@ Phase 02 addressed TypeScript errors across the entire monorepo. Key fixes inclu
 ## Future Phases (Backlog)
 
 *Additional phases to be planned based on business priorities*
+
+### Phase 07: Optimize Admin Loading
+
+**Status:** Planning
+
+**Goal:** Eliminate unnecessary loading spinners when navigating between admin pages
+
+**Problem:** Every page navigation triggers a full-page loading spinner, even when data is cached by Convex. Users see spinners on every page visit.
+
+**Solution:** Track "ever loaded" state in hooks and pages. Only show spinner on first visit (cold cache). Return visits show data instantly from Convex cache.
+
+**Deliverables:**
+- [ ] Plan 01: Create useCachedQuery hook + update hooks (useEntityList, useOrders, useUsers, useCategories)
+- [ ] Plan 02: Update list pages (Products, Orders, Users, Categories, Coupons, CartRules)
+- [ ] Plan 03: Update Dashboard, Analytics, and detail pages
+
+**Expected Impact:**
+- First visit to any page: shows spinner (cold cache)
+- Return to any page: shows data instantly (warm cache)
+- Better UX with no perceived latency on navigation
 
 ---
 
