@@ -8,6 +8,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@convex/api';
 import { Id } from '@convex/dataModel';
 import { Category, CategoryStatus } from '@shared/types';
+import { useCachedQuery } from './useCachedQuery';
 
 export interface CategoryFormData {
   name: string;
@@ -70,8 +71,11 @@ export interface UseCategoriesReturn {
 }
 
 export function useCategories(): UseCategoriesReturn {
-  // API queries and mutations
-  const categories = useQuery(api.categories.list, { includeInactive: true });
+  // API queries and mutations with cache detection
+  const { data: categories, isLoading, hasEverLoaded, isRefreshing } = useCachedQuery({
+    query: api.categories.list,
+    args: { includeInactive: true },
+  });
   const createCategory = useMutation(api.categories.create);
   const updateCategory = useMutation(api.categories.update);
   const deleteCategory = useMutation(api.categories.remove);
@@ -242,6 +246,8 @@ export function useCategories(): UseCategoriesReturn {
   return {
     categories,
     isLoading,
+    hasEverLoaded,
+    isRefreshing,
     tree: {
       categoryTree,
       expandedCategories,
