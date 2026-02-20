@@ -17,7 +17,7 @@ const categoryLabels: Record<string, string> = { red_wine: 'יינות אדומ�
 export default function Products() {
   const navigate = useNavigate();
   const deleteMutation = useMutation(api.products.remove);
-  const { items: products, isLoading, state, handlers } = useEntityList<Product>({
+  const { items: products, isLoading, hasEverLoaded, state, handlers } = useEntityList<Product>({
     query: api.products.list,
     filters: [
       { key: 'search', type: 'search' },
@@ -31,7 +31,8 @@ export default function Products() {
   const getCategoryLabel = (c: string) => categoryLabels[c] || c;
   const getRandomImage = (i: number) => productImages[i % productImages.length];
 
-  if (isLoading) return <LoadingState message="טוען מוצרים..." />;
+  // Only show spinner on first load (cold cache), not on return visits
+  if (isLoading && !hasEverLoaded) return <LoadingState message="טוען מוצרים..." />;
 
   return (
     <VStack gap="0" align="stretch" h="full">
