@@ -104,6 +104,15 @@ export function useProductEditor({ id }: UseProductEditorProps) {
   const [tagInput, setTagInput] = useState('');
   const [hasLoadedData, setHasLoadedData] = useState(false);
 
+  // Track when product data has loaded for the first time (cache-aware loading)
+  const productDataLoaded = isEditMode ? existingProduct !== undefined : true;
+  useEffect(() => {
+    if (productDataLoaded) setHasLoadedData(true);
+  }, [productDataLoaded]);
+
+  // Only show loading spinner on first load (cold cache), show cached data instantly on return
+  const isLoading = isEditMode && !hasLoadedData && existingProduct === undefined;
+
   // Transform categories for UI
   const categories = useMemo(() => {
     return (categoriesData || []).map((cat: Category) => ({
@@ -343,7 +352,7 @@ export function useProductEditor({ id }: UseProductEditorProps) {
     editor,
     state: {
       isEditMode,
-      isLoading: isEditMode && existingProduct === undefined,
+      isLoading,
       isSaving,
       isDeleting,
       deleteDialogOpen,
