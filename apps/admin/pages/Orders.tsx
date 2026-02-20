@@ -10,13 +10,14 @@ import { useOrders } from '../hooks/useOrders';
 
 export default function Orders() {
   const navigate = useNavigate();
-  const { orders, isLoading, state, handlers } = useOrders();
+  const { orders, isLoading, hasEverLoaded, state, handlers } = useOrders();
   const { paginatedOrders, totalPages, currentPage, ordersPerPage, selectedOrders, statusCounts, deleteDialog, filters } = state;
   const { setActiveChip, setSearchTerm, setStatusFilter, setDateFilter, setCurrentPage, toggleOrderSelection, selectAllOrders, openDeleteDialog, closeDeleteDialog, confirmDelete } = handlers;
   const handleView = (orderId: string) => navigate(`/orders/${orderId}`);
   const handleEdit = (orderId: string) => navigate(`/orders/${orderId}`);
 
-  if (isLoading) return <LoadingState message="טוען הזמנות..." />;
+  // Only show spinner on first load (cold cache), not on return visits
+  if (isLoading && !hasEverLoaded) return <LoadingState message="טוען הזמנות..." />;
 
   return (
     <VStack gap="0" align="stretch" h="full">
