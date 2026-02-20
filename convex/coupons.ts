@@ -88,6 +88,7 @@ export const create = adminMutation({
 export const update = adminMutation({
   args: {
     id: v.id("coupons"),
+    code: v.optional(v.string()),
     status: v.optional(v.union(
       v.literal("active"),
       v.literal("paused"),
@@ -95,10 +96,27 @@ export const update = adminMutation({
       v.literal("scheduled")
     )),
     description: v.optional(v.string()),
+    discountType: v.optional(v.union(
+      v.literal("percentage"),
+      v.literal("fixed_amount"),
+      v.literal("free_shipping"),
+      v.literal("free_product"),
+      v.literal("buy_x_get_y")
+    )),
     discountValue: v.optional(v.float64()),
+    buyQuantity: v.optional(v.number()),
+    getQuantity: v.optional(v.number()),
+    startDate: v.optional(v.string()),
     endDate: v.optional(v.string()),
+    minimumOrder: v.optional(v.float64()),
+    maximumDiscount: v.optional(v.float64()),
     usageLimit: v.optional(v.number()),
     usageLimitPerUser: v.optional(v.number()),
+    categoryIds: v.optional(v.array(v.string())),
+    productIds: v.optional(v.array(v.string())),
+    userIds: v.optional(v.array(v.string())),
+    firstPurchaseOnly: v.optional(v.boolean()),
+    excludeOtherCoupons: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     const { id, ...patch } = args;

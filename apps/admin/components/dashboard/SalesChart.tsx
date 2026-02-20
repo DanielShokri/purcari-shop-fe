@@ -51,7 +51,7 @@ export default function SalesChart({
           <Select.Root
             collection={yearOptions}
             size="sm"
-            width="auto"
+            width="80px"
             value={selectedYear ? [selectedYear] : []}
             onValueChange={(e) => onYearChange?.(e.value[0])}
           >

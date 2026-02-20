@@ -160,8 +160,7 @@ export function useCategories(): UseCategoriesReturn {
     }
   }, [selectedCategory, reset]);
 
-  // Loading state
-  const isLoading = categories === undefined;
+  // isLoading is now provided by useCachedQuery (line 75)
 
   // Handlers
   const selectCategory = useCallback((id: string | null) => {
