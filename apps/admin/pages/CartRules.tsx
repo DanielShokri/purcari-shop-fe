@@ -1,80 +1,32 @@
 // @ts-nocheck
 // Type instantiation depth issues with Convex useQuery API
-// This file compiles correctly at runtime but TypeScript cannot fully verify it
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from 'convex/react';
+import { useMutation } from 'convex/react';
 import { api } from "@convex/api";
-import { Id } from "@convex/dataModel";
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { CartRulesFilterToolbar, CartRulesTable } from '../components/cart-rules';
+import { useEntityList } from '../hooks/useEntityList';
+import { CartRule } from '@shared/types';
 
 export default function CartRules() {
   const navigate = useNavigate();
-  const cartRules = useQuery(api.cartRules.get, {});
-  const deleteCartRule = useMutation(api.cartRules.remove);
-  const isLoading = cartRules === undefined;
+  const deleteMutation = useMutation(api.cartRules.remove);
+  const { items: cartRules, isLoading, state, handlers } = useEntityList<CartRule>({
+    query: api.cartRules.get,
+    filters: [
+      { key: 'search', type: 'search' },
+      { key: 'type', type: 'select', field: 'ruleType', defaultValue: 'all' },
+      { key: 'status', type: 'select', field: 'status', defaultValue: 'all' },
+    ],
+    itemsPerPage: 10,
+    enableSelection: true,
+  });
+  const { paginatedItems, totalPages, currentPage, itemsPerPage, filters, selectedItems, deleteDialog } = state;
+  const { setFilter, setPage, toggleSelection, selectAll, clearSelection, openDeleteDialog, closeDeleteDialog, confirmDelete } = handlers;
 
-  // Filter States
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedCartRules, setSelectedCartRules] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const cartRulesPerPage = 10;
-
-  // Delete Dialog State
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [cartRuleToDelete, setCartRuleToDelete] = useState<Id<"cartRules"> | null>(null);
-
-  if (isLoading) {
-    return <LoadingState message="טוען חוקי עגלה..." />;
-  }
-
-  const filteredCartRules = cartRules?.filter(rule => {
-    const matchesSearch = rule.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (rule.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    const matchesType = typeFilter === 'all' || rule.ruleType === typeFilter;
-    const matchesStatus = statusFilter === 'all' || rule.status === statusFilter;
-    return matchesSearch && matchesType && matchesStatus;
-  }) || [];
-
-  const totalPages = Math.ceil(filteredCartRules.length / cartRulesPerPage);
-  const paginatedCartRules = filteredCartRules.slice(
-    (currentPage - 1) * cartRulesPerPage,
-    currentPage * cartRulesPerPage
-  ).map(r => ({ ...r, $id: r._id }));
-
-  const handleDelete = (id: string) => {
-    setCartRuleToDelete(id as Id<"cartRules">);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (cartRuleToDelete) {
-      await deleteCartRule({ id: cartRuleToDelete });
-      setDeleteDialogOpen(false);
-      setCartRuleToDelete(null);
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedCartRules(paginatedCartRules.map(r => r._id));
-    } else {
-      setSelectedCartRules([]);
-    }
-  };
-
-  const handleSelectCartRule = (cartRuleId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCartRules(prev => [...prev, cartRuleId]);
-    } else {
-      setSelectedCartRules(prev => prev.filter(id => id !== cartRuleId));
-    }
-  };
+  if (isLoading) return <LoadingState message="טוען חוקי עגלה..." />;
 
   return (
     <VStack gap="0" align="stretch" h="full">
@@ -85,37 +37,35 @@ export default function CartRules() {
         actionIcon="add"
         onAction={() => navigate('/cart-rules/new')}
       />
-
       <CartRulesFilterToolbar
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        typeFilter={typeFilter}
-        onTypeFilterChange={setTypeFilter}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
+        searchTerm={filters.search}
+        onSearchChange={(value) => setFilter('search', value)}
+        typeFilter={filters.type}
+        onTypeFilterChange={(value) => setFilter('type', value)}
+        statusFilter={filters.status}
+        onStatusFilterChange={(value) => setFilter('status', value)}
       />
-
       <CartRulesTable
-        cartRules={paginatedCartRules}
-        selectedCartRules={selectedCartRules}
-        onSelectAll={handleSelectAll}
-        onSelectCartRule={handleSelectCartRule}
+        cartRules={paginatedItems}
+        selectedCartRules={selectedItems}
+        onSelectAll={(checked) => checked ? selectAll() : clearSelection()}
+        onSelectCartRule={(id, checked) => toggleSelection(id)}
         onEdit={(cartRuleId) => navigate(`/cart-rules/${cartRuleId}/edit`)}
-        onDelete={handleDelete}
+        onDelete={(id) => {
+          const rule = cartRules?.find((r) => r._id === id);
+          if (rule) openDeleteDialog(rule);
+        }}
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={filteredCartRules.length}
-        itemsPerPage={cartRulesPerPage}
-        onPageChange={setCurrentPage}
+        totalItems={state.filteredItems.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setPage}
       />
-
       <DeleteConfirmationDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setCartRuleToDelete(null);
-        }}
-        onConfirm={handleConfirmDelete}
+        isOpen={deleteDialog.isOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={() => confirmDelete(deleteMutation)}
+        isLoading={deleteDialog.isDeleting}
         title="מחיקת חוק עגלה"
         message="האם אתה בטוח שברצונך למחוק חוק זה? פעולה זו לא ניתנת לביטול."
       />
