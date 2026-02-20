@@ -1,19 +1,24 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 19, 2026 (23:08 UTC)
+**Last updated:** February 20, 2026 (07:51 UTC)
 
 ---
 
 ## Current Position
 
-**Active phase:** Phase refactor-product-editor
-**Current plan:** refactor-product-editor-01 (completed)
-**Plans completed:** 1 of 1
+**Active phase:** Phase refactor-admin-hooks
+**Current plan:** refactor-admin-hooks-03 (pending)
+**Plans completed:** 2 of 4
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan refactor-admin-hooks-02: Extract useOrders hook from Orders.tsx
+  - Created useOrders hook (293 lines) consolidating all order list state
+  - Refactored Orders.tsx from 251 lines to 48 lines (81% reduction)
+  - Eliminated 10 useState calls from component
+  - Extracted date filtering and status counts to hook
 - Plan refactor-product-editor-01: Refactor ProductEditor to use useProductEditor hook
   - Fixed WineType enum to match Convex schema (Red, White, Rosé, Sparkling)
   - Created useProductEditor hook (370 lines) consolidating all product form state
@@ -66,6 +71,7 @@
 | Node action pattern | External API calls in "use node" action files, mutations in separate helper files |
 | Google OAuth provider | Use @auth/core/providers/google for standard OAuth flow |
 | OAuth UX | Place Google button below email form with "או" divider, maintain RTL layout |
+| Order list state pattern | Use useOrders hook with state/handlers structure | Phase refactor-admin-hooks-02 |
 
 ### Deferred
 
@@ -140,3 +146,6 @@
 | refactor-product-editor-01 | 10 min   | 3     | 3     |
 | auth-google-01       | 4 min    | 4     | 4     |
 | 03-01                | 3 min    | 2     | 5     |
+| Phase refactor-admin-hooks P02 | 2min | 2 tasks | 2 files |
+| Phase refactor-admin-hooks P01 | 8 min | 3 tasks | 3 files |
+
