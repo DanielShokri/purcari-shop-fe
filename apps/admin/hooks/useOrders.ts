@@ -7,6 +7,7 @@ import { useQuery, useMutation } from 'convex/react';
 import { api } from '@convex/api';
 import { Order, OrderStatus } from '@shared/types';
 import { toaster } from '../components/ui/toaster';
+import { useCachedQuery } from './useCachedQuery';
 
 export interface UseOrdersFilters {
   activeChip: string;
@@ -87,12 +88,14 @@ const isWithinDateRange = (dateStr: string, range: string): boolean => {
 };
 
 export function useOrders(): UseOrdersReturn {
-  // Data fetching
+  // Data fetching with cache detection
   const [activeChip, setActiveChip] = useState<string>('all');
-  const orders = useQuery(api.orders.listAll, {
-    status: activeChip !== 'all' ? (activeChip as any) : undefined,
+  const { data: orders, isLoading, hasEverLoaded, isRefreshing } = useCachedQuery({
+    query: api.orders.listAll,
+    args: {
+      status: activeChip !== 'all' ? (activeChip as any) : undefined,
+    },
   });
-  const isLoading = orders === undefined;
   const updateOrderStatusMutation = useMutation(api.orders.updateStatus);
 
   // Filter states
@@ -253,6 +256,8 @@ export function useOrders(): UseOrdersReturn {
   return {
     orders,
     isLoading,
+    hasEverLoaded,
+    isRefreshing,
     state: {
       filteredOrders,
       paginatedOrders,
