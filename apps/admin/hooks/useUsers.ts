@@ -6,6 +6,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/api';
 import { User } from '@shared/types';
+import { useCachedQuery } from './useCachedQuery';
 
 export interface UseUsersFilters {
   searchTerm: string;
@@ -43,9 +44,11 @@ export interface UseUsersReturn {
 const USERS_PER_PAGE = 10;
 
 export function useUsers(): UseUsersReturn {
-  // Data fetching
-  const users = useQuery(api.users.listAll, {});
-  const isLoading = users === undefined;
+  // Data fetching with cache detection
+  const { data: users, isLoading, hasEverLoaded, isRefreshing } = useCachedQuery({
+    query: api.users.listAll,
+    args: {},
+  });
 
   // Filter states (UI-only)
   const [searchTerm, setSearchTerm] = useState('');
@@ -134,6 +137,8 @@ export function useUsers(): UseUsersReturn {
   return {
     users,
     isLoading,
+    hasEverLoaded,
+    isRefreshing,
     state: {
       filteredUsers,
       paginatedUsers,
