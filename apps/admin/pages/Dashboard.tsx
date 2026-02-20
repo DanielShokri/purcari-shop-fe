@@ -19,13 +19,6 @@ import { LoadingState } from '../components/shared';
 import { StatCard, SalesChart, ActivityFeed, OrdersTable } from '../components/dashboard';
 import type { ActivityItem, Order as DashboardOrder } from '../components/dashboard';
 
-// Activity data (would need a separate collection to be dynamic)
-const recentActivity: ActivityItem[] = [
-  { title: 'הזמנה חדשה #4023', subtitle: 'לפני 2 דקות • יוסי כהן', color: 'blue.500' },
-  { title: 'התשלום התקבל בהצלחה', subtitle: 'לפני 15 דקות • חשבונית 5002', color: 'green.500' },
-  { title: 'התראה על מלאי נמוך', subtitle: 'לפני שעה • מוצר #X99', color: 'yellow.500' },
-];
-
 // Helper to format currency
 const formatCurrency = (amount: number): string => {
   return `₪${amount.toLocaleString('he-IL')}`;
@@ -63,12 +56,34 @@ const formatDate = (dateStr: string): string => {
   });
 };
 
+// Helper to format relative time in Hebrew
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffMinutes < 1) return 'עכשיו';
+  if (diffMinutes < 60) return `לפני ${diffMinutes} דקות`;
+  if (diffHours < 24) return diffHours === 1 ? 'לפני שעה' : `לפני ${diffHours} שעות`;
+  if (diffDays === 1) return 'אתמול';
+  if (diffDays < 7) return `לפני ${diffDays} ימים`;
+
+  return date.toLocaleDateString('he-IL', {
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  
+
   const stats = useQuery(api.admin.getStats);
   const recentOrders = useQuery(api.orders.listAll, {});
   const monthlySales = useQuery(api.admin.getMonthlySales);
+  const recentActivities = useQuery(api.activities.getLatest);
 
    // Map API orders to dashboard Order type
    const dashboardOrders: DashboardOrder[] = useMemo(() => {
@@ -88,7 +103,17 @@ export default function Dashboard() {
   // Use chart data from API or fallback to empty
   const chartData = monthlySales || [];
 
-  const isLoading = stats === undefined || recentOrders === undefined || monthlySales === undefined;
+  // Map API activities to dashboard ActivityItem type
+  const dashboardActivities: ActivityItem[] = useMemo(() => {
+    if (!recentActivities || recentActivities.length === 0) return [];
+    return recentActivities.slice(0, 5).map((activity) => ({
+      title: activity.title,
+      subtitle: `${formatRelativeTime(activity.createdAt)} • ${activity.subtitle}`,
+      color: activity.color,
+    }));
+  }, [recentActivities]);
+
+  const isLoading = stats === undefined || recentOrders === undefined || monthlySales === undefined || recentActivities === undefined;
 
   if (isLoading) {
     return <LoadingState message="טוען נתונים..." />;
@@ -179,7 +204,7 @@ export default function Dashboard() {
       {/* Charts Section */}
       <SimpleGrid columns={{ base: 1, lg: 3 }} gap="6">
         <SalesChart data={chartData} />
-        <ActivityFeed activities={recentActivity} />
+        <ActivityFeed activities={dashboardActivities} />
       </SimpleGrid>
 
       {/* Orders Table */}

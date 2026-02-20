@@ -298,6 +298,23 @@ export default defineSchema({
     .index("by_userId_event", ["userId", "event"])
     .index("by_anon_id", ["anonymousId"]),
 
+  activities: defineTable({
+    title: v.string(),
+    subtitle: v.string(),
+    type: v.union(
+      v.literal("order"),
+      v.literal("payment"),
+      v.literal("inventory"),
+      v.literal("user_action"),
+      v.literal("system")
+    ),
+    color: v.optional(v.string()),
+    relatedId: v.optional(v.string()),
+    createdAt: v.string(),
+  })
+    .index("by_type", ["type"])
+    .index("by_createdAt", ["createdAt"]),
+
   notifications: defineTable({
     userId: v.id("users"), 
     title: v.string(),

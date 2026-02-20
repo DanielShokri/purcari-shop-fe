@@ -157,6 +157,14 @@ export const create = mutation({
       });
     }
 
+    // 8. Create activity entry for the new order
+    // @ts-expect-error Type instantiation depth issue with Convex API types
+    await ctx.runMutation(api.activities.createOrderActivity, {
+      orderNumber,
+      customerName: args.customerName,
+      total,
+    });
+
     return orderId;
   },
 });
@@ -321,9 +329,59 @@ export const updateStatus = adminMutation({
   },
   handler: async (ctx, args) => {
     const now = new Date().toISOString();
+
+    // Get order details before updating
+    const order = await ctx.db.get(args.orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
     await ctx.db.patch(args.orderId, {
       status: args.status,
       updatedAt: now,
     });
+
+    // Map status to activity/notification status
+    const statusMap: Record<string, string> = {
+      pending: "placed",
+      processing: "processing",
+      shipped: "shipped",
+      completed: "completed",
+      cancelled: "cancelled",
+    };
+
+    // Create activity entry for status change
+    const statusLabels: Record<string, { title: string; color: string }> = {
+      pending: { title: `הזמנה #${order.orderNumber} נוצרה`, color: "blue.500" },
+      processing: { title: `הזמנה #${order.orderNumber} בעיבוד`, color: "orange.500" },
+      shipped: { title: `הזמנה #${order.orderNumber} נשלחה`, color: "cyan.500" },
+      completed: { title: `הזמנה #${order.orderNumber} הושלמה`, color: "green.500" },
+      cancelled: { title: `הזמנה #${order.orderNumber} בוטלה`, color: "red.500" },
+    };
+
+    const statusInfo = statusLabels[args.status];
+    if (statusInfo) {
+      // Create activity entry
+      await ctx.db.insert("activities", {
+        title: statusInfo.title,
+        subtitle: `${order.customerName} - ₪${order.total.toLocaleString("he-IL")}`,
+        type: "order",
+        color: statusInfo.color,
+        relatedId: args.orderId,
+        createdAt: now,
+      });
+
+      // Create notification for the customer if they have a userId
+      if (order.customerId) {
+        // @ts-expect-error Type instantiation depth issue with Convex API types
+        await ctx.runMutation(api.notifications.createOrderNotification, {
+          userId: order.customerId,
+          orderNumber: order.orderNumber || 0,
+          customerName: order.customerName,
+          total: order.total,
+          status: statusMap[args.status] || "placed",
+        });
+      }
+    }
   },
 });

@@ -266,7 +266,7 @@ export const createSystemErrorNotification = mutation({
     const title =
       severityLabels[args.severity || "high"] ||
       severityLabels.high;
-    
+
     const serviceText = args.affectedService
       ? ` - ${args.affectedService}`
       : "";
@@ -278,6 +278,62 @@ export const createSystemErrorNotification = mutation({
       message,
       type: "system_error",
       icon: args.customIcon || "bug_report",
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+  },
+});
+
+/**
+ * Create an order notification
+ * Used when new orders are placed or order status changes
+ */
+export const createOrderNotification = mutation({
+  args: {
+    userId: v.id("users"),
+    orderNumber: v.number(),
+    customerName: v.string(),
+    total: v.number(),
+    status: v.string(), // "placed", "processing", "shipped", "completed", "cancelled"
+    customIcon: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const statusLabels: Record<string, { title: string; message: string; icon: string }> = {
+      placed: {
+        title: "הזמנה חדשה התקבלה",
+        message: `הזמנה #${args.orderNumber} מ${args.customerName} - ₪${args.total.toLocaleString("he-IL")}`,
+        icon: "shopping_cart",
+      },
+      processing: {
+        title: "הזמנה בעיבוד",
+        message: `הזמנה #${args.orderNumber} הועברה לטיפול - ₪${args.total.toLocaleString("he-IL")}`,
+        icon: "schedule",
+      },
+      shipped: {
+        title: "הזמנה נשלחה",
+        message: `הזמנה #${args.orderNumber} נשלחה ללקוח - ₪${args.total.toLocaleString("he-IL")}`,
+        icon: "local_shipping",
+      },
+      completed: {
+        title: "הזמנה הושלמה",
+        message: `הזמנה #${args.orderNumber} הושלמה בהצלחה - ₪${args.total.toLocaleString("he-IL")}`,
+        icon: "check_circle",
+      },
+      cancelled: {
+        title: "הזמנה בוטלה",
+        message: `הזמנה #${args.orderNumber} בוטלה - ₪${args.total.toLocaleString("he-IL")}`,
+        icon: "cancel",
+      },
+    };
+
+    const statusInfo = statusLabels[args.status] || statusLabels.placed;
+
+    await ctx.db.insert("notifications", {
+      userId: args.userId,
+      title: statusInfo.title,
+      message: statusInfo.message,
+      type: "order",
+      icon: args.customIcon || statusInfo.icon,
       isRead: false,
       createdAt: new Date().toISOString(),
     });

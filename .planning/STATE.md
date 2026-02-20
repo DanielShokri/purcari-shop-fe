@@ -1,19 +1,35 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 20, 2026 (08:01 UTC)
+**Last updated:** February 20, 2026 (Current Session)
 
 ---
 
 ## Current Position
 
-**Active phase:** Phase refactor-admin-hooks
-**Current plan:** refactor-admin-hooks-04 (completed)
-**Plans completed:** 4 of 4
+**Active phase:** admin-activity-integration
+**Current plan:** admin-activity-integration-01 (completed)
+**Plans completed:** 1 of 1
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Admin Dashboard Activity Integration
+  - Created `activities` table in Convex schema with type, color, title, subtitle fields
+  - Created `convex/activities.ts` module with:
+    - `getLatest` query - Returns last 10 activities for dashboard
+    - `createOrderActivity` mutation - Records new orders
+    - `createPaymentActivity` mutation - Records payment completions
+    - `createInventoryActivity` mutation - Records low stock alerts
+    - `createUserActivity` mutation - Records user actions
+    - `cleanupOldActivities` mutation - Maintains max 100 records
+  - Updated `convex/orders.ts` to auto-create activity when orders are placed
+  - Updated `convex/orders.ts` `updateStatus` to create activity and notification on status changes
+  - Added `createOrderNotification` mutation to `convex/notifications.ts`
+  - Updated `Dashboard.tsx` to fetch real activity data via `api.activities.getLatest`
+  - Dashboard ActivityFeed now displays live data with relative Hebrew timestamps
+  - Orders now appear in notifications when created or status changes
+
 - Plan refactor-admin-hooks-04: Create generic useEntityList hook and refactor Coupons, CartRules, Products
   - Created useEntityList hook (298 lines) with TypeScript generics
   - Added queryArg support for server-side filtering
@@ -142,17 +158,25 @@
 
 ## Next Actions
 
-### Option A: Complete Rivhit Payment (Phase 03)
+### Option A: Dashboard Activity Integration (COMPLETED)
+1. ✓ Activities table created in Convex schema
+2. ✓ Activity tracking functions implemented in `convex/activities.ts`
+3. ✓ Orders automatically create activity entries on creation
+4. ✓ Order status changes create activity entries and notifications
+5. ✓ Dashboard ActivityFeed displays live data from database
+6. Deploy to production: `npx convex dev` to regenerate types
+
+### Option B: Complete Rivhit Payment (Phase 03)
 1. Configure Rivhit API token via `npx convex env set` (see 03-USER-SETUP.md)
 2. Continue with Plan 03-02: Checkout flow integration
 3. Test payment flow end-to-end
 
-### Option B: Configure Google OAuth (COMPLETED)
+### Option C: Configure Google OAuth (COMPLETED)
 1. ✓ Google OAuth provider implemented
 2. Follow USER-SETUP.md to configure Google Cloud Console credentials:
-   - Create OAuth consent screen in Google Cloud Console
-   - Create OAuth 2.0 credentials (Client ID + Secret)
-   - Set environment variables via `npx convex env set`
+    - Create OAuth consent screen in Google Cloud Console
+    - Create OAuth 2.0 credentials (Client ID + Secret)
+    - Set environment variables via `npx convex env set`
 3. Test Google sign-in flow end-to-end on /login page
 
 **Note:** Google OAuth implementation complete - user setup required for functional testing.
