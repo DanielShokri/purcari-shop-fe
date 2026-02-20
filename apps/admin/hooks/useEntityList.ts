@@ -14,6 +14,8 @@ export interface FilterConfig<T> {
   field?: keyof T;
   type: 'search' | 'select' | 'status';
   defaultValue?: string;
+  /** If set, this filter value will be passed to the query as this argument name */
+  queryArg?: string;
 }
 
 /**
@@ -21,7 +23,7 @@ export interface FilterConfig<T> {
  */
 export interface UseEntityListOptions<T> {
   query: any;
-  queryArgs?: any;
+  queryArgs?: Record<string, any>;
   filters: FilterConfig<T>[];
   itemsPerPage?: number;
   enableSelection?: boolean;
@@ -68,12 +70,23 @@ export interface UseEntityListReturn<T extends { _id: string }> {
  * Generic hook for managing entity lists with filtering, pagination, and selection
  * 
  * @example
- * // Basic usage for Coupons
+ * // Basic usage for Coupons (client-side filtering)
  * const { items, isLoading, state, handlers } = useEntityList<Coupon>({
  *   query: api.coupons.list,
  *   filters: [
  *     { key: 'search', type: 'search' },
  *     { key: 'status', type: 'select', field: 'status', defaultValue: 'all' },
+ *   ],
+ *   itemsPerPage: 10,
+ * });
+ * 
+ * @example
+ * // With server-side filtering (e.g., Products by category)
+ * const { items, isLoading, state, handlers } = useEntityList<Product>({
+ *   query: api.products.list,
+ *   filters: [
+ *     { key: 'search', type: 'search' },
+ *     { key: 'category', type: 'select', defaultValue: 'all', queryArg: 'category' },
  *   ],
  *   itemsPerPage: 10,
  * });
@@ -95,15 +108,11 @@ export function useEntityList<T extends { _id: string }>(
 ): UseEntityListReturn<T> {
   const {
     query,
-    queryArgs = {},
+    queryArgs: staticQueryArgs = {},
     filters,
     itemsPerPage = 10,
     enableSelection = false,
   } = options;
-
-  // Data fetching
-  const items = useQuery(query, queryArgs);
-  const isLoading = items === undefined;
 
   // Initialize filter states from config
   const initialFilters = useMemo(() => {
@@ -130,26 +139,42 @@ export function useEntityList<T extends { _id: string }>(
     isDeleting: false,
   });
 
-  // Get search config
+  // Build dynamic query args from filters with queryArg mapping
+  const dynamicQueryArgs = useMemo(() => {
+    const args: Record<string, any> = { ...staticQueryArgs };
+    filters.forEach((filter) => {
+      if (filter.queryArg) {
+        const value = filterValues[filter.key];
+        // Only include non-'all' values
+        args[filter.queryArg] = value && value !== 'all' ? value : undefined;
+      }
+    });
+    return args;
+  }, [staticQueryArgs, filters, filterValues]);
+
+  // Data fetching with dynamic query args
+  const items = useQuery(query, dynamicQueryArgs);
+  const isLoading = items === undefined;
+
+  // Get search config (client-side only)
   const searchConfig = useMemo(() => {
-    return filters.find((f) => f.type === 'search');
+    return filters.find((f) => f.type === 'search' && !f.queryArg);
   }, [filters]);
 
-  // Get select configs
+  // Get select configs (client-side only - those without queryArg)
   const selectConfigs = useMemo(() => {
-    return filters.filter((f) => f.type === 'select' || f.type === 'status');
+    return filters.filter((f) => (f.type === 'select' || f.type === 'status') && !f.queryArg);
   }, [filters]);
 
-  // Computed: filtered items
+  // Computed: filtered items (client-side filtering only)
   const filteredItems = useMemo(() => {
     if (!items) return [];
 
     return items.filter((item: T) => {
-      // Apply search filter
+      // Apply search filter (client-side)
       if (searchConfig) {
         const searchTerm = filterValues[searchConfig.key]?.toLowerCase() || '';
         if (searchTerm) {
-          // Search across all string fields if no specific field defined
           const fieldsToSearch = searchConfig.field
             ? [searchConfig.field]
             : (Object.keys(item) as (keyof T)[]).filter((key) => 
@@ -168,7 +193,7 @@ export function useEntityList<T extends { _id: string }>(
         }
       }
 
-      // Apply select filters
+      // Apply select filters (client-side only)
       for (const config of selectConfigs) {
         const filterValue = filterValues[config.key];
         if (filterValue && filterValue !== 'all' && config.field) {
