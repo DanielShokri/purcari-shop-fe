@@ -2,7 +2,7 @@
 // Type instantiation depth issues with Convex useQuery API
 // This file compiles correctly at runtime but TypeScript cannot fully verify it
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { VStack, SimpleGrid, Heading, Text, Box, Tabs, HStack, Card } from '@chakra-ui/react';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/api';
@@ -22,6 +22,7 @@ import { AnalyticsInterval } from '@shared/types';
 export default function Analytics() {
   const [viewsInterval, setViewsInterval] = useState<AnalyticsInterval>(AnalyticsInterval.DAILY);
   const [salesInterval, setSalesInterval] = useState<AnalyticsInterval>(AnalyticsInterval.DAILY);
+  const [hasEverLoaded, setHasEverLoaded] = useState(false);
 
   // Existing queries
   const summary = useQuery(api.analytics.getSummary);
@@ -36,16 +37,16 @@ export default function Analytics() {
   const couponMetrics = useQuery(api.analytics.getCouponMetrics);
   const searchMetrics = useQuery(api.analytics.getSearchMetrics);
 
-  const isLoading = 
-    summary === undefined || 
-    viewsSeries === undefined || 
-    newUsersSeries === undefined ||
-    salesSeries === undefined ||
-    conversionMetrics === undefined ||
-    checkoutFunnel === undefined ||
-    cartMetrics === undefined ||
-    couponMetrics === undefined ||
-    searchMetrics === undefined;
+  // Track when all queries have loaded for the first time
+  const allLoaded = summary !== undefined && viewsSeries !== undefined && newUsersSeries !== undefined &&
+    salesSeries !== undefined && conversionMetrics !== undefined && checkoutFunnel !== undefined &&
+    cartMetrics !== undefined && couponMetrics !== undefined && searchMetrics !== undefined;
+  useEffect(() => {
+    if (allLoaded) setHasEverLoaded(true);
+  }, [allLoaded]);
+
+  // Only show spinner on first load (cold cache), show data instantly on return visits
+  const isLoading = !hasEverLoaded && !allLoaded;
 
   if (isLoading) {
     return <LoadingState message="טוען נתוני אנליטיקות..." />;
