@@ -30,6 +30,19 @@
   - Dashboard ActivityFeed now displays live data with relative Hebrew timestamps
   - Orders now appear in notifications when created or status changes
 
+- Admin Dashboard Sales Chart Integration (מגמת מכירות שנתית)
+  - Updated `convex/admin.ts` `getMonthlySales` to fetch real order data by year
+  - Added `getAvailableYears` query to dynamically populate year dropdown from orders
+  - Updated `convex/admin.ts` `getStats` to calculate real metrics from orders and users:
+    - Total revenue from completed orders
+    - Monthly revenue change calculations
+    - New orders count with day-over-day comparison
+    - User growth with week-over-week comparison
+    - Pending and cancelled order counts
+  - Updated `Dashboard.tsx` with year selection state management
+  - SalesChart now displays real monthly revenue data with year selector
+  - All dashboard stats cards now show live data from database
+
 - Plan refactor-admin-hooks-04: Create generic useEntityList hook and refactor Coupons, CartRules, Products
   - Created useEntityList hook (298 lines) with TypeScript generics
   - Added queryArg support for server-side filtering

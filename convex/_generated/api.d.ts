@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as activities from "../activities.js";
 import type * as admin from "../admin.js";
 import type * as analytics from "../analytics.js";
 import type * as analytics_aggregates from "../analytics/aggregates.js";
@@ -39,6 +40,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  activities: typeof activities;
   admin: typeof admin;
   analytics: typeof analytics;
   "analytics/aggregates": typeof analytics_aggregates;

@@ -2,7 +2,7 @@
 // Type instantiation depth issues with Convex useQuery API
 // This file compiles correctly at runtime but TypeScript cannot fully verify it
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from 'convex/react';
 import { api } from '@convex/api';
@@ -79,10 +79,12 @@ function formatRelativeTime(dateStr: string): string {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
 
   const stats = useQuery(api.admin.getStats);
   const recentOrders = useQuery(api.orders.listAll, {});
-  const monthlySales = useQuery(api.admin.getMonthlySales);
+  const availableYears = useQuery(api.admin.getAvailableYears);
+  const monthlySales = useQuery(api.admin.getMonthlySales, { year: parseInt(selectedYear) });
   const recentActivities = useQuery(api.activities.getLatest);
 
    // Map API orders to dashboard Order type
@@ -113,7 +115,7 @@ export default function Dashboard() {
     }));
   }, [recentActivities]);
 
-  const isLoading = stats === undefined || recentOrders === undefined || monthlySales === undefined || recentActivities === undefined;
+  const isLoading = stats === undefined || recentOrders === undefined || monthlySales === undefined || recentActivities === undefined || availableYears === undefined;
 
   if (isLoading) {
     return <LoadingState message="טוען נתונים..." />;
@@ -203,7 +205,12 @@ export default function Dashboard() {
 
       {/* Charts Section */}
       <SimpleGrid columns={{ base: 1, lg: 3 }} gap="6">
-        <SalesChart data={chartData} />
+        <SalesChart
+          data={chartData}
+          years={availableYears?.map(String) || [new Date().getFullYear().toString()]}
+          selectedYear={selectedYear}
+          onYearChange={setSelectedYear}
+        />
         <ActivityFeed activities={dashboardActivities} />
       </SimpleGrid>
 
