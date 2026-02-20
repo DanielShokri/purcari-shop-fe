@@ -1,19 +1,26 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 20, 2026 (08:00 UTC)
+**Last updated:** February 20, 2026 (08:01 UTC)
 
 ---
 
 ## Current Position
 
 **Active phase:** Phase refactor-admin-hooks
-**Current plan:** refactor-admin-hooks-04 (pending)
-**Plans completed:** 3 of 4
+**Current plan:** refactor-admin-hooks-04 (completed)
+**Plans completed:** 4 of 4
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan refactor-admin-hooks-04: Create generic useEntityList hook and refactor Coupons, CartRules, Products
+  - Created useEntityList hook (298 lines) with TypeScript generics
+  - Added queryArg support for server-side filtering
+  - Refactored Coupons.tsx from 132 lines to 74 lines (44% reduction)
+  - Refactored CartRules.tsx from 125 lines to 74 lines (41% reduction)
+  - Refactored Products.tsx from 150 lines to 44 lines (71% reduction)
+  - Eliminated 23 useState declarations across 3 pages
 - Plan refactor-admin-hooks-03: Extract useCategories hook from Categories.tsx
   - Created useCategories hook (278 lines) with tree building algorithm
   - Refactored Categories.tsx from 314 lines to 151 lines (52% reduction)
@@ -83,6 +90,7 @@
 | OAuth UX | Place Google button below email form with "או" divider, maintain RTL layout |
 | Order list state pattern | Use useOrders hook with state/handlers structure | Phase refactor-admin-hooks-02 |
 | Category tree pattern | Use useCategories hook for tree + form management | Phase refactor-admin-hooks-03 |
+| Entity list pattern | Use useEntityList<T> hook with filter config | Phase refactor-admin-hooks-04 |
 
 ### Deferred
 
@@ -122,6 +130,7 @@
 - Rivhit payment gateway for Israeli market
 - Analytics system complete with aggregates
 - Convex Auth with Password and Google OAuth providers
+- Generic useEntityList hook for entity list management
 
 ### Business Context
 - Wine e-commerce for Israeli market
@@ -148,12 +157,20 @@
 
 **Note:** Google OAuth implementation complete - user setup required for functional testing.
 
+### Option C: Phase refactor-admin-hooks COMPLETE
+All 4 plans completed:
+- useUsers/useUserDialogs for Users.tsx
+- useOrders for Orders.tsx
+- useCategories for Categories.tsx
+- useEntityList for Coupons.tsx, CartRules.tsx, Products.tsx
+
 ---
 
 ## Performance Metrics
 
 | Phase-Plan           | Duration | Tasks | Files |
 |----------------------|----------|-------|-------|
+| refactor-admin-hooks-04 | 4 min    | 4     | 4     |
 | refactor-admin-hooks-03 | 5 min    | 2     | 2     |
 | refactor-product-editor-01 | 10 min   | 3     | 3     |
 | auth-google-01       | 4 min    | 4     | 4     |
@@ -162,3 +179,9 @@
 | Phase refactor-admin-hooks P01 | 8 min | 3 tasks | 3 files |
 | Phase refactor-admin-hooks P03 | 5min | 2 tasks | 2 files |
 
+---
+
+## Last session
+
+**Stopped At:** Completed refactor-admin-hooks-04-PLAN.md
+**Resume file:** None
