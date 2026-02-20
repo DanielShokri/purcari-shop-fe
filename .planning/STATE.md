@@ -1,6 +1,6 @@
 # Project State: Purcari Wine E-commerce
 
-**Last updated:** February 20, 2026 (07:51 UTC)
+**Last updated:** February 20, 2026 (07:57 UTC)
 
 ---
 
@@ -14,6 +14,11 @@
 - None
 
 **Recently completed:**
+- Plan refactor-admin-hooks-01: Extract useUsers and useUserDialogs hooks from Users.tsx
+  - Created useUsers hook (160 lines) for list/filter/pagination/selection
+  - Created useUserDialogs hook (325 lines) for create/edit/delete dialogs
+  - Refactored Users.tsx from 474 lines to 302 lines (36% reduction)
+  - Eliminated 24 useState calls from component
 - Plan refactor-admin-hooks-02: Extract useOrders hook from Orders.tsx
   - Created useOrders hook (293 lines) consolidating all order list state
   - Refactored Orders.tsx from 251 lines to 48 lines (81% reduction)
