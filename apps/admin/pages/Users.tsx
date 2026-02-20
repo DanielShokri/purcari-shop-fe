@@ -2,36 +2,23 @@
 // Type instantiation depth issues with Convex useQuery API
 // This file compiles correctly at runtime but TypeScript cannot fully verify it
 
-import React, { useState } from 'react';
-import { useQuery, useMutation } from "convex/react";
-import { api } from '@convex/api';
-import { Id } from "@convex/dataModel";
-import { UserRole, User } from '@shared/types';
-import { 
-  VStack, 
-  Dialog, 
-  Portal, 
-  Button, 
-  CloseButton, 
-  Field, 
-  Input, 
+import { UserRole } from '@shared/types';
+import {
+  VStack,
+  Dialog,
+  Portal,
+  Button,
+  CloseButton,
+  Field,
+  Input,
   Stack,
   Select,
   createListCollection,
 } from '@chakra-ui/react';
 import { LoadingState, PageHeader, Breadcrumbs, DeleteConfirmationDialog } from '../components/shared';
 import { UsersFilterToolbar, UsersTable } from '../components/users';
-import { toaster } from '../components/ui/toaster';
-
-// Helper to validate Convex ID format
-const isValidConvexId = (id: string, tableName: string): boolean => {
-  return typeof id === 'string' && id.startsWith(`${tableName}:`) && id.length > tableName.length + 10;
-};
-
-// Helper to safely cast Convex ID
-const asUserId = (id: string): Id<"users"> | null => {
-  return isValidConvexId(id, "users") ? id as Id<"users"> : null;
-};
+import { useUsers } from '../hooks/useUsers';
+import { useUserDialogs } from '../hooks/useUserDialogs';
 
 const roleOptions = createListCollection({
   items: [
@@ -42,182 +29,43 @@ const roleOptions = createListCollection({
 });
 
 export default function Users() {
-  const users = useQuery(api.users.listAll, {});
-  const isLoading = users === undefined;
-  
-  const deleteUserMutation = useMutation(api.users.remove);
-  // Note: For now, we don't have a direct "create" in api.users since it's usually handled by Auth
-  // But for Admin UI we might want to add one. For now we skip implementing the 'create' part if it requires auth complexity
-  // However, update is definitely needed.
-  const updateUserMutation = useMutation(api.users.update);
+  const { users, isLoading, state, handlers } = useUsers();
+  const { create, edit, delete: deleteDialog } = useUserDialogs();
 
-  // Filter States
-  const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const usersPerPage = 10;
+  const {
+    filteredUsers,
+    paginatedUsers,
+    totalPages,
+    currentPage,
+    usersPerPage,
+    selectedUsers,
+    filters,
+  } = state;
 
-  // Create User Dialog State (Disabled functionality for now as Convex Auth handles creation)
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newUserName, setNewUserName] = useState('');
-  const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState<string>('viewer');
-  const [createError, setCreateError] = useState<string | null>(null);
-
-  // Edit User Dialog State
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [editUserName, setEditUserName] = useState('');
-  const [editUserEmail, setEditUserEmail] = useState('');
-  const [editUserPhone, setEditUserPhone] = useState('');
-  const [editUserAddress, setEditUserAddress] = useState('');
-  const [editUserRole, setEditUserRole] = useState<string>('viewer');
-  const [editError, setEditError] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  // Delete Dialog State
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const resetCreateForm = () => {
-    setNewUserName('');
-    setNewUserEmail('');
-    setNewUserPassword('');
-    setNewUserRole('viewer');
-    setCreateError(null);
-  };
-
-  const handleCreateUser = async () => {
-    toaster.create({
-      title: "יצירת משתמש מוגבלת בשלב זה",
-      description: "יש להשתמש במערכת ההרשמה של האתר",
-      type: "info",
-    });
-  };
+  const {
+    setSearchTerm,
+    setRoleFilter,
+    setStatusFilter,
+    setCurrentPage,
+    toggleUserSelection,
+    selectAllUsers,
+    clearSelection,
+  } = handlers;
 
   if (isLoading) {
     return <LoadingState message="טוען משתמשים..." />;
   }
 
-  const getRoleLabel = (role: string): string => {
-    switch (role) {
-      case 'admin':
-        return 'מנהל';
-      case 'editor':
-        return 'עורך';
-      default:
-        return 'צופה';
-    }
-  };
-
-  const filteredUsers = users?.filter(user => {
-    const matchesSearch = 
-      user.name.includes(searchTerm) || 
-      user.email.includes(searchTerm) ||
-      getRoleLabel(user.role || '').includes(searchTerm);
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
-    return matchesSearch && matchesRole && matchesStatus;
-  }) || [];
-
-   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
-const paginatedUsers = filteredUsers.slice(
-      (currentPage - 1) * usersPerPage,
-      currentPage * usersPerPage
-    ) as User[];
-
-  const handleDelete = (id: string) => {
-    setUserToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (userToDelete) {
-      setIsDeleting(true);
-      try {
-        const validUserId = asUserId(userToDelete);
-        if (!validUserId) throw new Error("Invalid user ID");
-        await deleteUserMutation({ userId: validUserId });
-        toaster.create({
-          title: "משתמש נמחק בהצלחה",
-          type: "success",
-        });
-      } catch (error) {
-        toaster.create({
-          title: "שגיאה במחיקת משתמש",
-          type: "error",
-        });
-      } finally {
-        setIsDeleting(false);
-        setDeleteDialogOpen(false);
-        setUserToDelete(null);
-      }
-    }
-  };
-
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedUsers(paginatedUsers.map(u => u._id));
+      selectAllUsers(paginatedUsers.map((u) => u._id));
     } else {
-      setSelectedUsers([]);
+      clearSelection();
     }
   };
 
   const handleSelectUser = (userId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedUsers(prev => [...prev, userId]);
-    } else {
-      setSelectedUsers(prev => prev.filter(id => id !== userId));
-    }
-  };
-
-  const handleEdit = (userId: string) => {
-    const user = users?.find(u => u._id === userId);
-    if (user) {
-      setEditingUser(userId);
-      setEditUserName(user.name);
-      setEditUserEmail(user.email);
-      setEditUserPhone(user.phone || '');
-      setEditUserAddress(''); // Address is in a separate table in Convex
-      setEditUserRole(user.role || 'viewer');
-      setEditError(null);
-      setIsEditDialogOpen(true);
-    }
-  };
-
-  const handleUpdateUser = async () => {
-    if (!editingUser || !editUserName || !editUserEmail) {
-      setEditError('נא למלא שדות חובה');
-      return;
-    }
-
-    setIsUpdating(true);
-    try {
-      const validUserId = asUserId(editingUser);
-      if (!validUserId) throw new Error("Invalid user ID");
-      await updateUserMutation({
-        userId: validUserId,
-        name: editUserName,
-        email: editUserEmail,
-        phone: editUserPhone,
-        role: editUserRole as "admin" | "editor" | "viewer",
-      });
-      
-      toaster.create({
-        title: "משתמש עודכן בהצלחה",
-        type: "success",
-      });
-      setIsEditDialogOpen(false);
-      setEditingUser(null);
-    } catch (error: any) {
-      setEditError('שגיאה בעדכון משתמש');
-    } finally {
-      setIsUpdating(false);
-    }
+    toggleUserSelection(userId);
   };
 
   return (
@@ -229,18 +77,11 @@ const paginatedUsers = filteredUsers.slice(
         subtitle="צפייה וניהול של כל המשתמשים במערכת"
         actionLabel="הוסף משתמש"
         actionIcon="add"
-        onAction={() => {
-          resetCreateForm();
-          setIsCreateDialogOpen(true);
-        }}
+        onAction={create.open}
       />
 
       {/* Create User Dialog */}
-      <Dialog.Root 
-        lazyMount 
-        open={isCreateDialogOpen} 
-        onOpenChange={(e) => setIsCreateDialogOpen(e.open)}
-      >
+      <Dialog.Root lazyMount open={create.isOpen} onOpenChange={(e) => !e.open && create.close()}>
         <Portal>
           <Dialog.Backdrop />
           <Dialog.Positioner>
@@ -252,38 +93,38 @@ const paginatedUsers = filteredUsers.slice(
                 <Stack gap="4">
                   <Field.Root required>
                     <Field.Label>שם מלא</Field.Label>
-                    <Input 
-                      placeholder="הזן שם מלא" 
-                      value={newUserName}
-                      onChange={(e) => setNewUserName(e.target.value)}
+                    <Input
+                      placeholder="הזן שם מלא"
+                      value={create.formData.name}
+                      onChange={(e) => create.setField('name', e.target.value)}
                     />
                   </Field.Root>
                   <Field.Root required>
                     <Field.Label>אימייל</Field.Label>
-                    <Input 
+                    <Input
                       type="email"
                       dir="ltr"
-                      placeholder="user@example.com" 
-                      value={newUserEmail}
-                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      placeholder="user@example.com"
+                      value={create.formData.email}
+                      onChange={(e) => create.setField('email', e.target.value)}
                     />
                   </Field.Root>
                   <Field.Root required>
                     <Field.Label>סיסמה</Field.Label>
-                    <Input 
+                    <Input
                       type="password"
                       dir="ltr"
-                      placeholder="לפחות 8 תווים" 
-                      value={newUserPassword}
-                      onChange={(e) => setNewUserPassword(e.target.value)}
+                      placeholder="לפחות 8 תווים"
+                      value={create.formData.password}
+                      onChange={(e) => create.setField('password', e.target.value)}
                     />
                   </Field.Root>
                   <Field.Root>
                     <Field.Label>תפקיד</Field.Label>
                     <Select.Root
                       collection={roleOptions}
-                      value={[newUserRole]}
-                      onValueChange={(e) => setNewUserRole(e.value[0] as UserRole)}
+                      value={[create.formData.role]}
+                      onValueChange={(e) => create.setField('role', e.value[0] as UserRole)}
                     >
                       <Select.HiddenSelect />
                       <Select.Control>
@@ -306,25 +147,20 @@ const paginatedUsers = filteredUsers.slice(
                       </Select.Positioner>
                     </Select.Root>
                   </Field.Root>
-                  {createError && (
+                  {create.error && (
                     <Field.Root invalid>
-                      <Field.ErrorText>{createError}</Field.ErrorText>
+                      <Field.ErrorText>{create.error}</Field.ErrorText>
                     </Field.Root>
                   )}
                 </Stack>
               </Dialog.Body>
               <Dialog.Footer>
                 <Dialog.ActionTrigger asChild>
-                  <Button variant="outline">ביטול</Button>
+                  <Button variant="outline" onClick={create.close}>ביטול</Button>
                 </Dialog.ActionTrigger>
-                  <Button 
-                    colorPalette="blue" 
-                    onClick={handleCreateUser}
-                    loading={false}
-                  >
-                    צור משתמש
-                  </Button>
-
+                <Button colorPalette="blue" onClick={create.submit} loading={create.isSubmitting}>
+                  צור משתמש
+                </Button>
               </Dialog.Footer>
               <Dialog.CloseTrigger asChild>
                 <CloseButton size="sm" />
@@ -335,11 +171,7 @@ const paginatedUsers = filteredUsers.slice(
       </Dialog.Root>
 
       {/* Edit User Dialog */}
-      <Dialog.Root 
-        lazyMount 
-        open={isEditDialogOpen} 
-        onOpenChange={(e) => setIsEditDialogOpen(e.open)}
-      >
+      <Dialog.Root lazyMount open={edit.isOpen} onOpenChange={(e) => !e.open && edit.close()}>
         <Portal>
           <Dialog.Backdrop />
           <Dialog.Positioner>
@@ -351,46 +183,46 @@ const paginatedUsers = filteredUsers.slice(
                 <Stack gap="4">
                   <Field.Root required>
                     <Field.Label>שם מלא</Field.Label>
-                    <Input 
-                      placeholder="הזן שם מלא" 
-                      value={editUserName}
-                      onChange={(e) => setEditUserName(e.target.value)}
+                    <Input
+                      placeholder="הזן שם מלא"
+                      value={edit.formData.name}
+                      onChange={(e) => edit.setField('name', e.target.value)}
                     />
                   </Field.Root>
                   <Field.Root required>
                     <Field.Label>אימייל</Field.Label>
-                    <Input 
+                    <Input
                       type="email"
                       dir="ltr"
-                      placeholder="user@example.com" 
-                      value={editUserEmail}
-                      onChange={(e) => setEditUserEmail(e.target.value)}
+                      placeholder="user@example.com"
+                      value={edit.formData.email}
+                      onChange={(e) => edit.setField('email', e.target.value)}
                     />
                   </Field.Root>
                   <Field.Root>
                     <Field.Label>טלפון</Field.Label>
-                    <Input 
+                    <Input
                       type="tel"
                       dir="ltr"
-                      placeholder="הזן מספר טלפון" 
-                      value={editUserPhone}
-                      onChange={(e) => setEditUserPhone(e.target.value)}
+                      placeholder="הזן מספר טלפון"
+                      value={edit.formData.phone}
+                      onChange={(e) => edit.setField('phone', e.target.value)}
                     />
                   </Field.Root>
                   <Field.Root>
                     <Field.Label>כתובת</Field.Label>
-                    <Input 
-                      placeholder="הזן כתובת מלאה" 
-                      value={editUserAddress}
-                      onChange={(e) => setEditUserAddress(e.target.value)}
+                    <Input
+                      placeholder="הזן כתובת מלאה"
+                      value={edit.formData.address}
+                      onChange={(e) => edit.setField('address', e.target.value)}
                     />
                   </Field.Root>
                   <Field.Root>
                     <Field.Label>תפקיד</Field.Label>
                     <Select.Root
                       collection={roleOptions}
-                      value={[editUserRole]}
-                      onValueChange={(e) => setEditUserRole(e.value[0] as UserRole)}
+                      value={[edit.formData.role]}
+                      onValueChange={(e) => edit.setField('role', e.value[0] as UserRole)}
                     >
                       <Select.HiddenSelect />
                       <Select.Control>
@@ -413,22 +245,18 @@ const paginatedUsers = filteredUsers.slice(
                       </Select.Positioner>
                     </Select.Root>
                   </Field.Root>
-                  {editError && (
+                  {edit.error && (
                     <Field.Root invalid>
-                      <Field.ErrorText>{editError}</Field.ErrorText>
+                      <Field.ErrorText>{edit.error}</Field.ErrorText>
                     </Field.Root>
                   )}
                 </Stack>
               </Dialog.Body>
               <Dialog.Footer>
                 <Dialog.ActionTrigger asChild>
-                  <Button variant="outline">ביטול</Button>
+                  <Button variant="outline" onClick={edit.close}>ביטול</Button>
                 </Dialog.ActionTrigger>
-                <Button 
-                  colorPalette="blue" 
-                  onClick={handleUpdateUser}
-                  loading={isUpdating}
-                >
+                <Button colorPalette="blue" onClick={edit.submit} loading={edit.isSubmitting}>
                   שמור שינויים
                 </Button>
               </Dialog.Footer>
@@ -441,7 +269,7 @@ const paginatedUsers = filteredUsers.slice(
       </Dialog.Root>
 
       <UsersFilterToolbar
-        searchTerm={searchTerm}
+        searchTerm={filters.searchTerm}
         onSearchChange={setSearchTerm}
       />
 
@@ -450,8 +278,11 @@ const paginatedUsers = filteredUsers.slice(
         selectedUsers={selectedUsers}
         onSelectAll={handleSelectAll}
         onSelectUser={handleSelectUser}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
+        onEdit={(userId) => {
+          const user = users?.find((u) => u._id === userId);
+          if (user) edit.open(user);
+        }}
+        onDelete={deleteDialog.open}
         currentPage={currentPage}
         totalPages={totalPages}
         totalItems={filteredUsers.length}
@@ -460,12 +291,9 @@ const paginatedUsers = filteredUsers.slice(
       />
 
       <DeleteConfirmationDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setUserToDelete(null);
-        }}
-        onConfirm={handleConfirmDelete}
+        isOpen={deleteDialog.isOpen}
+        onClose={deleteDialog.close}
+        onConfirm={deleteDialog.confirm}
         title="מחיקת משתמש"
         message="האם אתה בטוח שברצונך למחוק משתמש זה? פעולה זו לא ניתנת לביטול."
       />
