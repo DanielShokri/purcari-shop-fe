@@ -21,6 +21,7 @@ import { useCategories } from '../hooks/useCategories';
 export default function Categories() {
   const {
     isLoading,
+    hasEverLoaded,
     tree,
     selection,
     form,
@@ -33,7 +34,8 @@ export default function Categories() {
   const { register, formState, control } = form;
   const { errors } = formState;
 
-  if (isLoading) {
+  // Only show spinner on first load (cold cache), not on return visits
+  if (isLoading && !hasEverLoaded) {
     return <LoadingState message="טוען קטגוריות..." />;
   }
 
