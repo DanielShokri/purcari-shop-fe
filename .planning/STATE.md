@@ -6,14 +6,21 @@
 
 ## Current Position
 
-**Active phase:** admin-activity-integration
-**Current plan:** admin-activity-integration-01 (completed)
-**Plans completed:** 1 of 1
+**Active phase:** 07-optimize-loading
+**Current plan:** 07-01-PLAN.md (completed)
+**Plans completed:** 1 of 3
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan 07-01: Cache-Aware Loading Hooks
+  - Created useCachedQuery hook that tracks if data has ever been loaded
+  - Exports: data, isLoading, hasEverLoaded, isRefreshing
+  - isLoading = true only on first visit (cold cache)
+  - Return visits show data instantly from Convex cache
+  - Updated useEntityList, useOrders, useUsers, useCategories with new states
+
 - Admin Dashboard Activity Integration
   - Created `activities` table in Convex schema with type, color, title, subtitle fields
   - Created `convex/activities.ts` module with:
@@ -103,6 +110,7 @@
 | CartRuleStatus and CartRuleType are type aliases | Use string literals | Phase 02 |
 | Split Convex node/non-node code | Rivhit action in rivhit.ts, helpers in rivhitHelpers.ts | Phase 03-01 |
 | Add @auth/core as direct dependency | Resolve TypeScript module '@auth/core/providers/google' | Phase auth-google-01 |
+| useCachedQuery hook pattern | Track hasEverLoaded and isRefreshing for cache-aware loading | Phase 07-01 |
 
 ### Claude's Discretion
 
@@ -215,10 +223,11 @@ All 4 plans completed:
 | Phase refactor-admin-hooks P02 | 2min | 2 tasks | 2 files |
 | Phase refactor-admin-hooks P01 | 8 min | 3 tasks | 3 files |
 | Phase refactor-admin-hooks P03 | 5min | 2 tasks | 2 files |
+| 07-01 | 4 min | 5 tasks | 5 files |
 
 ---
 
 ## Last session
 
-**Stopped At:** Completed refactor-admin-hooks-04-PLAN.md
+**Stopped At:** Completed 07-01-PLAN.md (Phase 07: Optimize Loading - Plan 01)
 **Resume file:** None
