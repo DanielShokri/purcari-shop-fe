@@ -13,7 +13,7 @@ import { Coupon } from '@shared/types';
 export default function Coupons() {
   const navigate = useNavigate();
   const deleteMutation = useMutation(api.coupons.remove);
-  const { items: coupons, isLoading, state, handlers } = useEntityList<Coupon>({
+  const { items: coupons, isLoading, hasEverLoaded, state, handlers } = useEntityList<Coupon>({
     query: api.coupons.list,
     filters: [
       { key: 'search', type: 'search' },
@@ -26,7 +26,8 @@ export default function Coupons() {
   const { paginatedItems, totalPages, currentPage, itemsPerPage, filters, selectedItems, deleteDialog } = state;
   const { setFilter, setPage, toggleSelection, selectAll, clearSelection, openDeleteDialog, closeDeleteDialog, confirmDelete } = handlers;
 
-  if (isLoading) return <LoadingState message="טוען קופונים..." />;
+  // Only show spinner on first load (cold cache), not on return visits
+  if (isLoading && !hasEverLoaded) return <LoadingState message="טוען קופונים..." />;
 
   return (
     <VStack gap="0" align="stretch" h="full">
