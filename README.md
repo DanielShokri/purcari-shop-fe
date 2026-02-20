@@ -1,87 +1,130 @@
 # Purcari Israel - Premium Wine Ecommerce
 
-A modern, high-performance ecommerce frontend for **Purcari Winery Israel**, featuring full Right-to-Left (RTL) support in Hebrew and seamless integration with Appwrite Cloud.
+A modern, high-performance ecommerce platform for **Purcari Winery Israel**, featuring full Right-to-Left (RTL) support in Hebrew and Convex backend.
 
-## 🍷 Project Overview
+## Project Overview
 
-This project is a premium wine shop tailored for the Israeli market. It offers a sophisticated shopping experience with a focus on heritage, quality, and user-friendly navigation.
+This is a premium wine shop tailored for the Israeli market with a customer storefront and admin dashboard.
 
 ### Key Features
 
-- 🇮🇱 **Full RTL Support**: Native Hebrew interface with logical layout properties.
-- 🛍️ **Complete Shop Flow**: Product browsing, advanced filtering by category, and detailed product views.
-- 💳 **Multi-step Checkout**: Streamlined 3-step checkout process (Shipping -> Payment -> Review).
-- 👤 **Customer Authentication**: Secure login and registration with automated form pre-filling for existing users.
-- 📊 **Analytics Integration**: Real-time event tracking for page views, product views, and conversions.
-- 🏷️ **Coupon System**: Dynamic coupon validation against cart totals.
-- 📱 **Fully Responsive**: Optimized for mobile, tablet, and desktop devices.
-- ✨ **Polished UI/UX**: Smooth animations with Framer Motion and a luxury aesthetic using Tailwind CSS.
+- Full RTL Support - Native Hebrew interface with logical layout properties
+- Complete Shop Flow - Product browsing, filtering by category, detailed product views
+- Multi-step Checkout - Streamlined checkout process with Rivhit payment integration
+- Customer Authentication - Secure login with password and Google OAuth
+- Admin Dashboard - Full store management (products, orders, users, coupons, categories)
+- Analytics - Real-time event tracking with @convex-dev/aggregate
+- Coupon System - Dynamic coupon validation against cart totals
+- Fully Responsive - Optimized for mobile, tablet, and desktop
+- Polished UI/UX - Smooth animations with Framer Motion (storefront) and Chakra UI v3 (admin)
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-- **React 18** with **TypeScript**
-- **Vite 6** for lightning-fast development
-- **Redux Toolkit & RTK Query** for state management and API integration
-- **Appwrite Cloud** as the backend (Database, Auth, Storage)
-- **Tailwind CSS** for styling
-- **Framer Motion** for fluid animations
-- **Lucide React** for icons
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18 + TypeScript + Vite 6 |
+| Storefront UI | Tailwind CSS 4 + Framer Motion |
+| Admin UI | Chakra UI v3 |
+| State | Redux Toolkit (storefront) + Convex hooks (admin) |
+| Backend | Convex (Database, Auth, Functions) |
+| Payment | Rivhit (Israeli payment gateway) |
 
-## 📁 Project Structure
+## Project Structure
 
-```text
-├── components/         # Reusable UI components (broken into domains)
-│   ├── home/           # Homepage-specific components
-│   ├── about/          # About page-specific components
-│   ├── checkout/       # Checkout flow components
-│   └── ...             # Global components like Header, Footer, etc.
-├── pages/              # Main route components
-├── services/           # Backend interaction logic
-│   ├── appwrite.ts     # Appwrite client configuration
-│   └── api/            # RTK Query API slices
-├── store/              # Redux store and global state slices
-├── types.ts            # Shared TypeScript interfaces
-└── App.tsx             # Main application and routing
+```
+purcari-israel/
+├── apps/
+│   ├── storefront/       # Customer React app
+│   │   └── src/
+│   │       ├── components/
+│   │       ├── pages/
+│   │       ├── store/       # Redux Toolkit
+│   │       └── services/
+│   │
+│   └── admin/           # Admin dashboard
+│       └── src/
+│           ├── components/
+│           ├── pages/
+│           └── hooks/       # Convex hooks
+│
+├── packages/
+│   └── shared-types/    # Shared TypeScript types
+│
+├── convex/              # Convex backend
+│   ├── schema.ts        # Database schema
+│   ├── auth.ts          # Authentication
+│   └── *.ts             # API functions
+│
+└── package.json         # pnpm workspace root
 ```
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
-- Node.js (Latest LTS recommended)
-- An Appwrite Cloud account
+- Node.js 18+
+- pnpm 8+
 
 ### 2. Environment Setup
-Create a `.env.local` file in the root directory and add your Appwrite credentials:
-
+Copy `.env.example` to `.env.local`:
 ```env
-VITE_APPWRITE_ENDPOINT=https://cloud.appwrite.io/v1
-VITE_APPWRITE_PROJECT_ID=your_project_id
+VITE_CONVEX_URL=https://your-convex-deployment.convex.cloud
+CONVEX_URL=https://your-convex-deployment.convex.cloud
 ```
 
 ### 3. Installation
 ```bash
-npm install
+pnpm install
 ```
 
-### 4. Run Development Server
+### 4. Run Development
 ```bash
-npm run dev
+# Start Convex dev server (required)
+npx convex dev
+
+# Run all apps
+pnpm dev
+
+# Or run individually
+pnpm dev:storefront   # http://localhost:5173
+pnpm dev:admin       # http://localhost:5174
 ```
 
-### 5. Build for Production
+### 5. Build
 ```bash
-npm run build
+pnpm build
 ```
 
-## 📜 Backend Configuration (Appwrite)
+## Scripts
 
-The app expects the following collections in your `cms_db` database:
-- `products`: Product catalog
-- `categories`: Product categories
-- `orders`: Flattened order documents
-- `order_items`: Order line items
-- `coupons`: Discount codes
-- `analytics_events`: User tracking data
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Run all apps in parallel |
+| `pnpm dev:storefront` | Run storefront only |
+| `pnpm dev:admin` | Run admin only |
+| `pnpm build` | Build all apps |
+| `pnpm type-check` | Type-check all packages |
+
+## Development
+
+### Adding Dependencies
+```bash
+pnpm --filter @apps/storefront add <package>
+pnpm --filter @apps/admin add <package>
+```
+
+### Convex Functions
+```bash
+npx convex dev          # Start dev server & generate types
+npx convex deploy       # Deploy to cloud
+npx convex run <func> --args '{}'  # Run function locally
+```
+
+## Resources
+
+- [AGENTS.md](./AGENTS.md) - Developer instructions for AI agents
+- [Convex Docs](https://docs.convex.dev)
+- [Chakra UI v3 Docs](https://www.chakra-ui.com)
+- [Tailwind CSS](https://tailwindcss.com)
 
 ---
 

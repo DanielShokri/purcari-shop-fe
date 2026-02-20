@@ -22,6 +22,7 @@ const sortOptions: { value: SortOption; label: string }[] = [
 const ShopPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const categoryFromUrl = searchParams.get('category');
+  const searchFromUrl = searchParams.get('search');
   
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [isSortOpen, setIsSortOpen] = useState(false);
@@ -54,15 +55,33 @@ const ShopPage: React.FC = () => {
     } else {
       searchParams.set('category', categoryId);
     }
+    searchParams.delete('search');
     setSearchParams(searchParams);
   };
+  
+  const handleClearSearch = () => {
+    searchParams.delete('search');
+    setSearchParams(searchParams);
+  };
+  
+  // Search query - use dedicated search if search param exists
+  const searchResults = useQuery(
+    api.products.search,
+    searchFromUrl ? { query: searchFromUrl } : "skip"
+  );
   
   const productsResult = useQuery(api.products.list,
     activeCategory !== 'all' ? { category: activeCategory } : {}
   );
 
-  const isLoading = productsResult === undefined;
-  const products = productsResult || [];
+  const isLoading = searchFromUrl 
+    ? searchResults === undefined 
+    : productsResult === undefined;
+    
+  // Use search results if searching, otherwise use category results
+  const products = searchFromUrl 
+    ? (searchResults || []) 
+    : (productsResult || []);
 
   // Track category views when category changes
   useEffect(() => {
@@ -105,6 +124,14 @@ const ShopPage: React.FC = () => {
 
   const currentCategoryLabel = displayCategories.find(c => c.id === activeCategory)?.label || 'הכל';
 
+  const pageTitle = searchFromUrl 
+    ? `חיפוש: ${searchFromUrl} - פורקארי ישראל`
+    : `חנות - ${currentCategoryLabel}`;
+    
+  const pageDescription = searchFromUrl
+    ? `תוצאות חיפוש עבור "${searchFromUrl}" - יינות פורקרי ממולדובה במחירים מעולים.`
+    : `צפו בקטלוג היינות המלא של פורקארי ישראל. ${currentCategoryLabel} - יינות איכותיים ממולדובה במחירים מעולים.`;
+
   const breadcrumbSchema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -118,7 +145,7 @@ const ShopPage: React.FC = () => {
       {
         "@type": "ListItem",
         "position": 2,
-        "name": "חנות",
+        "name": searchFromUrl ? `חיפוש: ${searchFromUrl}` : "חנות",
         "item": "https://purcari.co.il/products"
       }
     ]
@@ -127,23 +154,33 @@ const ShopPage: React.FC = () => {
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
       <SEO 
-        title={`חנות - ${currentCategoryLabel}`}
-        description={`צפו בקטלוג היינות המלא של פורקארי ישראל. ${currentCategoryLabel} - יינות איכותיים ממולדובה במחירים מעולים.`}
-        canonical="/products"
+        title={pageTitle}
+        description={pageDescription}
+        canonical={searchFromUrl ? `/products?search=${searchFromUrl}` : "/products"}
         schemaData={breadcrumbSchema}
       />
       {/* Header */}
       <div className="bg-gray-900 text-white py-12 mb-10">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-2">החנות שלנו</h1>
-          <p className="text-gray-400">גלו את המבחר המלא של יינות פורקרי</p>
+          <h1 className="text-4xl font-bold mb-2">
+            {searchFromUrl ? `תוצאות חיפוש: "${searchFromUrl}"` : 'החנות שלנו'}
+          </h1>
+          <p className="text-gray-400">
+            {searchFromUrl 
+              ? `נמצאו ${sortedProducts.length} תוצאות`
+              : 'גלו את המבחר המלא של יינות פורקרי'
+            }
+          </p>
         </div>
       </div>
 
       <div className="container mx-auto px-4">
         {/* Breadcrumbs */}
         <Breadcrumbs 
-          items={[
+          items={searchFromUrl ? [
+            { label: 'חנות', href: '/products' },
+            { label: `חיפוש: "${searchFromUrl}"` }
+          ] : [
             { label: 'חנות' }
           ]}
           className="mb-6"
@@ -187,8 +224,22 @@ const ShopPage: React.FC = () => {
                </div>
              ) : (
                <>
-                 <div className="flex justify-between items-center mb-6">
-                    <p className="text-gray-500 text-sm">מציג {sortedProducts.length} מוצרים</p>
+                  <div className="flex justify-between items-center mb-6">
+                     <div className="flex items-center gap-2">
+                       {searchFromUrl ? (
+                         <>
+                           <p className="text-gray-500 text-sm">נמצאו {sortedProducts.length} תוצאות עבור "{searchFromUrl}"</p>
+                           <button
+                             onClick={handleClearSearch}
+                             className="text-sm text-secondary hover:underline cursor-pointer"
+                           >
+                             נקה חיפוש
+                           </button>
+                         </>
+                       ) : (
+                         <p className="text-gray-500 text-sm">מציג {sortedProducts.length} מוצרים</p>
+                       )}
+                     </div>
                     
                     {/* Sort Dropdown */}
                     <div className="relative">
@@ -237,11 +288,24 @@ const ShopPage: React.FC = () => {
                   </div>
 
 
-                 {sortedProducts.length === 0 && (
-                   <div className="text-center py-20">
-                     <p className="text-gray-500 text-lg">לא נמצאו מוצרים בקטגוריה זו.</p>
-                   </div>
-                 )}
+                  {sortedProducts.length === 0 && (
+                    <div className="text-center py-20">
+                      <p className="text-gray-500 text-lg">
+                        {searchFromUrl 
+                          ? `לא נמצאו תוצאות עבור "${searchFromUrl}".`
+                          : 'לא נמצאו מוצרים בקטגוריה זו.'
+                        }
+                      </p>
+                      {searchFromUrl && (
+                        <button
+                          onClick={handleClearSearch}
+                          className="mt-4 text-secondary hover:underline cursor-pointer"
+                        >
+                          נקה חיפוש
+                        </button>
+                      )}
+                    </div>
+                  )}
                </>
              )}
           </div>

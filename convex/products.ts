@@ -106,24 +106,44 @@ export const getById = query({
 
 /**
  * Search products using bilingual indexes.
+ * Returns active products matching the search query in either Hebrew or English.
  */
 export const search = query({
   args: {
     query: v.string(),
-    language: v.union(v.literal("en"), v.literal("he")),
   },
   handler: async (ctx, args) => {
-    if (args.language === "he") {
-      return await ctx.db
-        .query("products")
-        .withSearchIndex("search_he", (q) => q.search("productNameHe", args.query))
-        .collect();
-    } else {
-      return await ctx.db
-        .query("products")
-        .withSearchIndex("search_en", (q) => q.search("productName", args.query))
-        .collect();
+    const searchQuery = args.query.trim();
+    if (!searchQuery) {
+      return [];
     }
+
+    // Search both Hebrew and English indexes in parallel
+    const [productsHe, productsEn] = await Promise.all([
+      ctx.db
+        .query("products")
+        .withSearchIndex("search_he", (q) => q.search("productNameHe", searchQuery))
+        .collect(),
+      ctx.db
+        .query("products")
+        .withSearchIndex("search_en", (q) => q.search("productName", searchQuery))
+        .collect(),
+    ]);
+
+    // Combine and deduplicate results
+    const productMap = new Map();
+    [...productsHe, ...productsEn].forEach((p) => {
+      if (!productMap.has(p._id)) {
+        productMap.set(p._id, p);
+      }
+    });
+
+    // Filter by active status
+    const activeProducts = Array.from(productMap.values()).filter(
+      (p) => p.status === "active"
+    );
+
+    return activeProducts;
   },
 });
 

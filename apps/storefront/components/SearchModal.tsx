@@ -35,9 +35,9 @@ const SearchModal: React.FC = () => {
   const { trackSearch } = useTrackSearch();
   const hasTrackedSearch = useRef<string>('');
 
-  // Fetch products from Convex using search query
+  // Fetch products from Convex using search query (bilingual)
   const searchResults = useQuery(api.products.search, 
-    debouncedSearch.length >= 2 ? { query: debouncedSearch, language: 'he' } : "skip"
+    debouncedSearch.length >= 2 ? { query: debouncedSearch } : "skip"
   ) || [];
 
   const isLoading = searchResults === undefined && searchTerm.length >= 2;
