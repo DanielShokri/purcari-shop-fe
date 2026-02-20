@@ -2,7 +2,7 @@
 // Type instantiation depth issues with Convex useQuery API
 // This file compiles correctly at runtime but TypeScript cannot fully verify it
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from "convex/react";
 import { api } from '@convex/api';
@@ -68,10 +68,19 @@ const orderStatusOptions = createListCollection({
 export default function OrderDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [hasEverLoaded, setHasEverLoaded] = useState(false);
   
   const orderId = id ? id as Id<"orders"> : null;
   const order = useQuery(api.orders.get, orderId ? { orderId } : "skip");
-  const isLoading = order === undefined;
+  
+  // Track when order has loaded for the first time
+  const allLoaded = order !== undefined;
+  useEffect(() => {
+    if (allLoaded) setHasEverLoaded(true);
+  }, [allLoaded]);
+
+  // Only show spinner on first load (cold cache), show data instantly on return visits
+  const isLoading = !hasEverLoaded && !allLoaded;
   const updateStatus = useMutation(api.orders.updateStatus);
   const [isUpdating, setIsUpdating] = React.useState(false);
 
