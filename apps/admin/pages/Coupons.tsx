@@ -1,87 +1,32 @@
 // @ts-nocheck
 // Type instantiation depth issues with Convex useQuery API
-// This file compiles correctly at runtime but TypeScript cannot fully verify it
-
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from 'convex/react';
+import { useMutation } from 'convex/react';
 import { api } from '@convex/api';
-import { Id } from '@convex/dataModel';
 import { VStack } from '@chakra-ui/react';
 import { LoadingState, PageHeader, DeleteConfirmationDialog } from '../components/shared';
 import { CouponsFilterToolbar, CouponsTable } from '../components/coupons';
-import { CouponStatus, CouponDiscountType, Coupon } from '@shared/types';
+import { useEntityList } from '../hooks/useEntityList';
+import { Coupon } from '@shared/types';
 
 export default function Coupons() {
   const navigate = useNavigate();
-  const coupons = useQuery(api.coupons.list, {});
   const deleteMutation = useMutation(api.coupons.remove);
+  const { items: coupons, isLoading, state, handlers } = useEntityList<Coupon>({
+    query: api.coupons.list,
+    filters: [
+      { key: 'search', type: 'search' },
+      { key: 'status', type: 'select', field: 'status', defaultValue: 'all' },
+      { key: 'discountType', type: 'select', field: 'discountType', defaultValue: 'all' },
+    ],
+    itemsPerPage: 10,
+    enableSelection: true,
+  });
+  const { paginatedItems, totalPages, currentPage, itemsPerPage, filters, selectedItems, deleteDialog } = state;
+  const { setFilter, setPage, toggleSelection, selectAll, clearSelection, openDeleteDialog, closeDeleteDialog, confirmDelete } = handlers;
 
-  // Filter States
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [discountTypeFilter, setDiscountTypeFilter] = useState<string>('all');
-  const [selectedCoupons, setSelectedCoupons] = useState<string[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const couponsPerPage = 10;
-
-  // Delete Dialog State
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [couponToDelete, setCouponToDelete] = useState<string | null>(null);
-
-  const mappedCoupons = useMemo(() => {
-    return coupons?.map(coupon => ({
-      ...coupon,
-      $id: coupon._id,
-    })) as unknown as Coupon[];
-  }, [coupons]);
-
-  if (coupons === undefined) {
-    return <LoadingState message="טוען קופונים..." />;
-  }
-
-  const filteredCoupons = mappedCoupons?.filter(coupon => {
-    const matchesSearch = coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (coupon.description?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    const matchesStatus = statusFilter === 'all' || coupon.status === statusFilter;
-    const matchesDiscountType = discountTypeFilter === 'all' || coupon.discountType === discountTypeFilter;
-    return matchesSearch && matchesStatus && matchesDiscountType;
-  }) || [];
-
-  const totalPages = Math.ceil(filteredCoupons.length / couponsPerPage);
-  const paginatedCoupons = filteredCoupons.slice(
-    (currentPage - 1) * couponsPerPage,
-    currentPage * couponsPerPage
-  );
-
-  const handleDelete = (id: string) => {
-    setCouponToDelete(id);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = async () => {
-    if (couponToDelete) {
-      await deleteMutation({ id: couponToDelete as Id<"coupons"> });
-      setDeleteDialogOpen(false);
-      setCouponToDelete(null);
-    }
-  };
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedCoupons(paginatedCoupons.map(c => c._id));
-    } else {
-      setSelectedCoupons([]);
-    }
-  };
-
-  const handleSelectCoupon = (couponId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedCoupons(prev => [...prev, couponId]);
-    } else {
-      setSelectedCoupons(prev => prev.filter(id => id !== couponId));
-    }
-  };
+  if (isLoading) return <LoadingState message="טוען קופונים..." />;
 
   return (
     <VStack gap="0" align="stretch" h="full">
@@ -92,37 +37,35 @@ export default function Coupons() {
         actionIcon="add"
         onAction={() => navigate('/coupons/new')}
       />
-
       <CouponsFilterToolbar
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-        discountTypeFilter={discountTypeFilter}
-        onDiscountTypeFilterChange={setDiscountTypeFilter}
+        searchTerm={filters.search}
+        onSearchChange={(value) => setFilter('search', value)}
+        statusFilter={filters.status}
+        onStatusFilterChange={(value) => setFilter('status', value)}
+        discountTypeFilter={filters.discountType}
+        onDiscountTypeFilterChange={(value) => setFilter('discountType', value)}
       />
-
       <CouponsTable
-        coupons={paginatedCoupons}
-        selectedCoupons={selectedCoupons}
-        onSelectAll={handleSelectAll}
-        onSelectCoupon={handleSelectCoupon}
+        coupons={paginatedItems}
+        selectedCoupons={selectedItems}
+        onSelectAll={(checked) => checked ? selectAll() : clearSelection()}
+        onSelectCoupon={(id, checked) => toggleSelection(id)}
         onEdit={(couponId) => navigate(`/coupons/${couponId}/edit`)}
-        onDelete={handleDelete}
+        onDelete={(id) => {
+          const coupon = coupons?.find((c) => c._id === id);
+          if (coupon) openDeleteDialog(coupon);
+        }}
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={filteredCoupons.length}
-        itemsPerPage={couponsPerPage}
-        onPageChange={setCurrentPage}
+        totalItems={state.filteredItems.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={setPage}
       />
-
       <DeleteConfirmationDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => {
-          setDeleteDialogOpen(false);
-          setCouponToDelete(null);
-        }}
-        onConfirm={handleConfirmDelete}
+        isOpen={deleteDialog.isOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={() => confirmDelete(deleteMutation)}
+        isLoading={deleteDialog.isDeleting}
         title="מחיקת קופון"
         message="האם אתה בטוח שברצונך למחוק קופון זה? פעולה זו לא ניתנת לביטול."
       />
