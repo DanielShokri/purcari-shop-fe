@@ -121,9 +121,10 @@ export const initializeCart = createAsyncThunk(
 export const syncCartOnLogin = createAsyncThunk(
   'cart/syncOnLogin',
   async (convexClient: any, { getState }) => {
-    const state = getState() as RootState;
-    const currentItems = state.cart.items;
-    const currentCoupon = state.cart.appliedCoupon;
+    // Read from localStorage directly since Redux state might not be loaded yet
+    const localCart = loadCartFromLocalStorage();
+    const currentItems = localCart.items;
+    const currentCoupon = localCart.appliedCoupon;
 
     const cloudCart = await fetchCartFromConvex(convexClient);
 
@@ -159,6 +160,36 @@ export const handleLogout = createAsyncThunk(
     localStorage.removeItem('recentlyViewed');
     
     return { items: [], appliedCoupon: null };
+  }
+);
+
+// Async thunk: Add to cart and sync to Convex when logged in
+export const addToCartAndSync = createAsyncThunk(
+  'cart/addToCartAndSync',
+  async ({ convexClient, item }: { convexClient: any; item: CartItem }, { getState, dispatch }) => {
+    const state = getState() as RootState;
+    const existingItem = state.cart.items.find(i => i.productId === item.productId);
+    
+    let newQuantity = item.quantity;
+    if (existingItem) {
+      newQuantity = Math.min(existingItem.quantity + item.quantity, item.maxQuantity);
+    }
+    
+    const updatedItem = { ...item, quantity: newQuantity };
+    
+    // First add locally
+    dispatch(addToCart(updatedItem));
+    
+    // Then sync to Convex if there are items
+    const currentItems = state.cart.items.length > 0 
+      ? state.cart.items.map(i => i.productId === item.productId ? updatedItem : i)
+      : [updatedItem];
+    
+    if (currentItems.length > 0) {
+      await syncCartToConvex(convexClient, currentItems, state.cart.appliedCoupon);
+    }
+    
+    return updatedItem;
   }
 );
 

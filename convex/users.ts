@@ -233,18 +233,12 @@ export const updateProfile = mutation({
 export const getCart = query({
   args: {},
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
       return null;
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) =>
-        q.eq("email", identity.email)
-      )
-      .unique();
-
+    const user = await ctx.db.get(userId);
     if (!user) {
       return null;
     }
@@ -265,18 +259,12 @@ export const updateCart = mutation({
     }),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
       throw new Error("Not authenticated");
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) =>
-        q.eq("email", identity.email)
-      )
-      .unique();
-
+    const user = await ctx.db.get(userId);
     if (!user) {
       throw new Error("User not found");
     }

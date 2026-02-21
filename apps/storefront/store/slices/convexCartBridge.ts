@@ -5,10 +5,10 @@ import { CartItem, AppliedCoupon } from '@shared/types';
 // We'll use this in our thunks
 export const syncCartToConvex = async (convexClient: any, items: CartItem[], appliedCoupon: AppliedCoupon | null) => {
   try {
-    await convexClient.mutation(api.users.updateCart, {
+    await convexClient.mutation(api.users.updateCart as any, {
       cart: {
-        items,
-        appliedCoupon: appliedCoupon || undefined,
+        items: items as any,
+        appliedCoupon: (appliedCoupon || undefined) as any,
         updatedAt: new Date().toISOString(),
       },
     });

@@ -28,12 +28,8 @@ export default defineSchema({
     
     cart: v.optional(
       v.object({
-        items: v.array(v.object({
-          productId: v.id("products"),
-          quantity: v.number(),
-          priceAtTimeOfAdding: v.number(),
-        })),
-        appliedCoupon: v.optional(v.string()),
+        items: v.array(v.any()),
+        appliedCoupon: v.optional(v.any()),
         updatedAt: v.string(),
       })
     ),
