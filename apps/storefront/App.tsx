@@ -15,6 +15,7 @@ import AboutPage from './pages/AboutPage';
 import ShippingPage from './pages/ShippingPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import NotFoundPage from './pages/NotFoundPage';
 import { useConvex, useQuery } from "convex/react";
 import { api } from "@convex/api";
 import { useAppDispatch, useAppSelector } from './store/hooks';
@@ -89,7 +90,7 @@ const App: React.FC = () => {
           <Route path="/shipping" element={<ShippingPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="*" element={<div className="container mx-auto px-4 py-20 text-center">הדף לא נמצא (404)</div>} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </Layout>
     </Router>

@@ -195,6 +195,7 @@ export const updateStatus = mutation({
 
 /**
  * Update current user's profile information.
+ * Uses getAuthUserId for reliable auth user lookup (consistent with get query).
  */
 export const updateProfile = mutation({
   args: {
@@ -202,28 +203,25 @@ export const updateProfile = mutation({
     phone: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
+    // Use getAuthUserId for reliable auth user lookup
+    const userId = await getAuthUserId(ctx);
+
+    if (userId === null) {
       throw new Error("Not authenticated");
     }
 
-    const user = await ctx.db
-      .query("users")
-      .withIndex("email", (q) =>
-        q.eq("email", identity.email)
-      )
-      .unique();
+    const user = await ctx.db.get(userId);
 
     if (!user) {
       throw new Error("User not found");
     }
 
-    await ctx.db.patch(user._id, {
+    await ctx.db.patch(userId, {
       ...args,
       updatedAt: new Date().toISOString(),
     });
 
-    return user._id;
+    return userId;
   },
 });
 

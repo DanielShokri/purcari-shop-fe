@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -61,6 +61,9 @@ const DashboardPage: React.FC = () => {
 
   const [profileStatus, setProfileStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
+  // Track if profile form has been initialized to prevent resets while typing
+  const profileInitializedRef = useRef(false);
+
   // Profile Form
   const { 
     register: registerProfile, 
@@ -90,11 +93,14 @@ const DashboardPage: React.FC = () => {
   const { reset: resetAddress } = addressFormMethods;
 
   useEffect(() => {
-    if (user) {
+    // Only initialize the form once when user data is first available
+    // This prevents the form from being reset while the user is typing
+    if (user && !profileInitializedRef.current) {
       resetProfile({
         name: user.name || '',
         phone: user.phone || ''
       });
+      profileInitializedRef.current = true;
     }
   }, [user, resetProfile]);
 

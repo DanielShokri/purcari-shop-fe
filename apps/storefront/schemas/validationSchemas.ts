@@ -2,6 +2,8 @@ import * as z from 'zod';
 
 const phoneRegex = /^0\d{1,2}-?\d{7}$/;
 const addressRegex = /[א-תa-zA-Z]/; // At least one letter
+// Full name: at least 3 chars + space + at least 3 chars (e.g., "John Doe", "ישראל ישראלי")
+const fullNameRegex = /^\S{3,}\s+\S{3,}$/;
 
 export const emailSchema = z.string()
   .min(1, 'אימייל הוא שדה חובה')
@@ -10,8 +12,14 @@ export const emailSchema = z.string()
 export const passwordSchema = z.string()
   .min(4, 'הסיסמה חייבת להכיל לפחות 4 תווים');
 
+// Simple name validation (for address nicknames, short names)
 export const nameSchema = z.string()
   .min(2, 'השם חייב להכיל לפחות 2 תווים');
+
+// Full name validation: first name (3+ chars) + space + last name (3+ chars)
+export const fullNameSchema = z.string()
+  .min(7, 'השם המלא חייב להכיל שם פרטי ושם משפחה')
+  .regex(fullNameRegex, 'השם המלא חייב להכיל שם פרטי (לפחות 3 תווים), רווח ושם משפחה (לפחות 3 תווים)');
 
 export const phoneSchema = z.string()
   .min(1, 'מספר טלפון הוא שדה חובה')
@@ -34,7 +42,7 @@ export const loginSchema = z.object({
 });
 
 export const registerSchema = z.object({
-  name: nameSchema,
+  name: fullNameSchema,
   email: emailSchema,
   password: passwordSchema,
   phone: phoneSchema,
@@ -42,7 +50,7 @@ export const registerSchema = z.object({
 
 // Contact Schema
 export const contactSchema = z.object({
-  name: nameSchema,
+  name: fullNameSchema,
   email: emailSchema,
   subject: z.string().min(2, 'נושא קצר מדי'),
   message: z.string().min(10, 'הודעה חייבת להכיל לפחות 10 תווים'),
@@ -50,7 +58,7 @@ export const contactSchema = z.object({
 
 // Shipping Schema
 export const shippingSchema = z.object({
-  name: nameSchema,
+  name: fullNameSchema,
   email: emailSchema,
   phone: phoneSchema,
   street: streetSchema,
@@ -69,11 +77,11 @@ export const paymentSchema = z.object({
 
 // Profile Schema
 export const profileSchema = z.object({
-  name: nameSchema,
+  name: fullNameSchema,
   phone: phoneSchema,
 });
 
-// Address Schema
+// Address Schema (name is a nickname like "בית", "משרד" - not a full name)
 export const addressFormSchema = z.object({
   name: z.string().min(2, 'כינוי קצר מדי'),
   street: streetSchema,
@@ -86,7 +94,7 @@ export const addressFormSchema = z.object({
 // Checkout Schema (Shipping only - payment handled by Rivhit hosted page)
 export const checkoutSchema = z.object({
   // Shipping
-  name: nameSchema,
+  name: fullNameSchema,
   email: emailSchema,
   phone: phoneSchema,
   street: streetSchema,

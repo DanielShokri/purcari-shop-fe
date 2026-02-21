@@ -6,22 +6,22 @@ const ShippingPage: React.FC = () => {
   return (
     <div className="bg-gray-50 min-h-screen pb-20">
       <SEO 
-        title="מדיניות משלוחים והחזרות"
-        description="מידע על משלוחים, זמני אספקה והחזרות בפורקארי ישראל. משלוח חינם בהזמנה מעל ₪300."
+        title="מדיניות משלוחים"
+        description="מידע על משלוחים וזמני אספקה בפורקארי ישראל. משלוח חינם בהזמנה מעל ₪300."
         canonical="/shipping"
       />
       
       {/* Header */}
       <div className="bg-gray-900 text-white py-12 mb-10">
         <div className="container mx-auto px-4 text-center">
-          <h1 className="text-4xl font-bold mb-2">מדיניות משלוחים והחזרות</h1>
-          <p className="text-gray-400">כל המידע על משלוחים, זמני אספקה והחזרות</p>
+          <h1 className="text-4xl font-bold mb-2">מדיניות משלוחים</h1>
+          <p className="text-gray-400">כל המידע על משלוחים וזמני אספקה</p>
         </div>
       </div>
 
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Shipping Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
           <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
             <div className="w-14 h-14 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <Truck className="text-secondary" size={28} />
@@ -35,13 +35,6 @@ const ShippingPage: React.FC = () => {
             </div>
             <h3 className="font-bold text-lg mb-2">אספקה מהירה</h3>
             <p className="text-gray-600 text-sm">3-5 ימי עסקים</p>
-          </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
-            <div className="w-14 h-14 bg-secondary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <RotateCcw className="text-secondary" size={28} />
-            </div>
-            <h3 className="font-bold text-lg mb-2">החזרות</h3>
-            <p className="text-gray-600 text-sm">עד 14 יום</p>
           </div>
         </div>
 
@@ -77,7 +70,7 @@ const ShippingPage: React.FC = () => {
               </ul>
 
               <h3 className="font-bold text-lg mt-6 mb-3">אזורי משלוח:</h3>
-              <p>אנו משלחים לכל רחבי הארץ, כולל:</p>
+
               <ul className="grid grid-cols-2 gap-2 mt-2">
                 <li className="flex items-center gap-2">
                   <MapPin size={14} className="text-secondary" />
@@ -148,53 +141,6 @@ const ShippingPage: React.FC = () => {
             </div>
           </section>
 
-          {/* Returns Policy */}
-          <section className="bg-white p-8 rounded-2xl shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <RotateCcw className="text-secondary" size={24} />
-              <h2 className="text-2xl font-bold">מדיניות החזרות</h2>
-            </div>
-            
-            <div className="space-y-4 text-gray-700">
-              <p>
-                שביעות רצון הלקוחות חשובה לנו מאוד. אם אינכם מרוצים מהרכישה, 
-                ניתן להחזיר מוצרים בהתאם לתנאים הבאים:
-              </p>
-              
-              <h3 className="font-bold text-lg mt-6 mb-3">תנאי החזרה:</h3>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2">
-                  <span className="w-2 h-2 bg-secondary rounded-full mt-2"></span>
-                  <span>ניתן להחזיר מוצרים עד 14 יום מיום קבלת המשלוח</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-2 h-2 bg-secondary rounded-full mt-2"></span>
-                  <span>המוצר חייב להיות באריזתו המקורית, סגור וללא סימני שימוש</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-2 h-2 bg-secondary rounded-full mt-2"></span>
-                  <span>יש לצרף את חשבונית הקנייה המקורית</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="w-2 h-2 bg-secondary rounded-full mt-2"></span>
-                  <span>עלות המשלוח בהחזרה על חשבון הלקוח (אלא אם המוצר הגיע פגום)</span>
-                </li>
-              </ul>
-
-              <h3 className="font-bold text-lg mt-6 mb-3">מוצרים פגומים:</h3>
-              <p>
-                במקרה שקיבלתם מוצר פגום או שונה ממה שהזמנתם, אנא צרו איתנו קשר מיידית. 
-                נדאג להחליף את המוצר או לזכות אתכם במלוא הסכום ללא עלות נוספת.
-              </p>
-
-              <h3 className="font-bold text-lg mt-6 mb-3">זיכוי כספי:</h3>
-              <p>
-                לאחר קבלת המוצר המוחזר ובדיקתו, הזיכוי יועבר תוך 14 ימי עסקים 
-                לאמצעי התשלום בו בוצעה העסקה.
-              </p>
-            </div>
-          </section>
-
           {/* Contact */}
           <section className="bg-secondary/5 p-8 rounded-2xl">
             <div className="flex items-center gap-3 mb-4">
@@ -202,7 +148,7 @@ const ShippingPage: React.FC = () => {
               <h2 className="text-2xl font-bold">שאלות?</h2>
             </div>
             <p className="text-gray-700 mb-4">
-              אם יש לכם שאלות נוספות לגבי משלוחים או החזרות, אנחנו כאן לעזור!
+              אם יש לכם שאלות נוספות לגבי המשלוחים, אנחנו כאן לעזור!
             </p>
             <div className="flex flex-wrap gap-4">
               <a 

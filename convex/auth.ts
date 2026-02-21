@@ -11,7 +11,11 @@ const emailSchema = z.string().min(1, "אימייל הוא שדה חובה").ema
 
 const passwordSchema = z.string().min(4, "הסיסמה חייבת להכיל לפחות 4 תווים");
 
-const nameSchema = z.string().min(2, "השם חייב להכיל לפחות 2 תווים");
+// Full name: at least 3 chars + space + at least 3 chars (e.g., "John Doe", "ישראל ישראלי")
+const fullNameRegex = /^\S{3,}\s+\S{3,}$/;
+const nameSchema = z.string()
+  .min(7, "השם המלא חייב להכיל שם פרטי ושם משפחה")
+  .regex(fullNameRegex, "השם המלא חייב להכיל שם פרטי (לפחות 3 תווים), רווח ושם משפחה (לפחות 3 תווים)");
 
 export const { auth, signIn, signOut, store } = convexAuth({
   providers: [
