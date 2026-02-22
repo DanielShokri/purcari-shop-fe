@@ -7,13 +7,19 @@
 ## Current Position
 
 **Active phase:** 08-system-announcements
-**Current plan:** 08-02-PLAN.md (next to execute)
-**Plans completed:** 1 of 3
+**Current plan:** 08-03-PLAN.md (next to execute)
+**Plans completed:** 2 of 3
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan 08-02: System Announcements Admin UI
+  - Created SystemAnnouncements main page with CRUD operations
+  - Created AnnouncementsTable component with status/type badges
+  - Created AnnouncementEditor dialog with live banner preview
+  - Added navigation route for system announcements
+
 - Plan 08-01: System Announcements Backend
   - Added SystemAnnouncement types to shared-types
   - Created systemAnnouncements table in Convex schema with indexes
@@ -124,6 +130,7 @@
 | Cache-aware loading pattern | Only show spinner when isLoading AND !hasEverLoaded | Phase 07-02 |
 - [Phase 07-optimize-loading]: Applied hasEverLoaded pattern to Dashboard, Analytics, OrderDetails, ProductEditor pages
 - [Phase 08]: Used adminQuery/adminMutation wrappers for admin-only functions
+- [Phase 08-02]: Used NativeSelect instead of Select for simpler react-hook-form integration
 
 ### Claude's Discretion
 
@@ -193,8 +200,8 @@
 ## Next Actions
 
 ### Option A: System Announcements Feature (Phase 08) - RECOMMENDED
-1. Execute Plan 08-01: Backend schema and Convex functions
-2. Execute Plan 08-02: Admin panel announcement management page
+1. ✓ Plan 08-01: Backend schema and Convex functions (COMPLETE)
+2. ✓ Plan 08-02: Admin panel announcement management page (COMPLETE)
 3. Execute Plan 08-03: Storefront banner component integration
 4. Test full flow: Create announcement in admin → See banner on storefront
 
@@ -241,8 +248,9 @@ All 4 plans completed:
 ---
 | Phase 07-optimize-loading P03 | 4min | 4 tasks | 4 files |
 | Phase 08 P01 | 5 min | 3 tasks | 3 files |
+| Phase 08 P02 | 12 min | 4 tasks | 8 files |
 
 ## Last session
 
-**Stopped At:** Completed 08-01-PLAN.md
+**Stopped At:** Completed 08-02-PLAN.md
 **Resume file:** None
