@@ -6,28 +6,21 @@
 
 ## Current Position
 
-**Active phase:** 08-system-announcements
-**Current plan:** Phase complete
-**Plans completed:** 3 of 3
+**Active phase:** 09-cart-manager
+**Current plan:** Plan 01 complete
+**Plans completed:** 1 of 3
 
 **Current blockers:**
 - None
 
 **Recently completed:**
-- Plan 08-03: System Announcements Storefront Banner
-  - Created SystemAnnouncementBanner component with type-based styling
-  - Integrated banner into Layout below header
-  - Dismissible state persisted to localStorage
-  - RTL layout with Hebrew text support
-
-- Plan 08-02: System Announcements Admin UI
-  - Created SystemAnnouncements main page with CRUD operations
-  - Created AnnouncementsTable component with status/type badges
-  - Created AnnouncementEditor dialog with live banner preview
-  - Added navigation route for system announcements
-
-- Plan 08-01: System Announcements Backend
-  - Added SystemAnnouncement types to shared-types
+- Plan 09-01: Cart Manager Foundation
+  - Created convex/cart.ts with 6 cart mutations (addItem, removeItem, updateQuantity, clearCart, mergeGuestCart, getCart)
+  - Server-side stock/price validation prevents price manipulation
+  - mergeGuestCart returns CartSyncResult with skipped/priceChanged/adjusted items
+  - Created useCart() hook that transparently switches between Convex and localStorage
+  - Created useCartUI() context for cart modal state
+  - Added CartSyncResult type to shared-types
   - Created systemAnnouncements table in Convex schema with indexes
   - Implemented 5 Convex functions (list, getActive, create, update, remove)
 
@@ -261,5 +254,5 @@ All 4 plans completed:
 
 ## Last session
 
-**Stopped At:** Completed 08-03-PLAN.md
+**Stopped At:** Completed 09-01-PLAN.md
 **Resume file:** None
