@@ -3,14 +3,12 @@ import { RootState } from '../index';
 import { Toast, ToastType } from '@shared/types';
 
 interface UIState {
-  isCartModalOpen: boolean;
   isMobileMenuOpen: boolean;
   isSearchModalOpen: boolean;
   toasts: Toast[];
 }
 
 const initialState: UIState = {
-  isCartModalOpen: false,
   isMobileMenuOpen: false,
   isSearchModalOpen: false,
   toasts: [],
@@ -24,14 +22,8 @@ const uiSlice = createSlice({
   name: 'ui',
   initialState,
   reducers: {
-    toggleCartModal: (state) => {
-      state.isCartModalOpen = !state.isCartModalOpen;
-    },
     toggleMobileMenu: (state) => {
       state.isMobileMenuOpen = !state.isMobileMenuOpen;
-    },
-    closeCartModal: (state) => {
-      state.isCartModalOpen = false;
     },
     closeMobileMenu: (state) => {
       state.isMobileMenuOpen = false;
@@ -62,9 +54,7 @@ const uiSlice = createSlice({
 });
 
 export const { 
-  toggleCartModal, 
   toggleMobileMenu, 
-  closeCartModal, 
   closeMobileMenu, 
   openSearchModal, 
   closeSearchModal,
@@ -78,7 +68,6 @@ export const showToast = (payload: { type: ToastType; message: string; duration?
   addToast(payload);
 
 // Selectors
-export const selectIsCartModalOpen = (state: RootState) => state.ui.isCartModalOpen;
 export const selectIsMobileMenuOpen = (state: RootState) => state.ui.isMobileMenuOpen;
 export const selectIsSearchModalOpen = (state: RootState) => state.ui.isSearchModalOpen;
 export const selectToasts = (state: RootState) => state.ui.toasts;
