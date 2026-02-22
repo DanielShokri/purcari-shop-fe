@@ -10,5 +10,11 @@ export {
   categoryStatusConfig,
   userStatusConfig,
   userRoleConfig,
-  orderStatusConfig
+  orderStatusConfig,
+  couponStatusConfig,
+  couponDiscountTypeConfig,
+  cartRuleStatusConfig,
+  cartRuleTypeConfig,
+  announcementStatusConfig,
+  announcementTypeConfig
 } from './StatusBadge';

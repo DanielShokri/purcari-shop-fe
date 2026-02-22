@@ -115,3 +115,18 @@ export const cartRuleTypeConfig: Record<string, StatusConfig> = {
   restriction: { colorPalette: 'red', label: 'הגבלות' },
   benefit: { colorPalette: 'blue', label: 'הטבה' },
 };
+
+export const announcementStatusConfig: Record<string, StatusConfig> = {
+  active: { colorPalette: 'green', label: 'פעיל', showDot: true },
+  scheduled: { colorPalette: 'amber', label: 'מתוזמן' },
+  expired: { colorPalette: 'gray', label: 'פג תוקף' },
+  draft: { colorPalette: 'slate', label: 'טיוטה' },
+};
+
+export const announcementTypeConfig: Record<string, StatusConfig> = {
+  info: { colorPalette: 'blue', label: 'מידע' },
+  warning: { colorPalette: 'amber', label: 'אזהרה' },
+  success: { colorPalette: 'green', label: 'הצלחה' },
+  error: { colorPalette: 'red', label: 'שגיאה' },
+  maintenance: { colorPalette: 'orange', label: 'תחזוקה' },
+};
