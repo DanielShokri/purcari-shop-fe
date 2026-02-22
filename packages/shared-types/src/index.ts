@@ -98,6 +98,22 @@ export enum NotificationType {
   SYSTEM_ERROR = 'system_error',
 }
 
+// System Announcement types - for banner notifications
+export enum SystemAnnouncementType {
+  INFO = 'info',
+  WARNING = 'warning',
+  SUCCESS = 'success',
+  ERROR = 'error',
+  MAINTENANCE = 'maintenance',
+}
+
+export enum SystemAnnouncementStatus {
+  ACTIVE = 'active',
+  SCHEDULED = 'scheduled',
+  EXPIRED = 'expired',
+  DRAFT = 'draft',
+}
+
 // ============================================================================
 // PRODUCT & CATEGORY INTERFACES
 // ============================================================================
@@ -395,6 +411,22 @@ export interface Notification {
   isRead: boolean;
   icon?: string;
   createdAt?: string;
+}
+
+// System Announcement - for storefront banner display
+export interface SystemAnnouncement {
+  _id: string;
+  _creationTime?: number;
+  title: string;
+  message: string;
+  type: SystemAnnouncementType | 'info' | 'warning' | 'success' | 'error' | 'maintenance';
+  status: SystemAnnouncementStatus | 'active' | 'scheduled' | 'expired' | 'draft';
+  startDate: string;
+  endDate?: string;
+  isDismissible: boolean;
+  targetAudience: 'all' | 'customers' | 'admins';
+  createdAt: string;
+  updatedAt: string;
 }
 
 // ============================================================================
