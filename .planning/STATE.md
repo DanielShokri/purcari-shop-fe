@@ -7,13 +7,23 @@
 ## Current Position
 
 **Active phase:** 09-cart-manager
-**Current plan:** Plan 01 complete
-**Plans completed:** 1 of 3
+**Current plan:** Plan 02 complete
+**Plans completed:** 2 of 3
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan 09-02: Cart Hook Migration
+  - Added CartUIProvider to index.tsx provider tree
+  - Migrated all 13 storefront components to use useCart() and useCartUI() hooks
+  - Removed cart sync effects from App.tsx (useCart handles internally)
+  - CartModal, Layout, ProductCard, ProductPage now use useCart()
+  - HeaderActions, MobileMenu use useCart() for cart count/logout
+  - CheckoutPage uses useCart() for all cart data and coupon flow
+  - OrderConfirmationPage, DashboardPage use useCart().clearCart()
+  - Redux kept for non-cart (search modal, mobile menu, toasts)
+
 - Plan 09-01: Cart Manager Foundation
   - Created convex/cart.ts with 6 cart mutations (addItem, removeItem, updateQuantity, clearCart, mergeGuestCart, getCart)
   - Server-side stock/price validation prevents price manipulation
@@ -254,5 +264,5 @@ All 4 plans completed:
 
 ## Last session
 
-**Stopped At:** Completed 09-01-PLAN.md
+**Stopped At:** Completed 09-02-PLAN.md
 **Resume file:** None

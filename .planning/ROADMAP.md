@@ -16,7 +16,7 @@
 | 06 | **Refactor Admin Hooks** | ✓ Complete | 4/4 |
 | 07 | **Optimize Admin Loading** | ✓ Complete | 3/3 |
 | 08 | **System Announcements** | ✓ Complete | 3/3 |
-| 09 | **Cart Manager** | In progress | 1/3 |
+| 09 | **Cart Manager** | In progress | 2/3 |
 
 ---
 
@@ -24,7 +24,7 @@
 
 ### Phase 09: Cart Manager — Replace Redux Cart with Convex + localStorage
 
-**Status:** In progress (1/3 plans complete)
+**Status:** In progress (2/3 plans complete)
 
 **Goal:** Replace the Redux cart slice with a "Cart Manager" architecture where Convex is the single source of truth for authenticated users, localStorage is the fallback for guests, and a unified `useCart()` hook abstracts the storage backend from all components.
 
@@ -33,14 +33,14 @@
 - [x] CART-02: Guest cart merge on login with CartSyncResult reporting
 - [x] CART-03: Unified useCart() hook transparently switching between Convex and localStorage
 - [x] CART-04: useCartUI() React context replacing Redux cart modal state
-- [ ] CART-05: All storefront components migrated from Redux dispatch to useCart()/useCartUI()
-- [ ] CART-06: Coupon flow integrated into useCart() (replaces useCouponFlow)
-- [ ] CART-07: Cart summary with rules integrated into useCart() (replaces useCartSummaryWithRules)
+- [x] CART-05: All storefront components migrated from Redux dispatch to useCart()/useCartUI()
+- [x] CART-06: Coupon flow integrated into useCart() (replaces useCouponFlow)
+- [x] CART-07: Cart summary with rules integrated into useCart() (replaces useCartSummaryWithRules)
 - [ ] CART-08: Redux cartSlice.ts and convexCartBridge.ts deleted, store cleaned
 
 **Plans:** 3 plans
 - [x] 09-01-PLAN.md — Convex cart mutations + useCart()/useCartUI() hooks (foundation) ✅ COMPLETE
-- [ ] 09-02-PLAN.md — Migrate all 13 consumer components to new hooks
+- [x] 09-02-PLAN.md — Migrate all 13 consumer components to new hooks ✅ COMPLETE
 - [ ] 09-03-PLAN.md — Delete Redux cart artifacts and cleanup
 
 **Expected Deliverables:**
@@ -48,7 +48,7 @@
 - [x] `useCart()` hook with unified API for both auth states
 - [x] `useCartUI()` context for cart modal state
 - [x] `CartSyncResult` type in shared-types
-- [ ] All components using `useCart()` instead of Redux dispatch
+- [x] All components using `useCart()` instead of Redux dispatch
 - [ ] `cartSlice.ts` and `convexCartBridge.ts` deleted
 - [ ] Redux store retains only `uiSlice` (mobile menu, search modal, toasts)
 
