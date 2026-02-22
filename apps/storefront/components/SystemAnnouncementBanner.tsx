@@ -126,7 +126,7 @@ const SystemAnnouncementBanner: React.FC = () => {
   const IconComponent = typeIcons[activeAnnouncement.type] || Info;
 
   return (
-    <div className="w-full bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
+    <div className="fixed top-20 left-0 right-0 z-30 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
       <div className="container mx-auto px-4 py-3">
         <div
           className={`relative overflow-hidden rounded-lg border ${styles.bg} ${styles.border}`}
