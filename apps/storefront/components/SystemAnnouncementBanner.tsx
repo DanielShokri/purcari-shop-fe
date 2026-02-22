@@ -133,7 +133,7 @@ const SystemAnnouncementBanner: React.FC = () => {
           dir="rtl"
         >
           {/* Colored stripe on right edge (RTL) */}
-          <div className={`absolute top-0 end-0 w-1 h-full ${styles.stripesColor}`} />
+          <div className={`absolute top-0 end-0 w-1 h-full ${styles.stripeColor}`} />
 
           <div className="flex items-center gap-3 p-4 pe-5">
             {/* Icon circle on right (RTL) */}
