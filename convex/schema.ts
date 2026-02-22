@@ -355,4 +355,35 @@ export default defineSchema({
   })
     .index("by_orderId", ["orderId"])
     .index("by_status", ["status"]),
+
+  // System Announcements - for banner notifications on storefront
+  systemAnnouncements: defineTable({
+    title: v.string(),
+    message: v.string(),
+    type: v.union(
+      v.literal("info"),
+      v.literal("warning"),
+      v.literal("success"),
+      v.literal("error"),
+      v.literal("maintenance")
+    ),
+    status: v.union(
+      v.literal("active"),
+      v.literal("scheduled"),
+      v.literal("expired"),
+      v.literal("draft")
+    ),
+    startDate: v.string(),
+    endDate: v.optional(v.string()),
+    isDismissible: v.boolean(),
+    targetAudience: v.union(
+      v.literal("all"),
+      v.literal("customers"),
+      v.literal("admins")
+    ),
+    createdAt: v.string(),
+    updatedAt: v.string(),
+  })
+    .index("by_status", ["status"])
+    .index("by_status_startDate", ["status", "startDate"]),
 });
