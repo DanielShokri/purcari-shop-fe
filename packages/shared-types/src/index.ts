@@ -194,6 +194,14 @@ export interface SavedCart {
   updatedAt: string;
 }
 
+// Cart sync result - returned when merging guest cart on login
+export interface CartSyncResult {
+  mergedCart: CartItem[];
+  skippedItems: { productId: string; productName: string; reason: string }[];
+  priceChanges: { productId: string; productName: string; oldPrice: number; newPrice: number }[];
+  adjustedItems: { productId: string; productName: string; requestedQty: number; availableQty: number }[];
+}
+
 // ============================================================================
 // ORDER INTERFACES
 // ============================================================================
