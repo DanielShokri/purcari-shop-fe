@@ -15,6 +15,7 @@ export const routeLabels: Record<string, string> = {
   '/coupons/new': 'קופון חדש',
   '/cart-rules': 'חוקי עגלה',
   '/cart-rules/new': 'חוק חדש',
+  '/system-announcements': 'הודעות מערכת',
 };
 
 // Get page label from pathname
@@ -35,6 +36,11 @@ export function getPageLabel(pathname: string): string {
   // Check for cart rule edit routes (e.g., /cart-rules/:id/edit)
   if (pathname.includes('/cart-rules/') && pathname.includes('/edit')) {
     return 'עריכת חוק עגלה';
+  }
+  
+  // Check for system announcements edit routes (e.g., /system-announcements/:id/edit)
+  if (pathname.includes('/system-announcements/') && pathname.includes('/edit')) {
+    return 'עריכת הודעת מערכת';
   }
   
   // Check for order details (e.g., /orders/:id)
@@ -74,6 +80,7 @@ export const navigationConfig: NavSection[] = [
       { to: '/users', icon: 'group', label: 'משתמשים' },
       { to: '/coupons', icon: 'local_offer', label: 'קופונים', matchPaths: ['/coupons/'] },
       { to: '/cart-rules', icon: 'rule', label: 'חוקי עגלה', matchPaths: ['/cart-rules/'] },
+      { to: '/system-announcements', icon: 'campaign', label: 'הודעות מערכת' },
       { to: '/analytics', icon: 'insights', label: 'אנליטיקות' },
       { to: '/notifications', icon: 'notifications', label: 'התראות' },
       { to: '/media', icon: 'image', label: 'מדיה' },

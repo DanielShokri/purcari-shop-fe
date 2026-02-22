@@ -19,6 +19,7 @@ import Coupons from './pages/Coupons';
 import CouponEditor from './pages/CouponEditor';
 import CartRules from './pages/CartRules';
 import CartRuleEditor from './pages/CartRuleEditor';
+import SystemAnnouncements from './pages/SystemAnnouncements';
 import { Box, Flex, Text, Spinner, VStack, Center } from '@chakra-ui/react';
 import { toaster } from './components/ui/toaster';
 
@@ -157,6 +158,12 @@ export default function App() {
           <Route path="/notifications" element={
             <ProtectedRoute>
               <Notifications />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/system-announcements" element={
+            <ProtectedRoute>
+              <SystemAnnouncements />
             </ProtectedRoute>
           } />
           
