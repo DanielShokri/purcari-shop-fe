@@ -6,8 +6,8 @@ import { SystemAnnouncementType } from '@shared/types';
 
 const DISMISSED_ANNOUNCEMENTS_KEY = 'purcari_dismissed_announcements';
 
-// Type-based styling configuration
-const typeStyles: Record<SystemAnnouncementType | string, {
+// Type-based styling — use inline styles to avoid Tailwind v4 purging dynamic class strings
+const typeConfig: Record<SystemAnnouncementType | string, {
   bg: string;
   border: string;
   iconBg: string;
@@ -16,44 +16,44 @@ const typeStyles: Record<SystemAnnouncementType | string, {
   stripeColor: string;
 }> = {
   info: {
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
-    border: 'border-blue-200 dark:border-blue-900/50',
-    iconBg: 'bg-blue-100 dark:bg-blue-800/50',
-    iconColor: 'text-blue-600 dark:text-blue-400',
-    textColor: 'text-blue-800 dark:text-blue-200',
-    stripeColor: 'bg-blue-500',
+    bg: '#eff6ff',        // blue-50
+    border: '#bfdbfe',    // blue-200
+    iconBg: '#dbeafe',    // blue-100
+    iconColor: '#2563eb', // blue-600
+    textColor: '#1e40af', // blue-800
+    stripeColor: '#3b82f6', // blue-500
   },
   warning: {
-    bg: 'bg-amber-50 dark:bg-amber-900/20',
-    border: 'border-amber-200 dark:border-amber-900/50',
-    iconBg: 'bg-amber-100 dark:bg-amber-800/50',
-    iconColor: 'text-amber-600 dark:text-amber-400',
-    textColor: 'text-amber-800 dark:text-amber-200',
-    stripeColor: 'bg-amber-500',
+    bg: '#fffbeb',        // amber-50
+    border: '#fde68a',    // amber-200
+    iconBg: '#fef3c7',    // amber-100
+    iconColor: '#d97706', // amber-600
+    textColor: '#92400e', // amber-800
+    stripeColor: '#f59e0b', // amber-500
   },
   success: {
-    bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-    border: 'border-emerald-200 dark:border-emerald-900/50',
-    iconBg: 'bg-emerald-100 dark:bg-emerald-800/50',
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
-    textColor: 'text-emerald-800 dark:text-emerald-200',
-    stripeColor: 'bg-emerald-500',
+    bg: '#ecfdf5',        // emerald-50
+    border: '#a7f3d0',    // emerald-200
+    iconBg: '#d1fae5',    // emerald-100
+    iconColor: '#059669', // emerald-600
+    textColor: '#065f46', // emerald-800
+    stripeColor: '#10b981', // emerald-500
   },
   error: {
-    bg: 'bg-red-50 dark:bg-red-900/20',
-    border: 'border-red-200 dark:border-red-900/50',
-    iconBg: 'bg-red-100 dark:bg-red-800/50',
-    iconColor: 'text-red-600 dark:text-red-400',
-    textColor: 'text-red-800 dark:text-red-200',
-    stripeColor: 'bg-red-500',
+    bg: '#fef2f2',        // red-50
+    border: '#fecaca',    // red-200
+    iconBg: '#fee2e2',    // red-100
+    iconColor: '#dc2626', // red-600
+    textColor: '#991b1b', // red-800
+    stripeColor: '#ef4444', // red-500
   },
   maintenance: {
-    bg: 'bg-orange-50 dark:bg-orange-900/20',
-    border: 'border-orange-200 dark:border-orange-900/50',
-    iconBg: 'bg-orange-100 dark:bg-orange-800/50',
-    iconColor: 'text-orange-600 dark:text-orange-400',
-    textColor: 'text-orange-800 dark:text-orange-200',
-    stripeColor: 'bg-orange-500',
+    bg: '#fff7ed',        // orange-50
+    border: '#fed7aa',    // orange-200
+    iconBg: '#ffedd5',    // orange-100
+    iconColor: '#ea580c', // orange-600
+    textColor: '#9a3412', // orange-800
+    stripeColor: '#f97316', // orange-500
   },
 };
 
@@ -122,28 +122,41 @@ const SystemAnnouncementBanner: React.FC = () => {
     return null;
   }
 
-  const styles = typeStyles[activeAnnouncement.type] || typeStyles.info;
+  const cfg = typeConfig[activeAnnouncement.type] || typeConfig.info;
   const IconComponent = typeIcons[activeAnnouncement.type] || Info;
 
   return (
-    <div className={`w-full border-b ${styles.bg} ${styles.border}`} dir="rtl">
+    <div
+      dir="rtl"
+      style={{
+        backgroundColor: cfg.bg,
+        borderBottom: `1px solid ${cfg.border}`,
+      }}
+      className="w-full"
+    >
       <div className="container mx-auto px-4 py-2.5">
         <div className="relative flex items-center gap-3">
           {/* Colored stripe on right edge (RTL) */}
-          <div className={`absolute top-0 end-0 w-1 h-full ${styles.stripeColor} rounded-full`} />
+          <div
+            className="absolute top-0 end-0 w-1 h-full rounded-full"
+            style={{ backgroundColor: cfg.stripeColor }}
+          />
 
           {/* Icon circle */}
-          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${styles.iconBg}`}>
-            <IconComponent size={16} className={styles.iconColor} />
+          <div
+            className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center"
+            style={{ backgroundColor: cfg.iconBg }}
+          >
+            <IconComponent size={16} style={{ color: cfg.iconColor }} />
           </div>
 
           {/* Title and message */}
           <div className="flex-grow min-w-0">
-            <span className={`font-bold text-sm ${styles.textColor}`}>
+            <span className="font-bold text-sm" style={{ color: cfg.textColor }}>
               {activeAnnouncement.title}
             </span>
             {activeAnnouncement.title !== activeAnnouncement.message && (
-              <span className={`text-sm ${styles.textColor} opacity-80 me-2`}>
+              <span className="text-sm opacity-80 me-2" style={{ color: cfg.textColor }}>
                 {' — '}{activeAnnouncement.message}
               </span>
             )}
@@ -153,7 +166,8 @@ const SystemAnnouncementBanner: React.FC = () => {
           {activeAnnouncement.isDismissible && (
             <button
               onClick={handleDismiss}
-              className={`flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors cursor-pointer ${styles.iconColor}`}
+              className="flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors cursor-pointer"
+              style={{ color: cfg.iconColor }}
               aria-label="סגור הודעה"
             >
               <X size={16} />
