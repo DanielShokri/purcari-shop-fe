@@ -15,37 +15,42 @@
 | 05 | **Refactor Product Editor** | ✓ Complete | 1/1 |
 | 06 | **Refactor Admin Hooks** | ✓ Complete | 4/4 |
 | 07 | **Optimize Admin Loading** | ✓ Complete | 3/3 |
-| 08 | 3/3 | Complete    | 2026-02-22 |
+| 08 | **System Announcements** | ✓ Complete | 3/3 |
+| 09 | **Cart Manager** | In progress | 0/3 |
 
 ---
 
 ## In Progress
 
-### Phase 08: System Announcements
+### Phase 09: Cart Manager — Replace Redux Cart with Convex + localStorage
 
 **Status:** Ready to start (0/3 plans complete)
 
-**Goal:** Create a system announcement banner for storefront and admin management interface
+**Goal:** Replace the Redux cart slice with a "Cart Manager" architecture where Convex is the single source of truth for authenticated users, localStorage is the fallback for guests, and a unified `useCart()` hook abstracts the storage backend from all components.
 
 **Requirements:**
-- SYS-ANNOUNCE-01: Backend schema and Convex functions for announcements
-- SYS-ANNOUNCE-02: TypeScript types in shared-types
-- SYS-ANNOUNCE-03: Admin panel CRUD page for announcements
-- SYS-ANNOUNCE-04: Announcement editor with live preview
-- SYS-ANNOUNCE-05: Storefront banner component
-- SYS-ANNOUNCE-06: Banner dismissal with localStorage persistence
+- CART-01: Convex cart mutations with server-side stock/price validation
+- CART-02: Guest cart merge on login with CartSyncResult reporting
+- CART-03: Unified useCart() hook transparently switching between Convex and localStorage
+- CART-04: useCartUI() React context replacing Redux cart modal state
+- CART-05: All storefront components migrated from Redux dispatch to useCart()/useCartUI()
+- CART-06: Coupon flow integrated into useCart() (replaces useCouponFlow)
+- CART-07: Cart summary with rules integrated into useCart() (replaces useCartSummaryWithRules)
+- CART-08: Redux cartSlice.ts and convexCartBridge.ts deleted, store cleaned
 
-**Plans:**
-3/3 plans complete
-- [ ] 08-02-PLAN.md — Admin panel announcement management page
-- [ ] 08-03-PLAN.md — Storefront banner component integration
+**Plans:** 3 plans
+- [ ] 09-01-PLAN.md — Convex cart mutations + useCart()/useCartUI() hooks (foundation)
+- [ ] 09-02-PLAN.md — Migrate all 13 consumer components to new hooks
+- [ ] 09-03-PLAN.md — Delete Redux cart artifacts and cleanup
 
 **Expected Deliverables:**
-- systemAnnouncements table in Convex schema
-- Admin page at /system-announcements with full CRUD
-- Banner component on storefront below header
-- Type-based color styling (info/warning/success/error/maintenance)
-- Dismissible banners with localStorage persistence
+- `convex/cart.ts` with 6 functions (addItem, removeItem, updateQuantity, clearCart, mergeGuestCart, getCart)
+- `useCart()` hook with unified API for both auth states
+- `useCartUI()` context for cart modal state
+- `CartSyncResult` type in shared-types
+- All components using `useCart()` instead of Redux dispatch
+- `cartSlice.ts` and `convexCartBridge.ts` deleted
+- Redux store retains only `uiSlice` (mobile menu, search modal, toasts)
 
 ---
 
@@ -72,6 +77,26 @@
 ---
 
 ## Completed Phases
+
+### Phase 08: System Announcements
+
+**Status:** ✓ Complete (February 22, 2026)
+
+**Goal achieved:** System announcement banner on storefront with admin management interface
+
+**Deliverables:**
+- ✓ systemAnnouncements table in Convex schema
+- ✓ Admin page at /system-announcements with full CRUD
+- ✓ Banner component on storefront below header
+- ✓ Type-based color styling (info/warning/success/error/maintenance)
+- ✓ Dismissible banners with localStorage persistence
+
+**Plans completed:**
+- [x] 08-01-PLAN.md — Backend schema and Convex functions
+- [x] 08-02-PLAN.md — Admin panel announcement management page
+- [x] 08-03-PLAN.md — Storefront banner component integration
+
+---
 
 ### Phase 06: Refactor Admin Hooks
 
@@ -296,3 +321,6 @@ Phase 02 addressed TypeScript errors across the entire monorepo. Key fixes inclu
 | 2026-02-17 | Add @auth/core as direct dependency | Required for TypeScript module resolution of OAuth providers |
 
 | 2026-02-20 | Generic useEntityList<T> hook pattern | Reusable list management eliminates duplication across entity pages |
+| 2026-02-22 | Cart Manager: Convex + localStorage, no Redux | Convex is source of truth for auth users, localStorage for guests, unified useCart() hook |
+| 2026-02-22 | Keep cart embedded in users table | No separate cart table — simpler schema, fewer joins |
+| 2026-02-22 | Server-side price/stock validation in cart mutations | Prevents price manipulation — CartItem built from DB product data, not client |
