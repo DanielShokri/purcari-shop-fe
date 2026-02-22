@@ -21,7 +21,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     <div className="flex flex-col min-h-screen font-sans">
       <Header />
       <SystemAnnouncementBanner />
-      <main className="flex-grow pt-32">
+      <main className="flex-grow pt-20">
         {children}
       </main>
       <Footer />

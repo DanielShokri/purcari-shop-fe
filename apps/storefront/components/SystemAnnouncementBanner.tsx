@@ -126,42 +126,39 @@ const SystemAnnouncementBanner: React.FC = () => {
   const IconComponent = typeIcons[activeAnnouncement.type] || Info;
 
   return (
-    <div className="fixed top-20 left-0 right-0 z-30 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-      <div className="container mx-auto px-4 py-3">
-        <div
-          className={`relative overflow-hidden rounded-lg border ${styles.bg} ${styles.border}`}
-          dir="rtl"
-        >
+    <div className={`w-full border-b ${styles.bg} ${styles.border}`} dir="rtl">
+      <div className="container mx-auto px-4 py-2.5">
+        <div className="relative flex items-center gap-3">
           {/* Colored stripe on right edge (RTL) */}
-          <div className={`absolute top-0 end-0 w-1 h-full ${styles.stripeColor}`} />
+          <div className={`absolute top-0 end-0 w-1 h-full ${styles.stripeColor} rounded-full`} />
 
-          <div className="flex items-center gap-3 p-4 pe-5">
-            {/* Icon circle on right (RTL) */}
-            <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${styles.iconBg}`}>
-              <IconComponent size={20} className={styles.iconColor} />
-            </div>
+          {/* Icon circle */}
+          <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${styles.iconBg}`}>
+            <IconComponent size={16} className={styles.iconColor} />
+          </div>
 
-            {/* Title and message */}
-            <div className="flex-grow min-w-0">
-              <h3 className={`font-bold text-sm ${styles.textColor} mb-0.5`}>
-                {activeAnnouncement.title}
-              </h3>
-              <p className={`text-sm ${styles.textColor} opacity-90 truncate`}>
-                {activeAnnouncement.message}
-              </p>
-            </div>
-
-            {/* Close button on left (RTL) - only if dismissible */}
-            {activeAnnouncement.isDismissible && (
-              <button
-                onClick={handleDismiss}
-                className={`flex-shrink-0 p-1.5 rounded-full hover:bg-black/10 transition-colors cursor-pointer ${styles.iconColor}`}
-                aria-label="סגור הודעה"
-              >
-                <X size={18} />
-              </button>
+          {/* Title and message */}
+          <div className="flex-grow min-w-0">
+            <span className={`font-bold text-sm ${styles.textColor}`}>
+              {activeAnnouncement.title}
+            </span>
+            {activeAnnouncement.title !== activeAnnouncement.message && (
+              <span className={`text-sm ${styles.textColor} opacity-80 me-2`}>
+                {' — '}{activeAnnouncement.message}
+              </span>
             )}
           </div>
+
+          {/* Close button - only if dismissible */}
+          {activeAnnouncement.isDismissible && (
+            <button
+              onClick={handleDismiss}
+              className={`flex-shrink-0 p-1 rounded-full hover:bg-black/10 transition-colors cursor-pointer ${styles.iconColor}`}
+              aria-label="סגור הודעה"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
       </div>
     </div>
