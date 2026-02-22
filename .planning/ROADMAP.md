@@ -14,11 +14,40 @@
 | 04 | **Google OAuth Authentication** | ✓ Complete | 1/1 |
 | 05 | **Refactor Product Editor** | ✓ Complete | 1/1 |
 | 06 | **Refactor Admin Hooks** | ✓ Complete | 4/4 |
-| 07 | 3/3 | Complete    | 2026-02-20 |
+| 07 | **Optimize Admin Loading** | ✓ Complete | 3/3 |
+| 08 | 1/3 | In Progress|  |
 
 ---
 
 ## In Progress
+
+### Phase 08: System Announcements
+
+**Status:** Ready to start (0/3 plans complete)
+
+**Goal:** Create a system announcement banner for storefront and admin management interface
+
+**Requirements:**
+- SYS-ANNOUNCE-01: Backend schema and Convex functions for announcements
+- SYS-ANNOUNCE-02: TypeScript types in shared-types
+- SYS-ANNOUNCE-03: Admin panel CRUD page for announcements
+- SYS-ANNOUNCE-04: Announcement editor with live preview
+- SYS-ANNOUNCE-05: Storefront banner component
+- SYS-ANNOUNCE-06: Banner dismissal with localStorage persistence
+
+**Plans:**
+1/3 plans executed
+- [ ] 08-02-PLAN.md — Admin panel announcement management page
+- [ ] 08-03-PLAN.md — Storefront banner component integration
+
+**Expected Deliverables:**
+- systemAnnouncements table in Convex schema
+- Admin page at /system-announcements with full CRUD
+- Banner component on storefront below header
+- Type-based color styling (info/warning/success/error/maintenance)
+- Dismissible banners with localStorage persistence
+
+---
 
 ### Phase 03: Rivhit Payment Integration
 
@@ -228,23 +257,29 @@ Phase 02 addressed TypeScript errors across the entire monorepo. Key fixes inclu
 
 ### Phase 07: Optimize Admin Loading
 
-**Status:** In progress (1/3 plans complete)
+**Status:** ✓ Complete (February 20, 2026)
 
-**Goal:** Eliminate unnecessary loading spinners when navigating between admin pages
+**Goal achieved:** Eliminated unnecessary loading spinners when navigating between admin pages
 
 **Problem:** Every page navigation triggers a full-page loading spinner, even when data is cached by Convex. Users see spinners on every page visit.
 
-**Solution:** Track "ever loaded" state in hooks and pages. Only show spinner on cache). Return visits first visit (cold show data instantly from Convex cache.
+**Solution:** Track "ever loaded" state in hooks and pages. Only show spinner on first visit (cold cache). Return visits show data instantly from Convex cache.
 
 **Deliverables:**
-- [x] Plan 01: Create useCachedQuery hook + update hooks (useEntityList, useOrders, useUsers, useCategories)
-- [ ] Plan 02: Update list pages (Products, Orders, Users, Categories, Coupons, CartRules)
-- [ ] Plan 03: Update Dashboard, Analytics, and detail pages
+- ✓ useCachedQuery hook created with hasEverLoaded and isRefreshing states
+- ✓ Updated hooks: useEntityList, useOrders, useUsers, useCategories
+- ✓ Updated all admin list pages with cache-aware loading
+- ✓ Updated Dashboard, Analytics, OrderDetails, ProductEditor pages
 
-**Expected Impact:**
-- First visit to any page: shows spinner (cold cache)
-- Return to any page: shows data instantly (warm cache)
-- Better UX with no perceived latency on navigation
+**Plans completed:**
+- [x] 07-01-PLAN.md — Create useCachedQuery hook + update hooks
+- [x] 07-02-PLAN.md — Update list pages with cache-aware loading
+- [x] 07-03-PLAN.md — Update Dashboard, Analytics, and detail pages
+
+**Success criteria met:**
+- [x] First visit to any page: shows spinner (cold cache)
+- [x] Return to any page: shows data instantly (warm cache)
+- [x] Better UX with no perceived latency on navigation
 
 ---
 

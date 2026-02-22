@@ -6,14 +6,19 @@
 
 ## Current Position
 
-**Active phase:** 07-optimize-loading
-**Current plan:** 07-02-PLAN.md (completed)
-**Plans completed:** 2 of 3
+**Active phase:** 08-system-announcements
+**Current plan:** 08-02-PLAN.md (next to execute)
+**Plans completed:** 1 of 3
 
 **Current blockers:**
 - None
 
 **Recently completed:**
+- Plan 08-01: System Announcements Backend
+  - Added SystemAnnouncement types to shared-types
+  - Created systemAnnouncements table in Convex schema with indexes
+  - Implemented 5 Convex functions (list, getActive, create, update, remove)
+
 - Plan 07-02: Cache-Aware Loading States
   - Enhanced LoadingState component with variant prop ('full'/'subtle')
   - Updated all 6 admin list pages to use hasEverLoaded pattern
@@ -118,6 +123,7 @@
 | useCachedQuery hook pattern | Track hasEverLoaded and isRefreshing for cache-aware loading | Phase 07-01 |
 | Cache-aware loading pattern | Only show spinner when isLoading AND !hasEverLoaded | Phase 07-02 |
 - [Phase 07-optimize-loading]: Applied hasEverLoaded pattern to Dashboard, Analytics, OrderDetails, ProductEditor pages
+- [Phase 08]: Used adminQuery/adminMutation wrappers for admin-only functions
 
 ### Claude's Discretion
 
@@ -186,13 +192,11 @@
 
 ## Next Actions
 
-### Option A: Dashboard Activity Integration (COMPLETED)
-1. ✓ Activities table created in Convex schema
-2. ✓ Activity tracking functions implemented in `convex/activities.ts`
-3. ✓ Orders automatically create activity entries on creation
-4. ✓ Order status changes create activity entries and notifications
-5. ✓ Dashboard ActivityFeed displays live data from database
-6. Deploy to production: `npx convex dev` to regenerate types
+### Option A: System Announcements Feature (Phase 08) - RECOMMENDED
+1. Execute Plan 08-01: Backend schema and Convex functions
+2. Execute Plan 08-02: Admin panel announcement management page
+3. Execute Plan 08-03: Storefront banner component integration
+4. Test full flow: Create announcement in admin → See banner on storefront
 
 ### Option B: Complete Rivhit Payment (Phase 03)
 1. Configure Rivhit API token via `npx convex env set` (see 03-USER-SETUP.md)
@@ -236,8 +240,9 @@ All 4 plans completed:
 
 ---
 | Phase 07-optimize-loading P03 | 4min | 4 tasks | 4 files |
+| Phase 08 P01 | 5 min | 3 tasks | 3 files |
 
 ## Last session
 
-**Stopped At:** Completed 07-03-PLAN.md (Phase 07: Optimize Loading - Plan 03)
+**Stopped At:** Completed 08-01-PLAN.md
 **Resume file:** None
