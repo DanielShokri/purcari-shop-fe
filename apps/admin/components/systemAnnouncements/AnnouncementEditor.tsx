@@ -9,11 +9,10 @@ import {
   HStack,
   Input,
   Textarea,
-  Select,
+  NativeSelect,
   Checkbox,
   Box,
   Flex,
-  Heading,
 } from '@chakra-ui/react';
 import { useForm } from 'react-hook-form';
 import { SystemAnnouncement, SystemAnnouncementType, SystemAnnouncementStatus } from '@shared/types';
@@ -21,11 +20,11 @@ import { SystemAnnouncement, SystemAnnouncementType, SystemAnnouncementStatus } 
 interface AnnouncementFormData {
   title: string;
   message: string;
-  type: SystemAnnouncementType;
-  status: SystemAnnouncementStatus;
+  type: SystemAnnouncementType | string;
+  status: SystemAnnouncementStatus | string;
   startDate: string;
   endDate?: string;
-  targetAudience: 'all' | 'customers' | 'admins';
+  targetAudience: 'all' | 'customers' | 'admins' | string;
   isDismissible: boolean;
 }
 
@@ -38,7 +37,7 @@ interface AnnouncementEditorProps {
 }
 
 // Banner preview component
-function BannerPreview({ type, message }: { type: SystemAnnouncementType; message: string }) {
+function BannerPreview({ type, message }: { type: string; message: string }) {
   const getBannerStyles = () => {
     switch (type) {
       case 'info':
@@ -114,8 +113,8 @@ export default function AnnouncementEditor({
         reset({
           title: announcement.title,
           message: announcement.message,
-          type: announcement.type as SystemAnnouncementType,
-          status: announcement.status as SystemAnnouncementStatus,
+          type: announcement.type as string,
+          status: announcement.status as string,
           startDate: announcement.startDate.split('T')[0],
           endDate: announcement.endDate ? announcement.endDate.split('T')[0] : '',
           targetAudience: announcement.targetAudience,
@@ -213,71 +212,37 @@ export default function AnnouncementEditor({
                       <Text fontSize="sm" fontWeight="semibold" color="fg">
                         סוג הודעה
                       </Text>
-                      <Select.Root
-                        {...register('type')}
-                        value={[watch('type')]}
-                        onValueChange={(e) => {
-                          const select = register('type');
-                          select.onChange?.({ target: { name: 'type', value: e.value } } as any);
-                        }}
-                      >
-                        <Select.Trigger w="full" bg="bg.subtle">
-                          <Select.ValueText placeholder="בחר סוג" />
-                        </Select.Trigger>
-                        <Select.Portals>
-                          <Select.Content>
-                            <Select.Item item="info">
-                              <Select.ItemText>מידע</Select.ItemText>
-                            </Select.Item>
-                            <Select.Item item="warning">
-                              <Select.ItemText>אזהרה</Select.ItemText>
-                            </Select.Item>
-                            <Select.Item item="success">
-                              <Select.ItemText>הצלחה</Select.ItemText>
-                            </Select.Item>
-                            <Select.Item item="error">
-                              <Select.ItemText>שגיאה</Select.ItemText>
-                            </Select.Item>
-                            <Select.Item item="maintenance">
-                              <Select.ItemText>תחזוקה</Select.ItemText>
-                            </Select.Item>
-                          </Select.Content>
-                        </Select.Portals>
-                      </Select.Root>
+                      <NativeSelect.Root w="full">
+                        <NativeSelect.Field
+                          {...register('type')}
+                          bg="bg.subtle"
+                          borderColor="border"
+                        >
+                          <option value="info">מידע</option>
+                          <option value="warning">אזהרה</option>
+                          <option value="success">הצלחה</option>
+                          <option value="error">שגיאה</option>
+                          <option value="maintenance">תחזוקה</option>
+                        </NativeSelect.Field>
+                      </NativeSelect.Root>
                     </VStack>
 
                     <VStack align="start" gap="1.5" flex="1">
                       <Text fontSize="sm" fontWeight="semibold" color="fg">
                         סטטוס
                       </Text>
-                      <Select.Root
-                        {...register('status')}
-                        value={[watch('status')]}
-                        onValueChange={(e) => {
-                          const select = register('status');
-                          select.onChange?.({ target: { name: 'status', value: e.value } } as any);
-                        }}
-                      >
-                        <Select.Trigger w="full" bg="bg.subtle">
-                          <Select.ValueText placeholder="בחר סטטוס" />
-                        </Select.Trigger>
-                        <Select.Portals>
-                          <Select.Content>
-                            <Select.Item item="active">
-                              <Select.ItemText>פעיל</Select.ItemText>
-                            </Select.Item>
-                            <Select.Item item="scheduled">
-                              <Select.ItemText>מתוזמן</Select.ItemText>
-                            </Select.Item>
-                            <Select.Item item="expired">
-                              <Select.ItemText>פג תוקף</Select.ItemText>
-                            </Select.Item>
-                            <Select.Item item="draft">
-                              <Select.ItemText>טיוטה</Select.ItemText>
-                            </Select.Item>
-                          </Select.Content>
-                        </Select.Portals>
-                      </Select.Root>
+                      <NativeSelect.Root w="full">
+                        <NativeSelect.Field
+                          {...register('status')}
+                          bg="bg.subtle"
+                          borderColor="border"
+                        >
+                          <option value="active">פעיל</option>
+                          <option value="scheduled">מתוזמן</option>
+                          <option value="expired">פג תוקף</option>
+                          <option value="draft">טיוטה</option>
+                        </NativeSelect.Field>
+                      </NativeSelect.Root>
                     </VStack>
                   </HStack>
 
@@ -322,31 +287,17 @@ export default function AnnouncementEditor({
                     <Text fontSize="sm" fontWeight="semibold" color="fg">
                       קהל יעד
                     </Text>
-                    <Select.Root
-                      {...register('targetAudience')}
-                      value={[watch('targetAudience')]}
-                      onValueChange={(e) => {
-                        const select = register('targetAudience');
-                        select.onChange?.({ target: { name: 'targetAudience', value: e.value } } as any);
-                      }}
-                    >
-                      <Select.Trigger w="full" bg="bg.subtle">
-                        <Select.ValueText placeholder="בחר קהל יעד" />
-                      </Select.Trigger>
-                      <Select.Portals>
-                        <Select.Content>
-                          <Select.Item item="all">
-                            <Select.ItemText>כל המשתמשים</Select.ItemText>
-                          </Select.Item>
-                          <Select.Item item="customers">
-                            <Select.ItemText>לקוחות בלבד</Select.ItemText>
-                          </Select.Item>
-                          <Select.Item item="admins">
-                            <Select.ItemText>מנהלים בלבד</Select.ItemText>
-                          </Select.Item>
-                        </Select.Content>
-                      </Select.Portals>
-                    </Select.Root>
+                    <NativeSelect.Root w="full">
+                      <NativeSelect.Field
+                        {...register('targetAudience')}
+                        bg="bg.subtle"
+                        borderColor="border"
+                      >
+                        <option value="all">כל המשתמשים</option>
+                        <option value="customers">לקוחות בלבד</option>
+                        <option value="admins">מנהלים בלבד</option>
+                      </NativeSelect.Field>
+                    </NativeSelect.Root>
                   </VStack>
 
                   {/* Dismissible */}
@@ -355,7 +306,7 @@ export default function AnnouncementEditor({
                       checked={watch('isDismissible')}
                       onCheckedChange={(e) => {
                         const checkbox = register('isDismissible');
-                        checkbox.onChange?.({ target: { name: 'isDismissible', value: e.checked } } as any);
+                        checkbox.onChange?.({ target: { name: 'isDismissible', value: e.checked, type: 'checkbox' } } as React.ChangeEvent<HTMLInputElement>);
                       }}
                     >
                       <Checkbox.HiddenInput />
