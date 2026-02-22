@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
-import { selectCartItems, clearCart, useCartSummaryWithRules, useCouponFlow } from '../store/slices/cartSlice';
+import { useCart } from '../hooks/useCart';
 import { useMutation, useQuery, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useTrackCheckoutStart, useTrackCheckoutStep } from '../hooks/useAnalytics';
@@ -12,6 +11,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { checkoutSchema, CheckoutInput } from '../schemas/validationSchemas';
 import { Id } from '../../../convex/_generated/dataModel';
+import { CouponValidationResult } from '@shared/types';
 
 import CheckoutProgressBar from '../components/checkout/CheckoutProgressBar';
 import ShippingStep from '../components/checkout/ShippingStep';
@@ -21,11 +21,20 @@ import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const toast = useToast();
-  // Use the new hook that triggers cart rules fetch
-  const cartSummary = useCartSummaryWithRules();
-  const { items: cartItems, subtotal, shipping, validationErrors, appliedBenefits, discount: automaticDiscount } = cartSummary;
+  const cart = useCart();
+  const { 
+    items: cartItems, 
+    subtotal, 
+    shipping, 
+    validationErrors, 
+    appliedBenefits, 
+    discount: automaticDiscount,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
+    clearCart
+  } = cart;
   
   const user = useQuery(api.users.get);
   const addresses = useQuery(api.userAddresses.list, user ? { userId: user._id } : "skip");
@@ -39,15 +48,10 @@ const CheckoutPage: React.FC = () => {
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [currentOrderId, setCurrentOrderId] = useState<Id<"orders"> | null>(null);
 
-  // Initialize coupon flow
-  const {
-    validationState,
-    validationError,
-    appliedCoupon,
-    handleValidateCoupon,
-    handleApplyCoupon,
-    handleRemoveCoupon,
-  } = useCouponFlow();
+  // Coupon validation state
+  const [couponValidationState, setCouponValidationState] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [validatedCoupon, setValidatedCoupon] = useState<CouponValidationResult | null>(null);
 
   const methods = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutSchema),
@@ -275,14 +279,14 @@ const CheckoutPage: React.FC = () => {
       );
       
       if (isPaymentComplete && currentOrderId) {
-        dispatch(clearCart());
+        clearCart();
         navigate(`/order-confirmation/${currentOrderId}`);
       }
     };
 
     window.addEventListener('message', handlePaymentMessage);
     return () => window.removeEventListener('message', handlePaymentMessage);
-  }, [currentOrderId, dispatch, navigate]);
+  }, [currentOrderId, clearCart, navigate]);
 
   if (cartItems.length === 0) {
     return (
@@ -373,11 +377,33 @@ const CheckoutPage: React.FC = () => {
             discount={totalDiscount}
             total={total}
             appliedCoupon={appliedCoupon}
-            validationState={validationState}
-            validationError={validationError}
-            onValidateCoupon={handleValidateCoupon}
-            onApplyCoupon={handleApplyCoupon}
-            onRemoveCoupon={handleRemoveCoupon}
+            validationState={couponValidationState}
+            validationError={couponError}
+            onValidateCoupon={async (code: string) => {
+              setCouponValidationState('validating');
+              setCouponError(null);
+              const result = await applyCoupon(code);
+              if (result && result.valid) {
+                setValidatedCoupon(result);
+                setCouponValidationState('valid');
+                return result;
+              } else {
+                setCouponValidationState('invalid');
+                setCouponError(result?.error || 'קוד קופון לא תקין');
+                return null;
+              }
+            }}
+            onApplyCoupon={(validationResult: CouponValidationResult) => {
+              // The coupon has already been applied via onValidateCoupon call
+              // This callback is for the sidebar to handle its internal UI state
+              setValidatedCoupon(null);
+            }}
+            onRemoveCoupon={() => {
+              removeCoupon();
+              setCouponValidationState('idle');
+              setCouponError(null);
+              setValidatedCoupon(null);
+            }}
           />
         </div>
       </div>

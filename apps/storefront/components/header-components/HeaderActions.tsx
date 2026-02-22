@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Search, User, LogOut, ChevronDown } from 'lucide-react';
-import { useAppDispatch, useAppSelector } from '../../store/hooks';
-import { toggleCartModal, openSearchModal } from '../../store/slices/uiSlice';
-import { selectCartItemCount, handleLogout as handleCartLogout } from '../../store/slices/cartSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { openSearchModal } from '../../store/slices/uiSlice';
+import { useCart } from '../../hooks/useCart';
+import { useCartUI } from '../../hooks/useCartUI';
 import { useAuthActions } from "@convex-dev/auth/react";
 
 interface HeaderActionsProps {
@@ -13,7 +14,8 @@ interface HeaderActionsProps {
 const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const cartCount = useAppSelector(selectCartItemCount);
+  const { itemCount, clearCart } = useCart();
+  const { toggleCart } = useCartUI();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const { signOut } = useAuthActions();
@@ -35,7 +37,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
     try {
       setIsLoggingOut(true);
       await signOut();
-      dispatch(handleCartLogout());
+      clearCart();
       setIsUserMenuOpen(false);
       navigate('/');
     } catch (error) {
@@ -115,13 +117,13 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
 
       <button 
         className="p-2 text-gray-600 hover:text-secondary transition-colors relative cursor-pointer"
-        onClick={() => dispatch(toggleCartModal())}
+        onClick={toggleCart}
         aria-label="סל קניות"
       >
         <ShoppingCart size={22} />
-        {cartCount > 0 && (
+        {itemCount > 0 && (
           <span className="absolute top-0 -end-1 bg-secondary text-white text-[10px] w-5 h-5 flex items-center justify-center rounded-full font-bold">
-            {cartCount}
+            {itemCount}
           </span>
         )}
       </button>

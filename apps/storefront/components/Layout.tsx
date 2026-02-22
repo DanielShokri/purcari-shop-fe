@@ -6,13 +6,12 @@ import SearchModal from './SearchModal';
 import AgeVerificationModal from './AgeVerificationModal';
 import SystemAnnouncementBanner from './SystemAnnouncementBanner';
 import { ToastContainer } from './toast';
-import { useAppSelector } from '../store/hooks';
-import { selectIsCartModalOpen } from '../store/slices/uiSlice';
+import { useCartUI } from '../hooks/useCartUI';
 import { AnimatePresence } from 'framer-motion';
 import { useTrackPageView } from '../hooks/useAnalytics';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const isCartOpen = useAppSelector(selectIsCartModalOpen);
+  const { isCartOpen } = useCartUI();
 
   // Enable automatic page view tracking (must be inside Router context)
   useTrackPageView();

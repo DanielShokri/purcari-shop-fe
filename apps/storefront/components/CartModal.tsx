@@ -1,21 +1,21 @@
 import React, { useEffect } from 'react';
-import { useAppDispatch } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
-import { removeFromCart, updateQuantity, useCartSummaryWithRules } from '../store/slices/cartSlice';
-import { closeCartModal } from '../store/slices/uiSlice';
+import { useCart } from '../hooks/useCart';
+import { useCartUI } from '../hooks/useCartUI';
 import { useTrackCheckoutStart, useTrackCartViewed, useTrackCartItemRemoved } from '../hooks/useAnalytics';
 import { X, Trash2, Plus, Minus, Gift } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
 const CartModal: React.FC = () => {
-  const dispatch = useAppDispatch();
   const toast = useToast();
-  const cartSummary = useCartSummaryWithRules();
-  const { items, subtotal, discount, appliedBenefits } = cartSummary;
+  const cart = useCart();
+  const { closeCart } = useCartUI();
   const { trackCheckoutStart } = useTrackCheckoutStart();
   const { trackCartViewed } = useTrackCartViewed();
   const { trackCartItemRemoved } = useTrackCartItemRemoved();
+
+  const { items, subtotal, discount, appliedBenefits, removeItem, updateQuantity } = cart;
 
   // Track cart viewed when modal opens
   useEffect(() => {
@@ -31,7 +31,7 @@ const CartModal: React.FC = () => {
        price,
        items.length - 1
      );
-     dispatch(removeFromCart(productId));
+     removeItem(productId);
      toast.info(`${title} הוסר מהסל`);
    };
 
@@ -42,7 +42,7 @@ const CartModal: React.FC = () => {
       items.length,
       subtotal
     );
-    dispatch(closeCartModal());
+    closeCart();
   };
 
   return (
@@ -54,23 +54,23 @@ const CartModal: React.FC = () => {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
         className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
-        onClick={() => dispatch(closeCartModal())}
+        onClick={closeCart}
       />
       
-      {/* Panel */}
-      <motion.div 
-        initial={{ x: '-100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '-100%' }}
-        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-        className="absolute top-0 end-0 w-full max-w-md h-full bg-white shadow-2xl flex flex-col"
-      >
-        
+        {/* Panel */}
+        <motion.div 
+          initial={{ x: '-100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '-100%' }}
+          transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+          className="absolute top-0 end-0 w-full max-w-md h-full bg-white shadow-2xl flex flex-col"
+        >
+          
         {/* Header */}
         <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-gray-50">
           <h2 className="text-xl font-bold text-gray-800">סל הקניות</h2>
           <button 
-            onClick={() => dispatch(closeCartModal())}
+            onClick={closeCart}
             className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
           >
             <X size={24} />
@@ -83,7 +83,7 @@ const CartModal: React.FC = () => {
             <div className="text-center text-gray-500 mt-20">
               <p className="text-lg">הסל שלך ריק</p>
               <button 
-                onClick={() => dispatch(closeCartModal())} 
+                onClick={closeCart} 
                 className="mt-4 text-secondary underline font-medium cursor-pointer"
               >
                 המשך בקניות
@@ -109,14 +109,14 @@ const CartModal: React.FC = () => {
                     <div className="flex items-center border border-gray-300 rounded overflow-hidden">
                       <button 
                         className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity - 1 }))}
+                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
                       >
                         <Minus size={14} />
                       </button>
                       <span className="px-2 text-sm font-medium w-8 text-center">{item.quantity}</span>
                       <button 
                         className="px-2 py-1 hover:bg-gray-100 cursor-pointer"
-                        onClick={() => dispatch(updateQuantity({ productId: item.productId, quantity: item.quantity + 1 }))}
+                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
                       >
                         <Plus size={14} />
                       </button>

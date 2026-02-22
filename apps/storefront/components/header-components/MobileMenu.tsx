@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import { X, ChevronLeft, Search, User, LogOut } from 'lucide-react';
 import { useAppDispatch } from '../../store/hooks';
 import { toggleMobileMenu, openSearchModal } from '../../store/slices/uiSlice';
-import { handleLogout as handleCartLogout } from '../../store/slices/cartSlice';
+import { useCart } from '../../hooks/useCart';
 import { navLinks } from './navLinks';
 
 interface MobileMenuProps {
@@ -19,6 +19,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
   const navigate = useNavigate();
   const { signOut } = useAuthActions();
   const toast = useToast();
+  const { clearCart } = useCart();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleClose = () => dispatch(toggleMobileMenu());
@@ -32,7 +33,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
      setIsLoggingOut(true);
      try {
        await signOut();
-       dispatch(handleCartLogout());
+       clearCart();
        handleClose();
        toast.success("התנתקת בהצלחה");
        navigate('/');

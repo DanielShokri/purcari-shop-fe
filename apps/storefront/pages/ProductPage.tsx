@@ -6,10 +6,8 @@ import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { Product } from '@shared/types';
 import SEO from '../components/SEO';
-import { useAppDispatch } from '../store/hooks';
-import { addToCart, selectCartSubtotal } from '../store/slices/cartSlice';
+import { useCart } from '../hooks/useCart';
 import { useTrackProductView, useTrackAddToCart } from '../hooks/useAnalytics';
-import { useAppSelector } from '../store/hooks';
 import { Minus, Plus, ShoppingBag, Truck, Shield, RotateCcw, Package, AlertTriangle, CheckCircle } from 'lucide-react';
 import ProductCard from '../components/ProductCard';
 import Breadcrumbs from '../components/common/Breadcrumbs';
@@ -24,10 +22,10 @@ const ProductPage: React.FC = () => {
 
   const allProducts = useQuery(api.products.list, {});
 
-  const dispatch = useAppDispatch();
   const toast = useToast();
   const [quantity, setQuantity] = useState(1);
-  const cartTotal = useAppSelector(selectCartSubtotal);
+  const cart = useCart();
+  const cartTotal = cart.subtotal;
 
   // Track product view with all required properties
   useTrackProductView(
@@ -137,17 +135,7 @@ const ProductPage: React.FC = () => {
 
   const handleAddToCart = () => {
     if (isOutOfStock || !product) return;
-    dispatch(addToCart({
-      id: product._id,
-      productId: product._id,
-      title: product.productNameHe || product.productName,
-      price: currentPrice,
-      salePrice: product.onSale && product.salePrice ? product.salePrice : undefined,
-      originalPrice: product.onSale ? product.price : undefined,
-      quantity,
-      maxQuantity: Number(Number(product.quantityInStock)) || 99,
-      imgSrc: product.featuredImage || product.images?.[0] || ''
-    }));
+    cart.addItem(product, quantity);
     trackAddToCart(
       product._id,
       product.productNameHe || product.productName,

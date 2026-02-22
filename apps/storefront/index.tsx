@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { HelmetProvider } from 'react-helmet-async';
 import { store } from './store/index';
 import { ConvexClientProvider } from './providers/ConvexClientProvider';
+import { CartUIProvider } from './hooks/useCartUI';
 import App from './App';
 import './index.css';
 
@@ -18,9 +19,11 @@ root.render(
   <React.StrictMode>
     <ConvexClientProvider>
       <Provider store={store}>
-        <HelmetProvider>
-          <App />
-        </HelmetProvider>
+        <CartUIProvider>
+          <HelmetProvider>
+            <App />
+          </HelmetProvider>
+        </CartUIProvider>
       </Provider>
     </ConvexClientProvider>
   </React.StrictMode>

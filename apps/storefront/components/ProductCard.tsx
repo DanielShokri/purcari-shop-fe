@@ -1,9 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Product } from '@shared/types';
-import { useAppDispatch } from '../store/hooks';
 import useToast from '../store/hooks/useToast';
-import { addToCart } from '../store/slices/cartSlice';
+import { useCart } from '../hooks/useCart';
 import { useTrackAddToCart } from '../hooks/useAnalytics';
 import { ShoppingBag, Eye, Zap, Package, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -56,8 +55,8 @@ const SaleMarquee: React.FC<{ text: string }> = ({ text }) => {
 };
 
 const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
-  const dispatch = useAppDispatch();
   const toast = useToast();
+  const { addItem } = useCart();
   const { trackAddToCart } = useTrackAddToCart();
   const discountPercent = getDiscountPercent(product.price, product.salePrice);
   
@@ -72,17 +71,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     
     const currentPrice = product.onSale && product.salePrice ? product.salePrice : product.price;
     
-    dispatch(addToCart({
-      id: (product as any)._id,
-      productId: (product as any)._id,
-      title: product.productNameHe || product.productName,
-      price: currentPrice,
-      salePrice: product.onSale && product.salePrice ? product.salePrice : undefined,
-      originalPrice: product.onSale ? product.price : undefined,
-      quantity: 1,
-      maxQuantity: Number(product.quantityInStock) || 99,
-      imgSrc: product.featuredImage || product.images?.[0] || ''
-    }));
+    addItem(product, 1);
 
     // Track add to cart event
     trackAddToCart(

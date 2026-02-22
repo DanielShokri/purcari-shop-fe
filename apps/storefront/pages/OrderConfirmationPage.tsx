@@ -3,8 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
 import { useTrackPurchase } from '../hooks/useAnalytics';
-import { useAppDispatch } from '../store/hooks';
-import { clearCart } from '../store/slices/cartSlice';
+import { useCart } from '../hooks/useCart';
 import { CheckCircle, Package, Truck, ArrowRight, AlertCircle, Clock, XCircle, FileText, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Id } from '../../../convex/_generated/dataModel';
@@ -52,7 +51,7 @@ const PAYMENT_STATUS_STYLES = {
 const OrderConfirmationPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const { clearCart } = useCart();
   const orderData = useQuery(api.orders.getPublic, id ? { orderId: id as Id<"orders"> } : "skip");
   
   // Get payment transaction for this order (reactive - will auto-update when IPN arrives)
@@ -69,9 +68,9 @@ const OrderConfirmationPage: React.FC = () => {
   useEffect(() => {
     if (payment?.status === 'completed' && !hasCleared.current) {
       hasCleared.current = true;
-      dispatch(clearCart());
+      clearCart();
     }
-  }, [payment?.status, dispatch]);
+  }, [payment?.status, clearCart]);
 
   // Track order completion once when payment is confirmed
   useEffect(() => {
