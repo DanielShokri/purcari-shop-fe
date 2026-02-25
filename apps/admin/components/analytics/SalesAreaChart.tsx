@@ -91,7 +91,7 @@ export default function SalesAreaChart({
             <Select.Root
               collection={intervalOptions}
               size="md"
-              style={{ minWidth: '120px' }}
+              width="120px"
               value={[interval]}
               onValueChange={(e) => onIntervalChange(e.value[0] as AnalyticsInterval)}
             >

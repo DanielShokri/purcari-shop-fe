@@ -17,6 +17,7 @@ import type * as analytics_index from "../analytics/index.js";
 import type * as analytics_queries from "../analytics/queries.js";
 import type * as auth from "../auth.js";
 import type * as authHelpers from "../authHelpers.js";
+import type * as cart from "../cart.js";
 import type * as cartRules from "../cartRules.js";
 import type * as categories from "../categories.js";
 import type * as coupons from "../coupons.js";
@@ -30,6 +31,7 @@ import type * as products from "../products.js";
 import type * as rivhit from "../rivhit.js";
 import type * as rivhitHelpers from "../rivhitHelpers.js";
 import type * as seed from "../seed.js";
+import type * as systemAnnouncements from "../systemAnnouncements.js";
 import type * as userAddresses from "../userAddresses.js";
 import type * as users from "../users.js";
 
@@ -49,6 +51,7 @@ declare const fullApi: ApiFromModules<{
   "analytics/queries": typeof analytics_queries;
   auth: typeof auth;
   authHelpers: typeof authHelpers;
+  cart: typeof cart;
   cartRules: typeof cartRules;
   categories: typeof categories;
   coupons: typeof coupons;
@@ -62,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   rivhit: typeof rivhit;
   rivhitHelpers: typeof rivhitHelpers;
   seed: typeof seed;
+  systemAnnouncements: typeof systemAnnouncements;
   userAddresses: typeof userAddresses;
   users: typeof users;
 }>;

@@ -24,7 +24,7 @@ const FeaturesBar: React.FC = () => {
         <div className="flex flex-col items-center p-4 border-b md:border-b-0 md:border-e md:border-s border-gray-100">
           <div className="bg-gray-50 p-3 rounded-full mb-4 text-secondary"><Truck size={32} /></div>
           <h3 className="font-bold text-lg mb-2">משלוח מהיר</h3>
-          <p className="text-gray-500 text-sm px-6">משלוח מהיר עד פתח הבית לכל חלקי הארץ.</p>
+          <p className="text-gray-500 text-sm px-6">משלוח מהיר עד פתח הבית.</p>
         </div>
         <div className="flex flex-col items-center p-4">
           <div className="bg-gray-50 p-3 rounded-full mb-4 text-secondary"><ShieldCheck size={32} /></div>
