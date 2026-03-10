@@ -35,7 +35,7 @@ export default function RelatedProductsCard({
 
   const filteredProducts = availableProducts.filter(
     (p) =>
-      p.name.includes(searchTerm) &&
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
       !relatedProducts.some((rp) => rp.id === p.id)
   );
 
@@ -75,6 +75,7 @@ export default function RelatedProductsCard({
                 setShowDropdown(true);
               }}
               onFocus={() => setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
               placeholder="חפש מוצר להוספה..."
               bg="bg.subtle"
               borderColor="border"

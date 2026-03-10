@@ -208,13 +208,14 @@ export function useCart(): UseCartReturn {
         };
       } else {
         // Add new item
+        const hasSale = product.salePrice && product.salePrice < product.price;
         newItems.push({
           id: `${product._id}_${Date.now()}`,
           productId: product._id,
           title: product.productNameHe || product.productName,
-          price: product.price,
+          price: hasSale ? product.salePrice! : product.price,
           salePrice: product.salePrice,
-          originalPrice: product.price,
+          originalPrice: hasSale ? product.price : undefined,
           quantity: Math.min(quantity, product.quantityInStock),
           maxQuantity: product.quantityInStock,
           imgSrc: product.featuredImage || "",

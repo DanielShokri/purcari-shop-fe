@@ -73,13 +73,15 @@ export const addItem = mutation({
     );
 
     // Build CartItem from fresh product data
+    // Only set originalPrice if product has a valid sale price
+    const hasSale = product.salePrice && product.salePrice < product.price;
     const cartItem: any = {
       id: `${productId}_${Date.now()}`,
       productId: productId,
       title: product.productNameHe || product.productName,
-      price: product.price,
+      price: hasSale ? product.salePrice : product.price,
       salePrice: product.salePrice,
-      originalPrice: product.price,
+      originalPrice: hasSale ? product.price : undefined,
       quantity: 0, // Will be set below
       maxQuantity: product.quantityInStock,
       imgSrc: product.featuredImage || "",
@@ -344,7 +346,8 @@ export const mergeGuestCart = mutation({
 
       // Check for price changes
       const oldPrice = guestItem.price;
-      const newPrice = product.salePrice || product.price;
+      const hasSale = product.salePrice && product.salePrice < product.price;
+      const newPrice = hasSale ? product.salePrice! : product.price;
       if (oldPrice !== newPrice) {
         priceChanges.push({
           productId,
@@ -387,7 +390,7 @@ export const mergeGuestCart = mutation({
           title: product.productNameHe || product.productName,
           price: newPrice,
           salePrice: product.salePrice,
-          originalPrice: product.price,
+          originalPrice: hasSale ? product.price : undefined,
           quantity: requestedQty,
           maxQuantity: availableQty,
           imgSrc: product.featuredImage || "",

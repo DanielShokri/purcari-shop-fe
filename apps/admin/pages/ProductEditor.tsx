@@ -20,7 +20,7 @@ export default function ProductEditor() {
   return (
     <Box h="full" display="flex" flexDirection="column">
       <Box flex="1" overflowY="auto" css={{ scrollBehavior: 'smooth' }}>
-        <Box maxW="1200px" mx="auto" w="full" pb="24">
+        <Box maxW="full" mx="auto" w="full" pb="24">
           <Breadcrumbs items={[{ label: 'ראשי', href: '#' }, { label: 'מוצרים', href: '#/products' }, { label: isEditMode ? watch('productName') || 'עריכת מוצר' : 'יצירת מוצר' }]} />
           <Flex direction={{ base: 'column', sm: 'row' }} justify="space-between" align={{ base: 'start', sm: 'center' }} gap="4" mb="8">
             <Box>
@@ -59,13 +59,13 @@ export default function ProductEditor() {
                   <textarea {...register('shortDescription')} placeholder="כתוב תיאור קצר שיופיע ברשימת המוצרים..." style={{ width: '100%', minHeight: '80px', padding: '12px', fontSize: '14px', borderRadius: '6px', border: '1px solid var(--chakra-colors-border)', background: 'var(--chakra-colors-bg-subtle)', resize: 'vertical' }} maxLength={500} />
                   <Text fontSize="xs" color="fg.muted" mt="2" textAlign="left" dir="ltr">{(watch('shortDescription') || '').length}/500</Text>
                 </Card.Body></Card.Root>
+                <InventoryCard sku={watch('sku') || ''} onSkuChange={(s) => setValue('sku', s)} quantityInStock={watch('quantityInStock') || 0} onQuantityChange={(q) => setValue('quantityInStock', q)} stockStatus={watch('stockStatus') || 'in_stock'} onStockStatusChange={(s) => setValue('stockStatus', s)} isFeatured={watch('isFeatured') || false} onFeaturedChange={(f) => setValue('isFeatured', f)} />
+                <WineDetailsCard wineType={watch('wineType')} onWineTypeChange={(t) => setValue('wineType', t)} volume={watch('volume') || ''} onVolumeChange={(v) => setValue('volume', v)} grapeVariety={watch('grapeVariety') || ''} onGrapeVarietyChange={(g) => setValue('grapeVariety', g)} vintage={watch('vintage') || new Date().getFullYear()} onVintageChange={(v) => setValue('vintage', v)} servingTemperature={watch('servingTemperature') || ''} onServingTemperatureChange={(t) => setValue('servingTemperature', t)} />
                 <RelatedProductsCard relatedProducts={relatedProducts} availableProducts={availableProducts} onAddProduct={handleAddRelatedProduct} onRemoveProduct={handleRemoveRelatedProduct} />
               </VStack>
               <VStack gap="6" gridColumn={{ lg: 'span 4' }} align="stretch">
                 <PublishCard control={control} isEditMode={isEditMode} isCreating={isSaving && !isEditMode} isUpdating={isSaving && isEditMode} isDeleting={isDeleting} onDelete={handleDelete} />
                 <PricingCard price={watch('price') || 0} onPriceChange={(p) => setValue('price', p)} onSale={watch('onSale') || false} onSaleChange={(s) => setValue('onSale', s)} salePrice={watch('salePrice') || 0} onSalePriceChange={(p) => setValue('salePrice', p)} />
-                <WineDetailsCard wineType={watch('wineType')} onWineTypeChange={(t) => setValue('wineType', t)} volume={watch('volume') || ''} onVolumeChange={(v) => setValue('volume', v)} grapeVariety={watch('grapeVariety') || ''} onGrapeVarietyChange={(g) => setValue('grapeVariety', g)} vintage={watch('vintage') || new Date().getFullYear()} onVintageChange={(v) => setValue('vintage', v)} servingTemperature={watch('servingTemperature') || ''} onServingTemperatureChange={(t) => setValue('servingTemperature', t)} />
-                <InventoryCard sku={watch('sku') || ''} onSkuChange={(s) => setValue('sku', s)} quantityInStock={watch('quantityInStock') || 0} onQuantityChange={(q) => setValue('quantityInStock', q)} stockStatus={watch('stockStatus') || 'in_stock'} onStockStatusChange={(s) => setValue('stockStatus', s)} isFeatured={watch('isFeatured') || false} onFeaturedChange={(f) => setValue('isFeatured', f)} />
                 <CategoriesCard categories={categories} selectedCategories={watch('category') ? [watch('category')] : []} onCategoryToggle={handleCategoryToggle} />
                 <TagsCard tags={watch('tags') || []} tagInput={tagInput} onTagInputChange={setTagInput} onAddTag={handleAddTag} onRemoveTag={handleRemoveTag} />
                 <FeaturedImageCard imageUrl={watch('featuredImage')} onImageUrlChange={(u) => setValue('featuredImage', u)} />

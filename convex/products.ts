@@ -262,7 +262,7 @@ export const update = adminMutation({
     productName: v.optional(v.string()),
     productNameHe: v.optional(v.string()),
     price: v.optional(v.float64()),
-    quantityInStock: v.optional(v.int64()),
+    quantityInStock: v.optional(v.number()),
     sku: v.optional(v.string()),
     category: v.optional(v.id("categories")),
     description: v.optional(v.string()),
