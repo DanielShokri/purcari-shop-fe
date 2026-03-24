@@ -17,6 +17,7 @@
 | 07 | **Optimize Admin Loading** | ✓ Complete | 3/3 |
 | 08 | **System Announcements** | ✓ Complete | 3/3 |
 | 09 | **Cart Manager** | ✓ Complete | 3/3 |
+| 10 | **Simplify Auth System** | Planning | 1/1 |
 
 ---
 
@@ -279,6 +280,23 @@ Phase 02 addressed TypeScript errors across the entire monorepo. Key fixes inclu
 ## Future Phases (Backlog)
 
 *Additional phases to be planned based on business priorities*
+
+### Phase 10: Simplify Auth System
+
+**Status:** Planning
+
+**Goal:** Fix auth system issues - double user creation, InvalidSecret errors, complex validation
+
+**Problems to fix:**
+- [ ] Double user creation (createOrUpdateUser callback + useAuth hook redundant call)
+- [ ] InvalidSecret error on password sign-in (possibly corrupted existing accounts)
+- [ ] Complex name validation breaking Google OAuth
+- [ ] auth.config.ts may be unnecessary legacy config
+
+**Plans:**
+- [ ] 10-01-PLAN.md — Simplify auth.ts, remove redundant useAuth calls, test flows
+
+---
 
 ### Phase 07: Optimize Admin Loading
 
