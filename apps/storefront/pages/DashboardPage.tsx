@@ -106,7 +106,7 @@ const DashboardPage: React.FC = () => {
   // Handlers
   const handleLogout = async () => {
     await signOut();
-    clearCart();
+    // Note: We don't clear the cart on logout - user's cart persists in the database
     navigate('/login');
   };
 

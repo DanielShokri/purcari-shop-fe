@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
-import { useAuthActions } from "@convex-dev/auth/react";
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useAdminAuth } from '../hooks/useAdminAuth';
 import {
   Flex,
   Box,
@@ -23,49 +22,15 @@ interface LoginFormData {
 
 export default function Login() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>();
-  const { signIn, signOut } = useAuthActions();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  // Check for access denied message from ProtectedRoute redirect
-  useEffect(() => {
-    const state = location.state as { accessDenied?: boolean } | null;
-    if (state?.accessDenied) {
-      setError('גישה נדחתה - מערכת ניהול למנהלים בלבד');
-      // Sign out non-admin user
-      signOut();
-      // Clear the state so error doesn't persist on refresh
-      navigate('/login', { replace: true, state: {} });
-    }
-  }, [location, navigate, signOut]);
+  const { signIn, isLoading, error: authError, isAuthenticated, isAdmin } = useAdminAuth();
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Sign in with Convex Auth - let the Authenticated section handle the redirect
-      await signIn("password", { 
-        email: data.email, 
-        password: data.password, 
-        flow: "signIn" 
-      });
-      // Sign in succeeded! The app will switch to <Authenticated> section
-      // and redirect to / from there
-    } catch (err: any) {
-      const message = err?.message || '';
-      if (message.includes('User does not exist') || message.includes('Invalid credentials')) {
-        setError('לא קיים משתמש עם כתובת אימייל זו');
-      } else if (message.includes('Incorrect password')) {
-        setError('הסיסמה שהוזנה אינה נכונה');
-      } else {
-        setError('שם משתמש או סיסמה שגויים');
-      }
-      setIsLoading(false);
-    }
+    await signIn(data);
+    // No navigation -- App.tsx will route based on auth state
   };
+
+  // Show access denied error if authenticated user is not admin
+  const showAccessDenied = isAuthenticated && !isAdmin;
 
   return (
     <Flex
@@ -100,13 +65,13 @@ export default function Login() {
               </Text>
             </VStack>
 
-            {/* Error Alert */}
-            {error && (
+            {/* Error Alerts */}
+            {(authError || showAccessDenied) && (
               <Alert.Root status="error" variant="subtle" rounded="lg">
                 <Alert.Indicator />
                 <Alert.Content>
                   <Alert.Description fontSize="sm" textAlign="center">
-                    {typeof error === 'string' ? error : 'שם משתמש או סיסמה שגויים'}
+                    {showAccessDenied ? "גישה נדחתה - מערכת ניהול למנהלים בלבד" : authError}
                   </Alert.Description>
                 </Alert.Content>
               </Alert.Root>

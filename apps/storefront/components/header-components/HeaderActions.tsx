@@ -37,7 +37,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ user }) => {
     try {
       setIsLoggingOut(true);
       await signOut();
-      clearCart();
+      // Note: We don't clear the cart on logout - user's cart persists in the database
       setIsUserMenuOpen(false);
       navigate('/');
     } catch (error) {

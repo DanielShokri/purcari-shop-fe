@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Authenticated, Unauthenticated, AuthLoading, useQuery } from "convex/react";
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useQuery } from "convex/react";
 import { api } from "@convex/api";
 import Layout from './components/Layout';
 import Dashboard from './pages/Dashboard';
@@ -21,32 +21,16 @@ import CartRules from './pages/CartRules';
 import CartRuleEditor from './pages/CartRuleEditor';
 import SystemAnnouncements from './pages/SystemAnnouncements';
 import { Box, Flex, Text, Spinner, VStack, Center } from '@chakra-ui/react';
-import { toaster } from './components/ui/toaster';
 
-// Protected Route Wrapper
-const ProtectedRoute = ({ children }: { children?: React.ReactNode }) => {
-  const user = useQuery(api.users.get);
-  const location = useLocation();
-
-  if (user === undefined) return null; // Loading handled by AuthLoading
-
-  if (user === null || user.role !== 'admin') {
-    // If user is authenticated but not admin, show access denied message
-    const isAuthenticated = user !== null;
-    return (
-      <Navigate 
-        to="/login" 
-        state={{ 
-          from: location,
-          accessDenied: isAuthenticated 
-        }} 
-        replace 
-      />
-    );
-  }
-
-  return <Layout>{children}</Layout>;
-};
+// Loading screen
+const LoadingScreen = () => (
+  <Center minH="100vh" bg="bg.subtle">
+    <VStack gap="4">
+      <Spinner size="xl" color="blue.500" borderWidth="4px" />
+      <Text color="fg.muted">טוען...</Text>
+    </VStack>
+  </Center>
+);
 
 // Placeholder page component
 const PlaceholderPage = ({ title }: { title: string }) => (
@@ -68,149 +52,53 @@ const PlaceholderPage = ({ title }: { title: string }) => (
 );
 
 export default function App() {
+  // Query current user data
+  const currentUser = useQuery(api.users.get);
+
+  // Loading state while query is undefined
+  if (currentUser === undefined) {
+    return <LoadingScreen />;
+  }
+
+  const isAuthenticated = currentUser !== null;
+  const isAdmin = currentUser?.role === 'admin';
+
+  // If authenticated as admin, show the full app with redirect from /login to /
+  if (isAuthenticated && isAdmin) {
+    return (
+      <Routes>
+        <Route path="/" element={<Layout><Dashboard /></Layout>} />
+        <Route path="/products" element={<Layout><Products /></Layout>} />
+        <Route path="/products/new" element={<Layout><ProductEditor /></Layout>} />
+        <Route path="/products/:id/edit" element={<Layout><ProductEditor /></Layout>} />
+        <Route path="/orders" element={<Layout><Orders /></Layout>} />
+        <Route path="/orders/:id" element={<Layout><OrderDetails /></Layout>} />
+        <Route path="/media" element={<Layout><PlaceholderPage title="עמוד מדיה" /></Layout>} />
+        <Route path="/users" element={<Layout><Users /></Layout>} />
+        <Route path="/categories" element={<Layout><Categories /></Layout>} />
+        <Route path="/settings" element={<Layout><PlaceholderPage title="עמוד הגדרות" /></Layout>} />
+        <Route path="/search" element={<Layout><Search /></Layout>} />
+        <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
+        <Route path="/notifications" element={<Layout><Notifications /></Layout>} />
+        <Route path="/system-announcements" element={<Layout><SystemAnnouncements /></Layout>} />
+        <Route path="/coupons" element={<Layout><Coupons /></Layout>} />
+        <Route path="/coupons/new" element={<Layout><CouponEditor /></Layout>} />
+        <Route path="/coupons/:id/edit" element={<Layout><CouponEditor /></Layout>} />
+        <Route path="/cart-rules" element={<Layout><CartRules /></Layout>} />
+        <Route path="/cart-rules/new" element={<Layout><CartRuleEditor /></Layout>} />
+        <Route path="/cart-rules/:id/edit" element={<Layout><CartRuleEditor /></Layout>} />
+        {/* Redirect /login to / when admin */}
+        <Route path="/login" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Layout><NotFound /></Layout>} />
+      </Routes>
+    );
+  }
+
+  // Otherwise (not authenticated OR not admin) - show only login page
   return (
-    <>
-      <AuthLoading>
-        <Center minH="100vh" bg="bg.subtle">
-          <VStack gap="4">
-            <Spinner size="xl" color="blue.500" borderWidth="4px" />
-            <Text color="fg.muted">טוען...</Text>
-          </VStack>
-        </Center>
-      </AuthLoading>
-      <Unauthenticated>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Unauthenticated>
-      <Authenticated>
-        <Routes>
-          <Route path="/login" element={<Navigate to="/" replace />} />
-          
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/products" element={
-            <ProtectedRoute>
-              <Products />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/products/new" element={
-            <ProtectedRoute>
-              <ProductEditor />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/products/:id/edit" element={
-            <ProtectedRoute>
-              <ProductEditor />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/orders" element={
-            <ProtectedRoute>
-              <Orders />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/orders/:id" element={
-            <ProtectedRoute>
-              <OrderDetails />
-            </ProtectedRoute>
-          } />
-          
-          {/* Placeholders for other routes */}
-          <Route path="/media" element={
-            <ProtectedRoute>
-              <PlaceholderPage title="עמוד מדיה" />
-            </ProtectedRoute>
-          } />
-          <Route path="/users" element={
-            <ProtectedRoute>
-              <Users />
-            </ProtectedRoute>
-          } />
-          <Route path="/categories" element={
-            <ProtectedRoute>
-              <Categories />
-            </ProtectedRoute>
-          } />
-          <Route path="/settings" element={
-            <ProtectedRoute>
-              <PlaceholderPage title="עמוד הגדרות" />
-            </ProtectedRoute>
-          } />
-          <Route path="/search" element={
-            <ProtectedRoute>
-              <Search />
-            </ProtectedRoute>
-          } />
-          <Route path="/analytics" element={
-            <ProtectedRoute>
-              <Analytics />
-            </ProtectedRoute>
-          } />
-          <Route path="/notifications" element={
-            <ProtectedRoute>
-              <Notifications />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/system-announcements" element={
-            <ProtectedRoute>
-              <SystemAnnouncements />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/coupons" element={
-            <ProtectedRoute>
-              <Coupons />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/coupons/new" element={
-            <ProtectedRoute>
-              <CouponEditor />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/coupons/:id/edit" element={
-            <ProtectedRoute>
-              <CouponEditor />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/cart-rules" element={
-            <ProtectedRoute>
-              <CartRules />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/cart-rules/new" element={
-            <ProtectedRoute>
-              <CartRuleEditor />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/cart-rules/:id/edit" element={
-            <ProtectedRoute>
-              <CartRuleEditor />
-            </ProtectedRoute>
-          } />
-          
-          {/* 404 Not Found - catch all unmatched routes */}
-          <Route path="*" element={
-            <ProtectedRoute>
-              <NotFound />
-            </ProtectedRoute>
-          } />
-        </Routes>
-      </Authenticated>
-    </>
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }

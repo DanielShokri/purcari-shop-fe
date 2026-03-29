@@ -33,10 +33,6 @@ export default function Orders() {
               <Text as="span" className="material-symbols-outlined" fontSize="20px">download</Text>
               <Text as="span">ייצוא דוח</Text>
             </Button>
-            <Button colorPalette="blue" size="md" shadow="sm">
-              <Text as="span" className="material-symbols-outlined" fontSize="20px">add</Text>
-              <Text as="span">הזמנה חדשה</Text>
-            </Button>
           </HStack>
         </HStack>
       </VStack>

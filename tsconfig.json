@@ -20,11 +20,9 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["packages/shared-*/src"],
+      "@shared/*": ["packages/shared-types/src/*"],
       "@convex/api": ["convex/_generated/api"],
-      "@convex/dataModel": ["convex/_generated/dataModel"],
-      "@/components/ui/color-mode": ["apps/admin/components/ui/color-mode.tsx"],
-      "@/components/notifications": ["apps/admin/components/notifications/index.ts"]
+      "@convex/dataModel": ["convex/_generated/dataModel"]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true,

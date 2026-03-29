@@ -13,6 +13,7 @@ import type * as admin from "../admin.js";
 import type * as analytics from "../analytics.js";
 import type * as analytics_aggregates from "../analytics/aggregates.js";
 import type * as analytics_events from "../analytics/events.js";
+import type * as analytics_helpers from "../analytics/helpers.js";
 import type * as analytics_index from "../analytics/index.js";
 import type * as analytics_queries from "../analytics/queries.js";
 import type * as auth from "../auth.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   analytics: typeof analytics;
   "analytics/aggregates": typeof analytics_aggregates;
   "analytics/events": typeof analytics_events;
+  "analytics/helpers": typeof analytics_helpers;
   "analytics/index": typeof analytics_index;
   "analytics/queries": typeof analytics_queries;
   auth: typeof auth;

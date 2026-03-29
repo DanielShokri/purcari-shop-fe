@@ -20,8 +20,11 @@ function loadFromLocalStorage(): CartItem[] {
       const parsed = JSON.parse(saved);
       return parsed.items || [];
     }
-  } catch {
-    // Silent fail
+  } catch (error) {
+    console.error('[Cart] Failed to load cart from localStorage:', error);
+    // Clear potentially corrupted data
+    localStorage.removeItem(CART_STORAGE_KEY);
+    localStorage.removeItem(COUPON_STORAGE_KEY);
   }
   return [];
 }
@@ -29,8 +32,8 @@ function loadFromLocalStorage(): CartItem[] {
 function saveToLocalStorage(items: CartItem[], coupon: AppliedCoupon | null): void {
   try {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ items, appliedCoupon: coupon }));
-  } catch {
-    // Silent fail
+  } catch (error) {
+    console.error('[Cart] Failed to save cart to localStorage:', error);
   }
 }
 
@@ -40,8 +43,9 @@ function loadCouponFromLocalStorage(): AppliedCoupon | null {
     if (saved) {
       return JSON.parse(saved);
     }
-  } catch {
-    // Silent fail
+  } catch (error) {
+    console.error('[Cart] Failed to load coupon from localStorage:', error);
+    localStorage.removeItem(COUPON_STORAGE_KEY);
   }
   return null;
 }
@@ -53,8 +57,8 @@ function saveCouponToLocalStorage(coupon: AppliedCoupon | null): void {
     } else {
       localStorage.removeItem(COUPON_STORAGE_KEY);
     }
-  } catch {
-    // Silent fail
+  } catch (error) {
+    console.error('[Cart] Failed to save coupon to localStorage:', error);
   }
 }
 
@@ -148,28 +152,31 @@ export function useCart(): UseCartReturn {
     if (nowAuth && wasGuest && guestCart.length > 0) {
       // Guest just logged in with items - merge
       setIsSyncing(true);
-      mergeGuestCartMutation({ guestItems: guestCart })
-        .then((result) => {
-          // Clear localStorage after merge
-          localStorage.removeItem(CART_STORAGE_KEY);
-          localStorage.removeItem(COUPON_STORAGE_KEY);
-          setGuestCart([]);
-          setGuestCoupon(null);
+        mergeGuestCartMutation({ guestItems: guestCart })
+          .then((result) => {
+            // Clear localStorage after merge
+            localStorage.removeItem(CART_STORAGE_KEY);
+            localStorage.removeItem(COUPON_STORAGE_KEY);
+            setGuestCart([]);
+            setGuestCoupon(null);
 
-          // Surface sync issues
-          if (
-            result &&
-            (result.skippedItems.length > 0 ||
-              result.priceChanges.length > 0 ||
-              result.adjustedItems.length > 0)
-          ) {
-            setSyncResult(result);
-          }
-        })
-        .catch(console.error)
-        .finally(() => {
-          setIsSyncing(false);
-        });
+            // Surface sync issues
+            if (
+              result &&
+              (result.skippedItems.length > 0 ||
+                result.priceChanges.length > 0 ||
+                result.adjustedItems.length > 0)
+            ) {
+              setSyncResult(result);
+            }
+          })
+          .catch((error) => {
+            console.error('[Cart] Failed to merge guest cart on login:', error);
+            // Keep syncResult null - user will need to contact support if items are missing
+          })
+          .finally(() => {
+            setIsSyncing(false);
+          });
     }
   }, [isAuthenticated, guestCart, mergeGuestCartMutation]);
 

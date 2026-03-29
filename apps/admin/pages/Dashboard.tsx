@@ -141,18 +141,6 @@ export default function Dashboard() {
             ברוך הבא למערכת הניהול, להלן הנתונים להיום.
           </Text>
         </Box>
-        <Button
-          colorPalette="blue"
-          size="sm"
-          fontWeight="medium"
-          shadow="lg"
-          _hover={{ bg: 'blue.600' }}
-        >
-          <Text as="span" className="material-symbols-outlined" fontSize="18px" ml="2">
-            add
-          </Text>
-          דוח חדש
-        </Button>
       </Flex>
 
       {/* Stats Grid */}

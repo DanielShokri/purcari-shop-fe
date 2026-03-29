@@ -33,7 +33,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({ user }) => {
      setIsLoggingOut(true);
      try {
        await signOut();
-       clearCart();
+       // Note: We don't clear the cart on logout - user's cart persists in the database
        handleClose();
        toast.success("התנתקת בהצלחה");
        navigate('/');

@@ -1,58 +1,52 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import useToast from '../store/hooks/useToast';
 import { useCart } from '../hooks/useCart';
 import { useMutation, useQuery, useAction } from 'convex/react';
 import { api } from '../../../convex/_generated/api';
-import { useTrackCheckoutStart, useTrackCheckoutStep } from '../hooks/useAnalytics';
+import { useCheckoutCoupon } from '../hooks/useCheckoutCoupon';
+import { usePaymentProcessing } from '../hooks/usePaymentProcessing';
+import { useCheckoutAnalytics } from '../hooks/useCheckoutAnalytics';
+import { usePaymentListener } from '../hooks/usePaymentListener';
 import { ShoppingBag } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { checkoutSchema, CheckoutInput } from '../schemas/validationSchemas';
 import { Id } from '../../../convex/_generated/dataModel';
-import { CouponValidationResult } from '@shared/types';
 
 import CheckoutProgressBar from '../components/checkout/CheckoutProgressBar';
 import ShippingStep from '../components/checkout/ShippingStep';
 import ReviewStep from '../components/checkout/ReviewStep';
 import PaymentStep from '../components/checkout/PaymentStep';
 import OrderSummarySidebar from '../components/checkout/OrderSummarySidebar';
+import EmptyCartView from '../components/checkout/EmptyCartView';
+import CheckoutWarnings from '../components/checkout/CheckoutWarnings';
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const cart = useCart();
-  const { 
-    items: cartItems, 
-    subtotal, 
-    shipping, 
-    validationErrors, 
-    appliedBenefits, 
+  const {
+    items: cartItems,
+    subtotal,
+    shipping,
+    validationErrors: cartValidationErrors,
+    appliedBenefits,
     discount: automaticDiscount,
     appliedCoupon,
     applyCoupon,
     removeCoupon,
-    clearCart
+    clearCart,
   } = cart;
-  
+
   const user = useQuery(api.users.get);
   const addresses = useQuery(api.userAddresses.list, user ? { userId: user._id } : "skip");
-  
-  // 3 steps: 1 = Shipping, 2 = Review, 3 = Payment (iframe)
+
+  // Step state
   const [step, setStep] = useState(1);
 
-  // Payment state
-  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
-  const [isLoadingPayment, setIsLoadingPayment] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [currentOrderId, setCurrentOrderId] = useState<Id<"orders"> | null>(null);
-
-  // Coupon validation state
-  const [couponValidationState, setCouponValidationState] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
-  const [couponError, setCouponError] = useState<string | null>(null);
-  const [validatedCoupon, setValidatedCoupon] = useState<CouponValidationResult | null>(null);
-
+  // Form
   const methods = useForm<CheckoutInput>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
@@ -65,8 +59,40 @@ const CheckoutPage: React.FC = () => {
       country: 'Israel',
     }
   });
-
   const { watch, setValue, trigger } = methods;
+
+  // Payment processing (includes state & logic)
+  const createOrderMutation = useMutation(api.orders.create);
+  const createPaymentPageAction = useAction(api.rivhit.createPaymentPage);
+  const {
+    paymentUrl,
+    isCreatingOrder,
+    isLoadingPayment,
+    paymentError,
+    currentOrderId,
+    handleProceedToPayment,
+    handleRetryPayment,
+  } = usePaymentProcessing({
+    getFormData: () => watch(),
+    createOrder: createOrderMutation,
+    createPaymentPage: createPaymentPageAction,
+    cartItems,
+    user,
+    subtotal,
+    shipping,
+    totalDiscount: automaticDiscount + (appliedCoupon?.discountAmount || 0),
+    total: Math.max(0, subtotal + shipping - (automaticDiscount + (appliedCoupon?.discountAmount || 0))),
+    appliedCoupon,
+  });
+
+  // Coupon management
+  const {
+    validationState: couponValidationState,
+    couponError,
+    validateCoupon,
+    onApplyCoupon,
+    onRemoveCoupon,
+  } = useCheckoutCoupon(applyCoupon, removeCoupon);
 
   // Pre-fill form if user is logged in
   useEffect(() => {
@@ -75,7 +101,7 @@ const CheckoutPage: React.FC = () => {
       setValue('email', user.email || '');
       if (user.phone) setValue('phone', user.phone);
     }
-    
+
     if (addresses && addresses.length > 0) {
       const defaultAddr = addresses.find(a => a.isDefault) || addresses[0];
       setValue('street', defaultAddr.street);
@@ -85,61 +111,21 @@ const CheckoutPage: React.FC = () => {
     }
   }, [user, addresses, setValue]);
 
-  const createOrder = useMutation(api.orders.create);
-  const createPaymentPage = useAction(api.rivhit.createPaymentPage);
-  
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  
-  const { trackCheckoutStart } = useTrackCheckoutStart();
-  const { trackCheckoutStep } = useTrackCheckoutStep();
-  const hasTrackedCheckout = useRef(false);
-  const hasTrackedStep = useRef<number>(0);
+  // Analytics tracking
+  useCheckoutAnalytics({
+    cartItemsLength: cartItems.length,
+    subtotal,
+    step,
+  });
 
-  // Track checkout start when page loads with items
-  useEffect(() => {
-    if (cartItems.length > 0 && !hasTrackedCheckout.current) {
-      hasTrackedCheckout.current = true;
-      trackCheckoutStart(
-        `checkout_${Date.now()}`,
-        cartItems.length,
-        subtotal
-      );
-    }
-  }, [cartItems.length, subtotal, trackCheckoutStart]);
-
-  // Track checkout step changes (now 3 steps)
-  useEffect(() => {
-    if (cartItems.length > 0 && step !== hasTrackedStep.current) {
-      hasTrackedStep.current = step;
-      const stepNames: Record<number, "shipping" | "payment" | "review" | "confirmation"> = {
-        1: "shipping",
-        2: "review",
-        3: "payment",
-      };
-      trackCheckoutStep(
-        stepNames[step],
-        step,
-        3, // Total steps now 3
-        subtotal,
-        cartItems.length
-      );
-    }
-  }, [step, cartItems.length, subtotal, trackCheckoutStep]);
-
-  // Calculate total discount (automatic + applied coupon)
-  const couponDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-  const totalDiscount = automaticDiscount + couponDiscount;
-  const total = Math.max(0, subtotal + shipping - totalDiscount);
-
-  // Step 1 -> Step 2: Validate shipping fields
+  // Step navigation
   const nextStep = async () => {
-    if (validationErrors.length > 0) {
-      toast.error(validationErrors[0]);
+    if (cartValidationErrors.length > 0) {
+      toast.error(cartValidationErrors[0]);
       return;
     }
 
     const fieldsToValidate: (keyof CheckoutInput)[] = ['name', 'email', 'phone', 'street', 'city', 'postalCode'];
-
     const isValid = await trigger(fieldsToValidate);
     if (isValid) {
       setStep(2);
@@ -148,156 +134,21 @@ const CheckoutPage: React.FC = () => {
 
   const prevStep = () => {
     if (step === 3) {
-      // Going back from payment to review
       setStep(2);
-      // Reset payment state
-      setPaymentUrl(null);
-      setPaymentError(null);
     } else if (step === 2) {
       setStep(1);
     }
   };
 
-  /**
-   * Step 2 -> Step 3: Create order and get payment URL
-   * Called when user clicks "Proceed to Payment" on the Review step
-   */
-  const handleProceedToPayment = async () => {
-    const formData = watch();
-    
-    try {
-      setIsCreatingOrder(true);
-      setPaymentError(null);
+  // Listen for payment completion
+  usePaymentListener(currentOrderId, (orderId) => {
+    clearCart();
+    navigate(`/order-confirmation/${orderId}`);
+  });
 
-      // 1. Create the order first (with pending payment status)
-      const orderId = await createOrder({
-        customerId: user?._id,
-        customerName: formData.name,
-        customerEmail: formData.email,
-        customerPhone: formData.phone,
-        shippingAddress: {
-          street: formData.street,
-          city: formData.city,
-          postalCode: formData.postalCode || '',
-          country: formData.country,
-        },
-        payment: {
-          method: 'Rivhit',
-          transactionId: 'pending',
-          chargeDate: new Date().toISOString(),
-        },
-        items: cartItems.map(item => ({
-          productId: item.productId as any,
-          productName: item.title,
-          productImage: item.imgSrc,
-          quantity: BigInt(item.quantity),
-          price: item.price,
-        })),
-        // Pre-calculated totals from the cart rules engine
-        subtotal,
-        shippingCost: shipping,
-        discount: totalDiscount,
-        total,
-        // Add coupon snapshot if applied
-        ...(appliedCoupon && {
-          appliedCouponCode: appliedCoupon.code,
-          appliedCouponDiscount: appliedCoupon.discountAmount,
-        }),
-      });
-
-      setCurrentOrderId(orderId);
-      setIsCreatingOrder(false);
-      setIsLoadingPayment(true);
-
-      // 2. Call iCredit to create payment page
-      const result = await createPaymentPage({ orderId });
-
-      if (result.success && result.paymentUrl) {
-        // Success - show payment iframe
-        setPaymentUrl(result.paymentUrl);
-        setStep(3);
-      } else {
-        // Payment page creation failed
-        setPaymentError(result.error || 'שגיאה ביצירת עמוד התשלום');
-      }
-    } catch (err) {
-      console.error('Failed to process payment:', err);
-      setPaymentError(err instanceof Error ? err.message : 'שגיאה בעיבוד התשלום');
-    } finally {
-      setIsCreatingOrder(false);
-      setIsLoadingPayment(false);
-    }
-  };
-
-  const handleRetryPayment = async () => {
-    if (!currentOrderId) {
-      // No order exists yet, retry from order creation
-      handleProceedToPayment();
-      return;
-    }
-
-    // Order exists, just retry getting payment URL
-    try {
-      setPaymentError(null);
-      setIsLoadingPayment(true);
-
-      const result = await createPaymentPage({ orderId: currentOrderId });
-
-      if (result.success && result.paymentUrl) {
-        setPaymentUrl(result.paymentUrl);
-        setStep(3);
-      } else {
-        setPaymentError(result.error || 'שגיאה ביצירת עמוד התשלום');
-      }
-    } catch (err) {
-      console.error('Failed to retry payment:', err);
-      setPaymentError(err instanceof Error ? err.message : 'שגיאה בעיבוד התשלום');
-    } finally {
-      setIsLoadingPayment(false);
-    }
-  };
-
-  // Listen for payment completion via postMessage from iCredit iframe
-  // Note: iCredit typically uses URL redirect, not postMessage, so this is a backup
-  useEffect(() => {
-    const handlePaymentMessage = (event: MessageEvent) => {
-      // Only handle messages from iCredit domains (test and production)
-      const isIcreditOrigin = event.origin.includes('icredit.rivhit.co.il') || 
-                              event.origin.includes('testicredit.rivhit.co.il');
-      
-      if (!isIcreditOrigin) return;
-      
-      console.log('[iCredit] Payment message received:', event.data);
-      
-      // Only redirect if we receive a specific payment completion message
-      // Check for explicit success indicators in the message data
-      const data = event.data;
-      const isPaymentComplete = data && (
-        data.status === 'success' || 
-        data.Status === 0 || 
-        data.type === 'payment_complete'
-      );
-      
-      if (isPaymentComplete && currentOrderId) {
-        clearCart();
-        navigate(`/order-confirmation/${currentOrderId}`);
-      }
-    };
-
-    window.addEventListener('message', handlePaymentMessage);
-    return () => window.removeEventListener('message', handlePaymentMessage);
-  }, [currentOrderId, clearCart, navigate]);
-
+  // Empty cart state
   if (cartItems.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <ShoppingBag size={64} className="mx-auto text-gray-300 mb-6" />
-        <h2 className="text-2xl font-bold mb-4">סל הקניות שלך ריק</h2>
-        <button onClick={() => navigate('/products')} className="bg-secondary text-white px-8 py-3 rounded-full font-bold cursor-pointer">
-          חזרה לחנות
-        </button>
-      </div>
-    );
+    return <EmptyCartView />;
   }
 
   return (
@@ -305,27 +156,10 @@ const CheckoutPage: React.FC = () => {
       <div className="container mx-auto px-4 max-w-4xl">
         <CheckoutProgressBar currentStep={step} />
 
-        {validationErrors.length > 0 && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            <p className="font-bold">שים לב:</p>
-            <ul className="list-disc list-inside">
-              {validationErrors.map((error, idx) => (
-                <li key={idx}>{error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {appliedBenefits.length > 0 && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6">
-            <p className="font-bold">הטבות פעילות:</p>
-            <ul className="list-disc list-inside">
-              {appliedBenefits.map((benefit, idx) => (
-                <li key={idx}>{benefit}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+        <CheckoutWarnings
+          validationErrors={cartValidationErrors}
+          appliedBenefits={appliedBenefits}
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Area */}
@@ -334,15 +168,15 @@ const CheckoutPage: React.FC = () => {
               <form onSubmit={(e) => e.preventDefault()}>
                 <AnimatePresence mode="wait">
                   {step === 1 && (
-                    <ShippingStep 
-                      key="step1" 
-                      nextStep={nextStep} 
-                      user={user} 
+                    <ShippingStep
+                      key="step1"
+                      nextStep={nextStep}
+                      user={user}
                     />
                   )}
 
                   {step === 2 && (
-                    <ReviewStep 
+                    <ReviewStep
                       key="step2"
                       formData={watch()}
                       cartItems={cartItems}
@@ -355,14 +189,14 @@ const CheckoutPage: React.FC = () => {
                   )}
 
                   {step === 3 && (
-                    <PaymentStep 
+                    <PaymentStep
                       key="step3"
                       paymentUrl={paymentUrl}
                       isLoadingUrl={isLoadingPayment}
                       paymentError={paymentError}
                       onRetry={handleRetryPayment}
                       prevStep={prevStep}
-                      total={total}
+                      total={subtotal + shipping - (automaticDiscount + (appliedCoupon?.discountAmount || 0))}
                     />
                   )}
                 </AnimatePresence>
@@ -370,40 +204,18 @@ const CheckoutPage: React.FC = () => {
             </FormProvider>
           </div>
 
-          <OrderSummarySidebar 
+          <OrderSummarySidebar
             cartItems={cartItems}
             subtotal={subtotal}
             shipping={shipping}
-            discount={totalDiscount}
-            total={total}
+            discount={automaticDiscount + (appliedCoupon?.discountAmount || 0)}
+            total={Math.max(0, subtotal + shipping - (automaticDiscount + (appliedCoupon?.discountAmount || 0)))}
             appliedCoupon={appliedCoupon}
             validationState={couponValidationState}
             validationError={couponError}
-            onValidateCoupon={async (code: string) => {
-              setCouponValidationState('validating');
-              setCouponError(null);
-              const result = await applyCoupon(code);
-              if (result && result.valid) {
-                setValidatedCoupon(result);
-                setCouponValidationState('valid');
-                return result;
-              } else {
-                setCouponValidationState('invalid');
-                setCouponError(result?.error || 'קוד קופון לא תקין');
-                return null;
-              }
-            }}
-            onApplyCoupon={(validationResult: CouponValidationResult) => {
-              // The coupon has already been applied via onValidateCoupon call
-              // This callback is for the sidebar to handle its internal UI state
-              setValidatedCoupon(null);
-            }}
-            onRemoveCoupon={() => {
-              removeCoupon();
-              setCouponValidationState('idle');
-              setCouponError(null);
-              setValidatedCoupon(null);
-            }}
+            onValidateCoupon={validateCoupon}
+            onApplyCoupon={onApplyCoupon}
+            onRemoveCoupon={onRemoveCoupon}
           />
         </div>
       </div>
