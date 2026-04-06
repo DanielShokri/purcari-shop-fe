@@ -53,7 +53,7 @@ export const create = adminMutation({
     nameHe: v.optional(v.string()),
     slug: v.string(),
     description: v.optional(v.string()),
-    parentId: v.optional(v.string()),
+    parentId: v.optional(v.id("categories")),
     order: v.optional(v.int64()),
     status: v.optional(v.union(v.literal("active"), v.literal("draft"), v.literal("hidden"))),
   },
@@ -78,7 +78,7 @@ export const update = adminMutation({
     nameHe: v.optional(v.string()),
     slug: v.optional(v.string()),
     description: v.optional(v.string()),
-    parentId: v.optional(v.string()),
+    parentId: v.optional(v.id("categories")),
     order: v.optional(v.int64()),
     status: v.optional(v.union(v.literal("active"), v.literal("draft"), v.literal("hidden"))),
   },
@@ -93,13 +93,35 @@ export const update = adminMutation({
 
 /**
  * Delete a category.
- * Admin-only mutation.
+ * Admin-only mutation. Reassigns products to a new category before deletion.
  */
 export const remove = adminMutation({
   args: {
     id: v.id("categories"),
+    reassignToCategoryId: v.optional(v.id("categories")),
   },
   handler: async (ctx, args) => {
-    await ctx.db.delete(args.id);
+    const categoryId = args.id;
+    const reassignToId = args.reassignToCategoryId;
+
+    // Get all products in this category
+    const products = await ctx.db
+      .query("products")
+      .withIndex("by_category", (q) => q.eq("category", categoryId))
+      .collect();
+
+    // If there are products and no reassignment target, fail
+    if (products.length > 0 && !reassignToId) {
+      throw new Error(`הקטגוריה מכילה ${products.length} מוצרים. יש להעביר אותם לקטגוריה אחרת או למחוק אותם קודם.`);
+    }
+
+    // Reassign products to new category
+    if (reassignToId) {
+      for (const product of products) {
+        await ctx.db.patch(product._id, { category: reassignToId });
+      }
+    }
+
+    await ctx.db.delete(categoryId);
   },
 });

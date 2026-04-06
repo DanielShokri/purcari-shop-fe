@@ -4,11 +4,11 @@ import { adminMutation } from "./authHelpers";
 import { Id } from "./_generated/dataModel";
 
 /**
- * List products with optional filtering.
+ * List products with optional filtering and pagination.
  */
 export const list = query({
   args: {
-    category: v.optional(v.string()), // Category ID as string (from URL params)
+    category: v.optional(v.string()),
     wineType: v.optional(
       v.union(
         v.literal("Red"),
@@ -30,30 +30,27 @@ export const list = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let results;
+    const limit = args.limit ?? 20;
 
+    let results;
     if (args.category) {
-      // First look up the category by slug to get its ID
       const category = await ctx.db
         .query("categories")
         .withIndex("by_slug", (q) => q.eq("slug", args.category!))
         .unique();
 
       if (category) {
-        // Use the actual category ID to filter products
         results = await ctx.db
           .query("products")
           .withIndex("by_category", (idx) => idx.eq("category", category._id))
-          .collect();
+          .take(limit);
       } else {
-        // Category not found - return empty array
-        results = [];
+        return [];
       }
     } else {
-      results = await ctx.db.query("products").collect();
+      results = await ctx.db.query("products").take(limit);
     }
 
-    // Secondary filtering in memory for multiple parameters (Convex best practice for small-medium datasets)
     let filtered = results;
 
     if (args.wineType) {
@@ -67,10 +64,6 @@ export const list = query({
     }
     if (args.stockStatus) {
       filtered = filtered.filter((p) => p.stockStatus === args.stockStatus);
-    }
-
-    if (args.limit) {
-      return filtered.slice(0, args.limit);
     }
 
     return filtered;

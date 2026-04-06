@@ -126,22 +126,27 @@ export const createUserActivity = mutation({
 });
 
 /**
- * Clean up old activities (keep only last 100)
+ * Clean up old activities (keep only last 150)
+ * Uses index for ordering and limits to 150 most recent
  * Can be run periodically via cron or manually
  */
 export const cleanupOldActivities = mutation({
   args: {},
   handler: async (ctx) => {
-    const allActivities = await ctx.db
+    const keepCount = 150;
+    
+    // Take 150 most recent using index
+    const recentActivities = await ctx.db
       .query("activities")
+      .withIndex("by_createdAt")
       .order("desc")
-      .collect();
+      .take(keepCount + 50);
 
-    if (allActivities.length <= 100) {
+    if (recentActivities.length <= keepCount) {
       return { deletedCount: 0 };
     }
 
-    const toDelete = allActivities.slice(100);
+    const toDelete = recentActivities.slice(keepCount);
     for (const activity of toDelete) {
       await ctx.db.delete(activity._id);
     }

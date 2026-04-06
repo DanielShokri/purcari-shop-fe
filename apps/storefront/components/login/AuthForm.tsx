@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import useToast from "../../store/hooks/useToast";
 import { LogIn, UserPlus, Mail, Lock, User as UserIcon, AlertCircle, Phone } from "lucide-react";
 import { motion } from "framer-motion";
-import { useForm, SubmitHandler } from "react-hook-form";
+import { useForm, SubmitHandler, FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, registerSchema, LoginInput, RegisterInput } from "../../schemas/validationSchemas";
 import { useAuth, SignUpInput, SignInInput } from "../../hooks/useAuth";
@@ -58,6 +58,9 @@ const AuthForm: React.FC = () => {
   } = useForm<FormData>({
     resolver: zodResolver(isLogin ? loginSchema : registerSchema),
   });
+
+  const registerErrors = errors as FieldErrors<RegisterInput>;
+  const loginErrors = errors as FieldErrors<LoginInput>;
 
   useEffect(() => {
     reset();
@@ -177,12 +180,12 @@ const AuthForm: React.FC = () => {
                   type="text"
                   {...register("name" as const)}
                   className={`w-full border-gray-300 rounded-xl p-3 ps-10 border focus:ring-secondary focus:border-secondary ${
-                    (errors as any).name ? "border-red-500" : ""
+                    !isLogin && registerErrors.name ? "border-red-500" : ""
                   }`}
                 />
               </div>
-              {(errors as any).name && (
-                <p className="text-red-500 text-xs mt-1">{(errors as any).name.message}</p>
+              {!isLogin && registerErrors.name && (
+                <p className="text-red-500 text-xs mt-1">{registerErrors.name.message}</p>
               )}
             </div>
             <div>
@@ -199,12 +202,12 @@ const AuthForm: React.FC = () => {
                   placeholder="050-1234567"
                   dir="ltr"
                   className={`w-full border-gray-300 rounded-xl p-3 ps-10 border focus:ring-secondary focus:border-secondary text-left ${
-                    (errors as any).phone ? "border-red-500" : ""
+                    !isLogin && registerErrors.phone ? "border-red-500" : ""
                   }`}
                 />
               </div>
-              {(errors as any).phone && (
-                <p className="text-red-500 text-xs mt-1">{(errors as any).phone.message}</p>
+              {!isLogin && registerErrors.phone && (
+                <p className="text-red-500 text-xs mt-1">{registerErrors.phone.message}</p>
               )}
             </div>
           </>

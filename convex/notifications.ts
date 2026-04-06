@@ -1,14 +1,28 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireAdmin } from "./authHelpers";
 
 export const list = query({
   args: {},
   handler: async (ctx) => {
-    // Admin list - show all notifications for all users (or we could filter for admin)
-    // For now, let's keep it simple and return all
+    await requireAdmin(ctx);
     return await ctx.db
       .query("notifications")
+      .order("desc")
+      .collect();
+  },
+});
+
+export const listMy = query({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) return [];
+
+    return await ctx.db
+      .query("notifications")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
       .order("desc")
       .collect();
   },
@@ -215,8 +229,8 @@ export const createPriceChangeNotification = mutation({
     customIcon: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const difference = args.newPrice - args.oldPrice;
-    const percentChange = ((difference / args.oldPrice) * 100).toFixed(1);
+    const priceDiff = Number(args.newPrice) - Number(args.oldPrice);
+    const percentChange = ((Number(priceDiff) / Number(args.oldPrice)) * 100).toFixed(1);
 
     const changeTypeLabels: Record<string, string> = {
       price_up: "עלייה במחיר",
@@ -228,8 +242,8 @@ export const createPriceChangeNotification = mutation({
     const changeLabel = changeTypeLabels[args.changeType || "price_up"] || "שינוי מחיר";
     const title = `${changeLabel} - ${args.productName}`;
     
-    const directionEmoji = difference > 0 ? "⬆️" : "⬇️";
-    const message = `${directionEmoji} ₪${args.oldPrice} → ₪${args.newPrice} (${percentChange > 0 ? "+" : ""}${percentChange}%)`;
+    const directionEmoji = Number(percentChange) > 0 ? "⬆️" : "⬇️";
+    const message = `${directionEmoji} ₪${args.oldPrice} → ₪${args.newPrice} (${Number(percentChange) > 0 ? "+" : ""}${percentChange}%)`;
 
     await ctx.db.insert("notifications", {
       userId: args.userId,

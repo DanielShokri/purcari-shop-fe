@@ -42,91 +42,145 @@ export const get = query({
  * Create or update user profile after authentication.
  * 
  * This mutation updates the user profile with phone number and other custom fields.
- * The user is already created by Convex Auth's createOrUpdateUser callback.
+ * Requires user to be authenticated - uses auth's getUserId for consistency.
  */
 export const createOrUpdateUserProfile = mutation({
   args: {
     phone: v.string(),
     name: v.optional(v.string()),
-    email: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Try to get identity, but if not available, use email to find user
-    const identity = await ctx.auth.getUserIdentity();
-    const userEmail = identity?.email || args.email;
-
-    if (!userEmail) {
-      throw new Error("User not authenticated and no email provided");
+    const userId = await getAuthUserId(ctx);
+    if (userId === null) {
+      throw new Error("יש להתחבר למערכת");
     }
 
-    // Check if user already exists by email
-    const existingUser = await ctx.db
-      .query("users")
-      .withIndex("email", (q) =>
-        q.eq("email", userEmail)
-      )
-      .unique();
+    const user = await ctx.db.get(userId);
+    if (!user) {
+      throw new Error("משתמש לא נמצא");
+    }
 
     const now = new Date().toISOString();
-
-    if (existingUser) {
-      // Update existing user with phone and other fields if provided
-      await ctx.db.patch(existingUser._id, {
-        phone: args.phone,
-        ...(args.name && { name: args.name }),
-        updatedAt: now,
-      });
-      return existingUser._id;
-    } else {
-      // Create new user document if not exists
-      const userId = await ctx.db.insert("users", {
-        name: args.name || identity?.name || "User",
-        email: userEmail,
-        phone: args.phone,
-        status: "active",
-        createdAt: now,
-        updatedAt: now,
-      });
-      return userId;
-    }
+    
+    await ctx.db.patch(userId, {
+      phone: args.phone,
+      ...(args.name && { name: args.name }),
+      updatedAt: now,
+    });
+    
+    return userId;
   },
 });
 
 /**
- * List all users. (Admin only)
+ * List all users with pagination. (Admin only)
  */
 export const listAll = query({
   args: {
     role: v.optional(v.union(v.literal("admin"), v.literal("editor"), v.literal("viewer"))),
     status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended"))),
+    limit: v.optional(v.number()),
+    cursor: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    // Verify admin access
     await requireAdmin(ctx);
     
-    let usersQuery = ctx.db.query("users");
+    const limit = args.limit ?? 20;
     
-    // Manual filtering for now as we don't have indexes for these yet
-    // In production, add indexes for role and status
-    const users = await usersQuery.collect();
+    let results;
+    if (args.role && args.status) {
+      results = await ctx.db
+        .query("users")
+        .withIndex("by_role_status", (qi) => 
+          qi.eq("role", args.role!).eq("status", args.status!)
+        )
+        .collect();
+    } else if (args.role) {
+      results = await ctx.db
+        .query("users")
+        .withIndex("by_role", (qi) => qi.eq("role", args.role!))
+        .collect();
+    } else if (args.status) {
+      results = await ctx.db
+        .query("users")
+        .withIndex("by_status", (qi) => qi.eq("status", args.status!))
+        .collect();
+    } else {
+      results = await ctx.db.query("users").collect();
+    }
     
-    return users.filter(user => {
-      if (args.role && user.role !== args.role) return false;
-      if (args.status && user.status !== args.status) return false;
-      return true;
-    });
+    let nextCursor: string | null = null;
+    if (results.length > limit) {
+      const lastItem = results[limit - 1];
+      nextCursor = lastItem._id;
+      results.length = limit;
+    }
+    
+    return { users: results, nextCursor };
   },
 });
 
 /**
  * Delete a user. (Admin only)
+ * Cascades deletion of addresses, notifications, and anonymizes orders/couponUsage.
  */
 export const remove = mutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    // Verify admin access
     await requireAdmin(ctx);
-    await ctx.db.delete(args.userId);
+    const userId = args.userId;
+
+    // Delete addresses
+    const addresses = await ctx.db
+      .query("userAddresses")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const addr of addresses) {
+      await ctx.db.delete(addr._id);
+    }
+
+    // Delete notifications
+    const notifications = await ctx.db
+      .query("notifications")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const notif of notifications) {
+      await ctx.db.delete(notif._id);
+    }
+
+    // Anonymize orders (keep order history but remove personal data)
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_customerId", (q) => q.eq("customerId", userId))
+      .collect();
+    for (const order of orders) {
+      await ctx.db.patch(order._id, {
+        customerId: undefined,
+        customerName: "משתמש נמחק",
+        customerEmail: "deleted@example.com",
+        customerPhone: undefined,
+      });
+    }
+
+    // Delete coupon usage records
+    const couponUsage = await ctx.db
+      .query("couponUsage")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const usage of couponUsage) {
+      await ctx.db.delete(usage._id);
+    }
+
+    // Delete cart
+    const userCart = await ctx.db
+      .query("carts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+    if (userCart) {
+      await ctx.db.delete(userCart._id);
+    }
+
+    await ctx.db.delete(userId);
   },
 });
 
@@ -144,7 +198,6 @@ export const update = mutation({
     status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended"))),
   },
   handler: async (ctx, args) => {
-    // Verify admin access
     await requireAdmin(ctx);
     
     const { userId, ...updates } = args;
@@ -152,6 +205,46 @@ export const update = mutation({
       ...updates,
       updatedAt: new Date().toISOString(),
     });
+  },
+});
+
+/**
+ * Create a new user (Admin only).
+ * Creates user without authentication - for admin use only.
+ */
+export const create = mutation({
+  args: {
+    name: v.string(),
+    email: v.string(),
+    phone: v.optional(v.string()),
+    role: v.optional(v.union(v.literal("admin"), v.literal("editor"), v.literal("viewer"))),
+    status: v.optional(v.union(v.literal("active"), v.literal("inactive"), v.literal("suspended"))),
+  },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx);
+    
+    // Check if user already exists
+    const existing = await ctx.db
+      .query("users")
+      .withIndex("email", (q) => q.eq("email", args.email))
+      .unique();
+    
+    if (existing) {
+      throw new Error("משתמש עם כתובת אימייל זו כבר קיים");
+    }
+    
+    const now = new Date().toISOString();
+    const userId = await ctx.db.insert("users", {
+      name: args.name,
+      email: args.email,
+      phone: args.phone,
+      role: args.role || "viewer",
+      status: args.status || "active",
+      createdAt: now,
+      updatedAt: now,
+    });
+    
+    return userId;
   },
 });
 
@@ -222,56 +315,5 @@ export const updateProfile = mutation({
     });
 
     return userId;
-  },
-});
-
-/**
- * Get current user's cart.
- */
-export const getCart = query({
-  args: {},
-  handler: async (ctx) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      return null;
-    }
-
-    const user = await ctx.db.get(userId);
-    if (!user) {
-      return null;
-    }
-
-    return user.cart ?? null;
-  },
-});
-
-/**
- * Update current user's cart.
- */
-export const updateCart = mutation({
-  args: {
-    cart: v.object({
-      items: v.array(v.any()),
-      appliedCoupon: v.optional(v.any()),
-      updatedAt: v.string(),
-    }),
-  },
-  handler: async (ctx, args) => {
-    const userId = await getAuthUserId(ctx);
-    if (userId === null) {
-      throw new Error("Not authenticated");
-    }
-
-    const user = await ctx.db.get(userId);
-    if (!user) {
-      throw new Error("User not found");
-    }
-
-    await ctx.db.patch(user._id, {
-      cart: args.cart,
-      updatedAt: new Date().toISOString(),
-    });
-
-    return user._id;
   },
 });

@@ -1,11 +1,32 @@
-// @ts-nocheck - TypeScript issues with Convex db.get() type inference
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { Doc, Id } from "./_generated/dataModel";
+
+interface CartItem {
+  id: string;
+  productId: string;
+  title: string;
+  price: number;
+  salePrice?: number;
+  originalPrice?: number;
+  quantity: number;
+  maxQuantity: number;
+  imgSrc: string;
+}
+
+interface Cart {
+  items: CartItem[];
+  appliedCoupon?: unknown;
+  updatedAt: string;
+}
+
+type ProductDoc = Doc<"products">;
+type CartDoc = Doc<"carts">;
 
 /**
- * Get current user's cart.
- * Returns cart items array or empty array if no cart.
+ * Get current user's cart from separate carts table.
+ * Returns cart items or null if no cart.
  */
 export const getCart = query({
   args: {},
@@ -15,12 +36,12 @@ export const getCart = query({
       return null;
     }
 
-    const user = await ctx.db.get(userId);
-    if (!user) {
-      return null;
-    }
+    const cart = await ctx.db
+      .query("carts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
 
-    return user.cart ?? null;
+    return cart ?? null;
   },
 });
 
@@ -43,7 +64,7 @@ export const addItem = mutation({
     const { productId, quantity } = args;
 
     // Fetch product from DB to get current price and stock
-    const product = await ctx.db.get(productId);
+    const product = await ctx.db.get(productId) as ProductDoc | null;
     if (!product) {
       throw new Error("המוצר לא נמצא");
     }
@@ -58,24 +79,24 @@ export const addItem = mutation({
       throw new Error("המוצר אזל מהמלאי");
     }
 
-    // Get current user cart
-    const user = await ctx.db.get(userId);
-    if (!user) {
-      throw new Error("משתמש לא נמצא");
-    }
+    // Get current user cart from carts table
+    let cart = await ctx.db
+      .query("carts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
 
-    const currentCart = user.cart ?? { items: [], updatedAt: "" };
-    const items = [...currentCart.items];
+    const currentItems = cart?.items ?? [];
+    const items = [...currentItems];
 
     // Check if item already exists in cart
     const existingIndex = items.findIndex(
-      (item: any) => item.productId === productId
+      (item: CartItem) => item.productId === productId
     );
 
     // Build CartItem from fresh product data
     // Only set originalPrice if product has a valid sale price
     const hasSale = product.salePrice && product.salePrice < product.price;
-    const cartItem: any = {
+    const cartItem: CartItem = {
       id: `${productId}_${Date.now()}`,
       productId: productId,
       title: product.productNameHe || product.productName,
@@ -105,14 +126,19 @@ export const addItem = mutation({
       items.push(cartItem);
     }
 
-    // Update cart
-    await ctx.db.patch(userId, {
-      cart: {
-        items,
-        appliedCoupon: currentCart.appliedCoupon,
-        updatedAt: new Date().toISOString(),
-      },
-    });
+    // Update cart - insert if not exists, patch if exists
+    const newCart = {
+      userId,
+      items,
+      appliedCoupon: cart?.appliedCoupon ?? null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (cart) {
+      await ctx.db.patch(cart._id, newCart);
+    } else {
+      await ctx.db.insert("carts", newCart);
+    }
 
     // Return the added/updated item
     const updatedItem =
@@ -142,24 +168,22 @@ export const removeItem = mutation({
 
     const { productId } = args;
 
-    // Get current user cart
-    const user = await ctx.db.get(userId);
-    if (!user) {
-      throw new Error("משתמש לא נמצא");
+    const cart = await ctx.db
+      .query("carts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!cart) {
+      return { success: true };
     }
 
-    const currentCart = user.cart ?? { items: [], updatedAt: "" };
-    const items = currentCart.items.filter(
-      (item: any) => item.productId !== productId
+    const items = cart.items.filter(
+      (item: CartItem) => item.productId !== productId
     );
 
-    // Update cart
-    await ctx.db.patch(userId, {
-      cart: {
-        items,
-        appliedCoupon: currentCart.appliedCoupon,
-        updatedAt: new Date().toISOString(),
-      },
+    await ctx.db.patch(cart._id, {
+      items,
+      updatedAt: new Date().toISOString(),
     });
 
     return { success: true };
@@ -183,39 +207,35 @@ export const updateQuantity = mutation({
 
     const { productId, quantity } = args;
 
-    // Get current user cart
-    const user = await ctx.db.get(userId);
-    if (!user) {
-      throw new Error("משתמש לא נמצא");
+    const cart = await ctx.db
+      .query("carts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!cart) {
+      throw new Error("העגלה ריקה");
     }
 
-    const currentCart = user.cart ?? { items: [], updatedAt: "" };
-    const items = [...currentCart.items];
+    const items = [...cart.items];
 
     if (quantity <= 0) {
-      // Remove item if quantity is 0 or negative
       const filtered = items.filter(
-        (item: any) => item.productId !== productId
+        (item: CartItem) => item.productId !== productId
       );
-      await ctx.db.patch(userId, {
-        cart: {
-          items: filtered,
-          appliedCoupon: currentCart.appliedCoupon,
-          updatedAt: new Date().toISOString(),
-        },
+      await ctx.db.patch(cart._id, {
+        items: filtered,
+        updatedAt: new Date().toISOString(),
       });
       return { success: true };
     }
 
-    // Fetch product to validate stock
-    const product = await ctx.db.get(productId);
+    const product = await ctx.db.get(productId) as ProductDoc | null;
     if (!product) {
       throw new Error("המוצר לא נמצא");
     }
 
-    // Update quantity, capped at stock
     const index = items.findIndex(
-      (item: any) => item.productId === productId
+      (item: CartItem) => item.productId === productId
     );
     if (index >= 0) {
       const actualQuantity = Math.min(quantity, product.quantityInStock);
@@ -227,12 +247,9 @@ export const updateQuantity = mutation({
         maxQuantity: product.quantityInStock,
       };
 
-      await ctx.db.patch(userId, {
-        cart: {
-          items,
-          appliedCoupon: currentCart.appliedCoupon,
-          updatedAt: new Date().toISOString(),
-        },
+      await ctx.db.patch(cart._id, {
+        items,
+        updatedAt: new Date().toISOString(),
       });
 
       return {
@@ -257,13 +274,18 @@ export const clearCart = mutation({
       throw new Error("יש להתחבר למערכת כדי לרוקן את העגלה");
     }
 
-    await ctx.db.patch(userId, {
-      cart: {
+    const cart = await ctx.db
+      .query("carts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    if (cart) {
+      await ctx.db.patch(cart._id, {
         items: [],
         appliedCoupon: null,
         updatedAt: new Date().toISOString(),
-      },
-    });
+      });
+    }
 
     return { success: true };
   },
@@ -285,14 +307,13 @@ export const mergeGuestCart = mutation({
 
     const { guestItems } = args;
 
-    // Get current cloud cart
-    const user = await ctx.db.get(userId);
-    if (!user) {
-      throw new Error("משתמש לא נמצא");
-    }
+    // Get current cloud cart from carts table
+    let cart = await ctx.db
+      .query("carts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
 
-    const cloudCart = user.cart ?? { items: [], appliedCoupon: null, updatedAt: "" };
-    const cloudItems = cloudCart.items as any[];
+    const cloudItems = cart?.items ?? [];
 
     // Track sync issues
     const skippedItems: { productId: string; productName: string; reason: string }[] = [];
@@ -309,10 +330,10 @@ export const mergeGuestCart = mutation({
 
     // Process guest items
     for (const guestItem of guestItems) {
-      const productId = guestItem.productId;
+      const productId = guestItem.productId as Id<"products">;
 
       // Fetch product from DB to validate
-      const product = await ctx.db.get(productId as any);
+      const product = await ctx.db.get(productId) as ProductDoc | null;
 
       if (!product) {
         // Product no longer exists
@@ -400,14 +421,18 @@ export const mergeGuestCart = mutation({
 
     const mergedCart = Array.from(merged.values());
 
-    // Update cart
-    await ctx.db.patch(userId, {
-      cart: {
-        items: mergedCart,
-        appliedCoupon: cloudCart.appliedCoupon,
-        updatedAt: new Date().toISOString(),
-      },
-    });
+    const newCartData = {
+      userId,
+      items: mergedCart,
+      appliedCoupon: cart?.appliedCoupon ?? null,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (cart) {
+      await ctx.db.patch(cart._id, newCartData);
+    } else {
+      await ctx.db.insert("carts", newCartData);
+    }
 
     return {
       mergedCart,

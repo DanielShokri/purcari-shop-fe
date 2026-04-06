@@ -184,6 +184,43 @@ export const handleIpnNotification = internalMutation({
         return { success: false, error: "Payment transaction not found" };
       }
 
+      // SECURITY: Verify payment is in pending status (not already processed)
+      if (paymentTransaction.status !== "pending") {
+        console.error("[iCredit IPN] Payment transaction already processed:", paymentTransaction.status);
+        return { success: false, error: "Payment already processed" };
+      }
+
+      // SECURITY: Verify the order exists and amount matches (prevent price manipulation)
+      if (orderId) {
+        const order = await ctx.db.get(orderId);
+        if (!order) {
+          console.error("[iCredit IPN] Order not found:", orderId);
+          return { success: false, error: "Order not found" };
+        }
+
+        // Verify amount matches to prevent tampering
+        const ipnAmount = Number(ipnData.Amount || ipnData.amount || 0);
+        if (ipnAmount > 0 && Math.abs(ipnAmount - paymentTransaction.amount) > 0.01) {
+          console.error("[iCredit IPN] Amount mismatch:", ipnAmount, "vs", paymentTransaction.amount);
+          return { success: false, error: "Amount mismatch - possible tampering" };
+        }
+      }
+
+      // SECURITY: Verify sale token if provided (prevents fake IPN)
+      const ipnToken = ipnData.Token || ipnData.token || ipnData.PrivateSaleToken;
+      if (ipnToken && paymentTransaction.ipnData) {
+        try {
+          const storedData = JSON.parse(paymentTransaction.ipnData);
+          const storedToken = storedData.privateSaleToken;
+          if (storedToken && storedToken !== ipnToken) {
+            console.error("[iCredit IPN] Token mismatch:", ipnToken, "vs", storedToken);
+            return { success: false, error: "Invalid token - possible spoofed IPN" };
+          }
+        } catch {
+          // Stored data may not be JSON, skip token verification
+        }
+      }
+
       // Determine payment status from iCredit response
       // iCredit uses TransactionStatus field: 0 = success, other values = error codes
       const rawStatus = ipnData.TransactionStatus ?? ipnData.transactionStatus ?? ipnData.Status ?? ipnData.status;

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useQuery, useMutation } from 'convex/react';
 import { api } from '@convex/api';
+import { Id } from '@convex/dataModel';
 import { CartItem, AppliedCoupon, CouponValidationResult, CartSyncResult } from '@shared/types';
 import { calculateCartTotals, CartTotals } from '../utils/cartCalculation';
 
@@ -140,7 +141,7 @@ export function useCart(): UseCartReturn {
 
   // Calculate totals
   const totals = useMemo((): CartTotals => {
-    return calculateCartTotals(items, (cartRules as any) ?? []);
+    return calculateCartTotals(items, cartRules ?? []);
   }, [items, cartRules]);
 
   // Auth transition effect - merge guest cart on login
@@ -189,7 +190,7 @@ export function useCart(): UseCartReturn {
       // Use Convex mutation
       try {
         await addItemMutation({
-          productId: product._id as any,
+          productId: product._id as Id<"products">,
           quantity,
         });
         return { success: true };
@@ -238,7 +239,7 @@ export function useCart(): UseCartReturn {
   // Remove item action
   const removeItem = useCallback(async (productId: string): Promise<void> => {
     if (isAuthenticated) {
-      await removeItemMutation({ productId: productId as any });
+      await removeItemMutation({ productId: productId as Id<"products"> });
     } else {
       const newItems = guestCart.filter(item => item.productId !== productId);
       setGuestCart(newItems);
@@ -250,9 +251,9 @@ export function useCart(): UseCartReturn {
   const updateQuantity = useCallback(async (productId: string, quantity: number): Promise<void> => {
     if (isAuthenticated) {
       if (quantity <= 0) {
-        await removeItemMutation({ productId: productId as any });
+        await removeItemMutation({ productId: productId as Id<"products"> });
       } else {
-        await updateQuantityMutation({ productId: productId as any, quantity });
+        await updateQuantityMutation({ productId: productId as Id<"products">, quantity });
       }
     } else {
       if (quantity <= 0) {
@@ -294,8 +295,9 @@ export function useCart(): UseCartReturn {
     const itemCount = totals.itemCount;
 
     try {
-      // Validate coupon via Convex
-      const result = await (window as any).__convex_client?.query(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const convexClient = (window as any).__convex_client;
+      const result = await convexClient?.query(
         api.coupons.validate,
         {
           code: code.trim(),
@@ -325,7 +327,7 @@ export function useCart(): UseCartReturn {
 
         return {
           valid: true,
-          coupon: result.coupon as any,
+          coupon: result.coupon,
           discountAmount: result.discountAmount,
         };
       } else {

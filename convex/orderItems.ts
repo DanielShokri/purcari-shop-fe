@@ -1,10 +1,10 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import { internalMutation, query } from "./_generated/server";
 
 /**
- * Add items to an existing order.
+ * Add items to an existing order. Internal only - called by orders.ts
  */
-export const create = mutation({
+export const create = internalMutation({
   args: {
     orderId: v.id("orders"),
     items: v.array(v.object({

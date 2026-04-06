@@ -9,8 +9,8 @@ import { Id } from "./_generated/dataModel";
 // CRITICAL: iCredit uses SEPARATE servers for test and production.
 // Test tokens only work on the test server, production tokens only on production.
 const ICREDIT_BASE_URLS = {
-  test: "https://testicredit.rivhit.co.il/API/PaymentPageRequest.svc",
-  production: "https://icredit.rivhit.co.il/API/PaymentPageRequest.svc",
+  test: "https://testicredit.icredit.co.il/API/PaymentPageRequest.svc",
+  production: "https://icredit.icredit.co.il/API/PaymentPageRequest.svc",
 } as const;
 
 function getIcreditApiUrl(environment: "test" | "production", endpoint: string): string {
@@ -33,7 +33,7 @@ const ICREDIT_STATUS = {
  * 4. Returns the payment page URL for redirect
  * 
  * iCredit uses the Rivhit infrastructure but has a different API format.
- * API docs: https://icredit.rivhit.co.il/API/PaymentPageRequest.svc/help
+ * API docs: https://icredit.icredit.co.il/API/PaymentPageRequest.svc/help
  */
 export const createPaymentPage = action({
   args: {
@@ -71,7 +71,7 @@ export const createPaymentPage = action({
     const storefrontUrl = process.env.STOREFRONT_URL || "http://localhost:3000";
 
     // 4. Read the order from the database
-    const order = await ctx.runQuery(internal.rivhitHelpers.getOrderById, {
+    const order = await ctx.runQuery(internal.icreditHelpers.getOrderById, {
       orderId: args.orderId,
     });
 
@@ -83,13 +83,13 @@ export const createPaymentPage = action({
     }
 
     // 5. Get order items
-    const orderItems = await ctx.runQuery(internal.rivhitHelpers.getOrderItems, {
+    const orderItems = await ctx.runQuery(internal.icreditHelpers.getOrderItems, {
       orderId: args.orderId,
     });
 
     // 6. Create a pending payment transaction record first
     const paymentTransactionId = await ctx.runMutation(
-      internal.rivhitHelpers.createPaymentTransaction,
+      internal.icreditHelpers.createPaymentTransaction,
       {
         orderId: args.orderId,
         amount: order.total,
@@ -105,16 +105,16 @@ export const createPaymentPage = action({
     const finalFailDestination = `${storefrontUrl}/order-confirmation/${args.orderId}?status=failed`;
     
     // RedirectURL points to our iframe-redirect handler which will redirect the parent window
-    const redirectUrl = `${siteUrl}/rivhit/iframe-redirect?finalUrl=${encodeURIComponent(finalDestination)}`;
-    const failRedirectUrl = `${siteUrl}/rivhit/iframe-redirect?finalUrl=${encodeURIComponent(finalFailDestination)}`;
+    const redirectUrl = `${siteUrl}/icredit/iframe-redirect?finalUrl=${encodeURIComponent(finalDestination)}`;
+    const failRedirectUrl = `${siteUrl}/icredit/iframe-redirect?finalUrl=${encodeURIComponent(finalFailDestination)}`;
     
     // IPNURL - webhook for payment notifications (server-to-server)
-    const ipnUrl = `${siteUrl}/rivhit/ipn`;
+    const ipnUrl = `${siteUrl}/icredit/ipn`;
     
     console.log("[iCredit] Order total:", order.total, "Items total:", order.subtotal, "Shipping:", order.shippingCost, "Tax:", order.tax);
 
     // 8. Build the iCredit GetUrl request
-    // API docs: https://icredit.rivhit.co.il/API/PaymentPageRequest.svc/help/operations/GetUrl
+    // API docs: https://icredit.icredit.co.il/API/PaymentPageRequest.svc/help/operations/GetUrl
     
     // Build items array - prices already include tax
     const items = orderItems.map((item) => ({
@@ -214,9 +214,9 @@ export const createPaymentPage = action({
       // 10. Process response
       if (result.Status === ICREDIT_STATUS.SUCCESS && result.URL) {
         // Success - update payment transaction with URL and tokens
-        await ctx.runMutation(internal.rivhitHelpers.updatePaymentTransaction, {
+        await ctx.runMutation(internal.icreditHelpers.updatePaymentTransaction, {
           paymentTransactionId,
-          rivhitPaymentUrl: result.URL,
+          icreditPaymentUrl: result.URL,
           // Store the sale tokens for later verification
           ipnData: JSON.stringify({
             privateSaleToken: result.PrivateSaleToken,
@@ -234,7 +234,7 @@ export const createPaymentPage = action({
         const errorMessage = result.DebugMessage || `iCredit error (Status: ${result.Status})`;
         console.error("[iCredit] API Error:", errorMessage);
         
-        await ctx.runMutation(internal.rivhitHelpers.updatePaymentTransaction, {
+        await ctx.runMutation(internal.icreditHelpers.updatePaymentTransaction, {
           paymentTransactionId,
           status: "failed",
           errorMessage,
@@ -251,7 +251,7 @@ export const createPaymentPage = action({
       const errorMessage = error instanceof Error ? error.message : "Network error";
       console.error("[iCredit] Network error:", errorMessage);
       
-      await ctx.runMutation(internal.rivhitHelpers.updatePaymentTransaction, {
+      await ctx.runMutation(internal.icreditHelpers.updatePaymentTransaction, {
         paymentTransactionId,
         status: "failed",
         errorMessage,

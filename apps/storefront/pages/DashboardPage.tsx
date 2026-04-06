@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, Authenticated, Unauthenticated, AuthLoading } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from '@convex/api';
+import { Id } from '@convex/dataModel';
 
 import { Address, AuthUser, Order } from '@shared/types';
 import { 
@@ -127,23 +128,22 @@ const DashboardPage: React.FC = () => {
   };
 
    const onAddressSubmit = async (data: AddressFormInput) => {
-     if (!user) return;
-     setIsUpdatingPrefs(true);
-     try {
-       if (editingAddressId) {
-         await updateAddress({
-           addressId: editingAddressId as any,
-           ...data,
-           postalCode: data.postalCode || '',
-         } as any);
-       } else {
-          await createAddress({
-            userId: convexUser?._id as any,
+      if (!user) return;
+      setIsUpdatingPrefs(true);
+      try {
+        if (editingAddressId) {
+          await updateAddress({
+            addressId: editingAddressId as Id<"userAddresses">,
             ...data,
             postalCode: data.postalCode || '',
-          } as any);
-       }
-      closeAddressModal();
+          });
+        } else {
+           await createAddress({
+             ...data,
+             postalCode: data.postalCode || '',
+           });
+        }
+       closeAddressModal();
     } catch (err) {
       console.error('Failed to update addresses:', err);
     } finally {
@@ -154,7 +154,7 @@ const DashboardPage: React.FC = () => {
   const deleteAddress = async (id: string) => {
     if (!confirm('האם אתה בטוח שברצונך למחוק כתובת זו?')) return;
     try {
-      await removeAddress({ addressId: id as any });
+      await removeAddress({ addressId: id as Id<"userAddresses"> });
     } catch (err) {
       console.error('Failed to delete address:', err);
     }

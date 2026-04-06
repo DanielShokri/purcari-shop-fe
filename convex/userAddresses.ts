@@ -1,27 +1,33 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { Id } from "./_generated/dataModel";
+
+async function requireAuth(ctx: any): Promise<Id<"users">> {
+  const userId = await getAuthUserId(ctx);
+  if (!userId) throw new Error("יש להתחבר למערכת");
+  return userId;
+}
 
 /**
- * List all addresses for a user.
+ * List all addresses for the current authenticated user.
  */
 export const list = query({
-  args: {
-    userId: v.id("users"),
-  },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
+    const userId = await requireAuth(ctx);
     return await ctx.db
       .query("userAddresses")
-      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
       .collect();
   },
 });
 
 /**
- * Create a new address for a user.
+ * Create a new address for the current authenticated user.
  */
 export const create = mutation({
   args: {
-    userId: v.id("users"),
     name: v.string(),
     street: v.string(),
     apartment: v.optional(v.string()),
@@ -31,10 +37,10 @@ export const create = mutation({
     isDefault: v.boolean(),
   },
   handler: async (ctx, args) => {
-    const { userId, isDefault, ...addressFields } = args;
+    const userId = await requireAuth(ctx);
+    const { isDefault, ...addressFields } = args;
 
     if (isDefault) {
-      // Unset any existing default addresses for this user
       const existingAddresses = await ctx.db
         .query("userAddresses")
         .withIndex("by_userId_default", (q) =>
@@ -59,7 +65,7 @@ export const create = mutation({
 });
 
 /**
- * Update an existing address.
+ * Update an existing address. Only the owner can update.
  */
 export const update = mutation({
   args: {
@@ -73,9 +79,11 @@ export const update = mutation({
     isDefault: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
+    const authUserId = await requireAuth(ctx);
     const { addressId, isDefault, ...fields } = args;
     const existing = await ctx.db.get(addressId);
     if (!existing) throw new Error("Address not found");
+    if (existing.userId !== authUserId) throw new Error("גישה נדחתה");
 
     if (isDefault === true && !existing.isDefault) {
       // Unset other defaults if this one is becoming the default
@@ -100,36 +108,41 @@ export const update = mutation({
 });
 
 /**
- * Remove an address.
+ * Remove an address. Only the owner can delete.
  */
 export const remove = mutation({
   args: {
     addressId: v.id("userAddresses"),
   },
   handler: async (ctx, args) => {
+    const authUserId = await requireAuth(ctx);
+    const existing = await ctx.db.get(args.addressId);
+    if (!existing) throw new Error("Address not found");
+    if (existing.userId !== authUserId) throw new Error("גישה נדחתה");
     await ctx.db.delete(args.addressId);
   },
 });
 
 /**
- * Explicitly set an address as the default for a user.
+ * Explicitly set an address as the default for the current user.
  */
 export const setDefault = mutation({
   args: {
     addressId: v.id("userAddresses"),
   },
   handler: async (ctx, args) => {
+    const authUserId = await requireAuth(ctx);
     const address = await ctx.db.get(args.addressId);
     if (!address) throw new Error("Address not found");
+    if (address.userId !== authUserId) throw new Error("גישה נדחתה");
 
     if (address.isDefault) return;
 
     // Unset other defaults
-    const userId = address.userId;
     const otherDefaults = await ctx.db
       .query("userAddresses")
       .withIndex("by_userId_default", (q) =>
-        q.eq("userId", userId).eq("isDefault", true)
+        q.eq("userId", authUserId).eq("isDefault", true)
       )
       .collect();
 

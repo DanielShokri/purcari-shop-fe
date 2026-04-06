@@ -35,12 +35,15 @@ const PaymentStep: React.FC<PaymentStepProps> = ({
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Listen for messages from iCredit iframe (if they support postMessage)
+  const ALLOWED_ORIGINS = ['https://icredit.rivhit.co.il', 'https://testicredit.rivhit.co.il'];
+
+  const isAllowedOrigin = (origin: string): boolean => {
+    return ALLOWED_ORIGINS.includes(origin);
+  };
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // iCredit might send payment status via postMessage
-      // Handle both test and production server origins
-      if (event.origin.includes('icredit.rivhit.co.il') || event.origin.includes('testicredit.rivhit.co.il')) {
+      if (isAllowedOrigin(event.origin)) {
         console.log('[iCredit] Received message:', event.data);
       }
     };

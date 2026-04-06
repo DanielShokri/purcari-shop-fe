@@ -169,15 +169,35 @@ export function useUserDialogs(): UseUserDialogsReturn {
   }, []);
 
   const submitCreate = useCallback(async () => {
-    // Note: User creation is typically handled by auth system
-    // This shows an info message for now
-    toaster.create({
-      title: 'יצירת משתמש מוגבלת בשלב זה',
-      description: 'יש להשתמש במערכת ההרשמה של האתר',
-      type: 'info',
-    });
-    closeCreateDialog();
-  }, [closeCreateDialog]);
+    if (!createState.formData.name || !createState.formData.email) {
+      toaster.create({
+        title: 'שדות חובה',
+        description: 'יש למלא שם ואימייל',
+        type: 'error',
+      });
+      return;
+    }
+    
+    try {
+      const userId = await createUserMutation({
+        name: createState.formData.name,
+        email: createState.formData.email,
+        role: createState.formData.role,
+      });
+      
+      toaster.create({
+        title: 'משתמש נוצר בהצלחה',
+        type: 'success',
+      });
+      closeCreateDialog();
+    } catch (error) {
+      toaster.create({
+        title: 'שגיאה ביצירת משתמש',
+        description: error instanceof Error ? error.message : 'שגיאה לא ידועה',
+        type: 'error',
+      });
+    }
+  }, [createState.formData, createUserMutation, closeCreateDialog]);
 
   // Edit dialog actions
   const openEditDialog = useCallback((user: User) => {

@@ -115,7 +115,7 @@ const ShopPage: React.FC = () => {
       case 'newest':
       default:
         return sorted.sort((a, b) => 
-          new Date((b as any).dateAdded || b.createdAt || '').getTime() - new Date((a as any).dateAdded || a.createdAt || '').getTime()
+          new Date(b.dateAdded || b.createdAt || '').getTime() - new Date(a.dateAdded || a.createdAt || '').getTime()
         );
     }
   }, [products, sortBy]);

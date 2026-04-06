@@ -11,58 +11,61 @@ const hebrewMonths = [
 export const getStats = query({
   args: {},
   handler: async (ctx) => {
-    // Get all orders
-    const orders = await ctx.db.query("orders").collect();
-
-    // Get all users
-    const users = await ctx.db.query("users").collect();
-
-    // Calculate total revenue - include all non-cancelled orders since they were paid
-    // (pending orders haven't been processed yet, but if they exist they may be paid)
-    // For safety, we'll include: pending, processing, completed, shipped
-    const paidOrders = orders.filter(o => 
-      o.status === "completed" || 
-      o.status === "processing" || 
-      o.status === "shipped" ||
-      o.status === "pending"
-    );
-    const totalRevenue = paidOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-
-    // Calculate current month stats
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
+    const startOfMonth = new Date(currentYear, currentMonth, 1).toISOString();
+    const startOfLastMonth = new Date(currentMonth === 0 ? currentYear - 1 : currentYear, currentMonth === 0 ? 11 : currentMonth - 1, 1).toISOString();
+    const endOfLastMonth = new Date(currentYear, currentMonth, 0).toISOString();
 
-    const thisMonthOrders = orders.filter(o => {
-      const orderDate = new Date(o.createdAt);
-      return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
-    });
+    // Use indexes for efficient queries
+    const thisMonthOrders = await ctx.db
+      .query("orders")
+      .withIndex("by_status_createdAt", (q) => 
+        q.gte("status", "pending").lte("status", "completed")
+      )
+      .filter((q) => q.gte(q.field("createdAt"), startOfMonth))
+      .collect();
 
-    const lastMonthOrders = orders.filter(o => {
-      const orderDate = new Date(o.createdAt);
-      const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-      const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
-      return orderDate.getMonth() === lastMonth && orderDate.getFullYear() === lastMonthYear;
-    });
+    const lastMonthOrders = await ctx.db
+      .query("orders")
+      .withIndex("by_status_createdAt", (q) => 
+        q.gte("status", "pending").lte("status", "completed")
+      )
+      .filter((q) => 
+        q.and(
+          q.gte(q.field("createdAt"), startOfLastMonth),
+          q.lt(q.field("createdAt"), endOfLastMonth)
+        )
+      )
+      .collect();
+
+    const allOrders = await ctx.db
+      .query("orders")
+      .withIndex("by_status", (q) => q.eq("status", "completed"))
+      .collect();
+
+    const allUsers = await ctx.db
+      .query("users")
+      .withIndex("by_status", (q) => q.eq("status", "active"))
+      .collect();
+
+    const totalRevenue = allOrders.reduce((sum, o) => sum + (o.total || 0), 0);
 
     // Calculate revenue change
-    const thisMonthRevenue = thisMonthOrders
-      .filter(o => o.status === "completed")
-      .reduce((sum, o) => sum + o.total, 0);
-    const lastMonthRevenue = lastMonthOrders
-      .filter(o => o.status === "completed")
-      .reduce((sum, o) => sum + o.total, 0);
+    const thisMonthRevenue = thisMonthOrders.reduce((sum, o) => sum + o.total, 0);
+    const lastMonthRevenue = lastMonthOrders.reduce((sum, o) => sum + o.total, 0);
     const revenueChange = lastMonthRevenue > 0
       ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
       : 0;
 
     // Calculate user change
-    const thisMonthUsers = users.filter(u => {
+    const thisMonthUsers = allUsers.filter(u => {
       if (!u.createdAt) return false;
       const userDate = new Date(u.createdAt);
       return userDate.getMonth() === currentMonth && userDate.getFullYear() === currentYear;
     }).length;
-    const lastMonthUsers = users.filter(u => {
+    const lastMonthUsers = allUsers.filter(u => {
       if (!u.createdAt) return false;
       const userDate = new Date(u.createdAt);
       const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
@@ -79,35 +82,38 @@ export const getStats = query({
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    const todayOrders = orders.filter(o => {
-      const orderDate = new Date(o.createdAt);
-      return orderDate >= today;
-    }).length;
-    const yesterdayOrders = orders.filter(o => {
-      const orderDate = new Date(o.createdAt);
-      return orderDate >= yesterday && orderDate < today;
-    }).length;
-    const ordersChange = yesterdayOrders > 0
-      ? ((todayOrders - yesterdayOrders) / yesterdayOrders) * 100
+    const allTodayOrders = await ctx.db
+      .query("orders")
+      .withIndex("by_createdAt", (q) => q.gte("createdAt", today.toISOString()))
+      .collect();
+
+    const allYesterdayOrders = await ctx.db
+      .query("orders")
+      .withIndex("by_createdAt", (q) => q.gte("createdAt", yesterday.toISOString()))
+      .filter((q) => q.lt(q.field("createdAt"), today.toISOString()))
+      .collect();
+
+    const ordersChange = allYesterdayOrders.length > 0
+      ? ((allTodayOrders.length - allYesterdayOrders.length) / allYesterdayOrders.length) * 100
       : 0;
 
     return {
-      totalSales: paidOrders.length,
+      totalSales: allOrders.length,
       totalRevenue,
       revenueChange,
-      orderCount: orders.length,
+      orderCount: allTodayOrders.length + allYesterdayOrders.length + thisMonthOrders.length,
       newOrders: thisMonthOrders.length,
       ordersChange,
-      customerCount: users.length,
-      totalUsers: users.length,
+      customerCount: allUsers.length,
+      totalUsers: allUsers.length,
       usersChange,
-      averageOrderValue: paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0,
+      averageOrderValue: allOrders.length > 0 ? totalRevenue / allOrders.length : 0,
       salesGrowth: revenueChange,
       orderGrowth: ordersChange,
       customerGrowth: usersChange,
-      cancelledOrders: orders.filter(o => o.status === "cancelled").length,
-      pendingOrders: orders.filter(o => o.status === "pending").length,
-      conversionRate: 0, // Would need analytics data for this
+      cancelledOrders: (await ctx.db.query("orders").withIndex("by_status", (q) => q.eq("status", "cancelled")).collect()).length,
+      pendingOrders: (await ctx.db.query("orders").withIndex("by_status", (q) => q.eq("status", "pending")).collect()).length,
+      conversionRate: 0,
     };
   }
 });
@@ -116,9 +122,20 @@ export const getMonthlySales = query({
   args: { year: v.optional(v.number()) },
   handler: async (ctx, args) => {
     const targetYear = args.year || new Date().getFullYear();
+    const startOfYear = `${targetYear}-01-01`;
+    const endOfYear = `${targetYear + 1}-01-01`;
 
-    // Get all orders for the target year
-    const orders = await ctx.db.query("orders").collect();
+    // Get non-cancelled orders for the target year using status index + filter
+    const orders = await ctx.db
+      .query("orders")
+      .withIndex("by_status", (q) => q.eq("status", "completed"))
+      .filter((q) => 
+        q.and(
+          q.gte(q.field("createdAt"), startOfYear),
+          q.lt(q.field("createdAt"), endOfYear)
+        )
+      )
+      .collect();
 
     // Initialize monthly data with zeros
     const monthlyData = hebrewMonths.map((month, index) => ({
@@ -127,14 +144,11 @@ export const getMonthlySales = query({
       month: index,
     }));
 
-    // Aggregate orders by month - include all non-cancelled orders
+    // Aggregate orders by month
     for (const order of orders) {
       const orderDate = new Date(order.createdAt);
-      // Include all orders except cancelled ones
-      if (orderDate.getFullYear() === targetYear && order.status !== "cancelled") {
-        const month = orderDate.getMonth();
-        monthlyData[month].value += (order.total || 0);
-      }
+      const month = orderDate.getMonth();
+      monthlyData[month].value += (order.total || 0);
     }
 
     return monthlyData;

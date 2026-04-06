@@ -39,11 +39,10 @@ export default defineSchema({
     .index("by_role", ["role"])
     .index("by_status", ["status"])
     .index("by_role_status", ["role", "status"])
-    // Note: searchField must be string, filterFields must be indexed or top-level
+    .index("by_createdAt", ["createdAt"])
     .searchIndex("search_users", { searchField: "name", filterFields: ["role"] }),
 
   userAddresses: defineTable({
-    userId: v.id("users"),
     name: v.string(),
     street: v.string(),
     apartment: v.optional(v.string()),
@@ -51,10 +50,20 @@ export default defineSchema({
     postalCode: v.string(),
     country: v.string(),
     isDefault: v.boolean(),
+    userId: v.id("users"),
     createdAt: v.string(),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_default", ["userId", "isDefault"]),
+
+  // Separate carts table to avoid hitting 1MB document limit
+  carts: defineTable({
+    userId: v.id("users"),
+    items: v.array(v.any()),
+    appliedCoupon: v.optional(v.any()),
+    updatedAt: v.string(),
+  })
+    .index("by_userId", ["userId"]),
 
   products: defineTable({
     productName: v.string(),
@@ -119,7 +128,10 @@ export default defineSchema({
     .index("by_category", ["category"])
     .index("by_status", ["status"])
     .index("by_wineType", ["wineType"])
-    .index("by_stockStatus", ["stockStatus"]),
+    .index("by_stockStatus", ["stockStatus"])
+    .index("by_isFeatured", ["isFeatured"])
+    .index("by_onSale", ["onSale"])
+    .index("by_createdAt", ["createdAt"]),
 
   categories: defineTable({
     name: v.string(),
@@ -181,6 +193,8 @@ export default defineSchema({
     .index("by_customerId", ["customerId"])
     .index("by_status", ["status"])
     .index("by_orderNumber", ["orderNumber"])
+    .index("by_status_createdAt", ["status", "createdAt"])
+    .index("by_createdAt", ["createdAt"])
     .searchIndex("search_orders", { searchField: "customerEmail", filterFields: ["status"] }),
 
   orderItems: defineTable({
@@ -245,7 +259,9 @@ export default defineSchema({
     usageCount: v.number(),
     lastUsedAt: v.optional(v.string()),
     createdAt: v.string(),
-  }).index("by_couponCode_userEmail", ["couponCode", "userEmail"]),
+  })
+    .index("by_couponCode_userEmail", ["couponCode", "userEmail"])
+    .index("by_userId", ["userId"]),
 
   cartRules: defineTable({
     name: v.string(),
@@ -386,4 +402,10 @@ export default defineSchema({
   })
     .index("by_status", ["status"])
     .index("by_status_startDate", ["status", "startDate"]),
+
+  // Counter table for atomic order number generation
+  counters: defineTable({
+    name: v.string(),
+    value: v.number(),
+  }).index("by_name", ["name"]),
 });

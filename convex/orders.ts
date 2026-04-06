@@ -1,38 +1,31 @@
 // @ts-nocheck
-// Type instantiation depth issues with Convex runMutation API
-// This file compiles correctly at runtime but TypeScript cannot fully verify it
+// Convex type instantiation depth issues with runMutation and complex types
 
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
-import { api } from "./_generated/api";
+import { mutation, query, internalAction } from "./_generated/server";
+import { api, internal } from "./_generated/api";
 import { adminMutation, adminQuery } from "./authHelpers";
 
-// Note: Product prices already include VAT. Shipping and discounts are calculated
-// by the frontend cart rules engine and passed in to the order creation mutation.
-// Do NOT recalculate shipping/tax here — it would double-count.
-
-// Starting order number (e.g., 1000 -> Order #1000)
 const STARTING_ORDER_NUMBER = 1000;
+const COUNTER_NAME = "orders";
 
-/**
- * Get the next sequential order number.
- * Finds the highest existing orderNumber and increments by 1.
- * Starts at STARTING_ORDER_NUMBER if no orders exist.
- */
 async function getNextOrderNumber(ctx: any): Promise<number> {
-  // Get the most recent orders with orderNumber set
-  const recentOrders = await ctx.db
-    .query("orders")
-    .withIndex("by_orderNumber")
-    .order("desc")
-    .take(1);
+  const counter = await ctx.db
+    .query("counters")
+    .withIndex("by_name", (q) => q.eq("name", COUNTER_NAME))
+    .unique();
 
-  if (recentOrders.length > 0 && recentOrders[0].orderNumber !== undefined) {
-    return recentOrders[0].orderNumber + 1;
+  if (!counter) {
+    await ctx.db.insert("counters", {
+      name: COUNTER_NAME,
+      value: STARTING_ORDER_NUMBER,
+    });
+    return STARTING_ORDER_NUMBER;
   }
 
-  // If no orders with orderNumber exist, start from the beginning
-  return STARTING_ORDER_NUMBER;
+  const nextValue = counter.value + 1;
+  await ctx.db.patch(counter._id, { value: nextValue });
+  return nextValue;
 }
 
 /**
@@ -85,6 +78,20 @@ export const create = mutation({
     appliedCouponDiscount: v.optional(v.float64()),
   },
   handler: async (ctx, args) => {
+    // Validate inventory before creating order
+    for (const item of args.items) {
+      const product = await ctx.db.get(item.productId);
+      if (!product) {
+        throw new Error(`מוצר לא נמצא: ${item.productName}`);
+      }
+      if (product.status === "discontinued") {
+        throw new Error(`המוצר ${item.productName} הופסק מהמכירה`);
+      }
+      if (product.quantityInStock < item.quantity) {
+        throw new Error(`מלאי לא מספיק עבור ${item.productName}. זמין: ${product.quantityInStock}, נדרש: ${item.quantity}`);
+      }
+    }
+
     // Use the pre-calculated totals from the cart rules engine
     // Product prices already include VAT; shipping/discount are calculated by cart rules on the frontend
     const { subtotal, shippingCost, discount, total } = args;
@@ -149,8 +156,8 @@ export const create = mutation({
 
     // 7. Increment Coupon Usage
     if (args.appliedCouponCode) {
-      // @ts-expect-error Type instantiation depth issue with Convex API types
-      await ctx.runMutation(api.coupons.incrementUsage, {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await ctx.runMutation(api.coupons.incrementUsage as any, {
         code: args.appliedCouponCode,
         userEmail: args.customerEmail,
         userId: args.customerId,
@@ -158,8 +165,8 @@ export const create = mutation({
     }
 
     // 8. Create activity entry for the new order
-    // @ts-expect-error Type instantiation depth issue with Convex API types
-    await ctx.runMutation(api.activities.createOrderActivity, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await ctx.runMutation(api.activities.createOrderActivity as any, {
       orderNumber,
       customerName: args.customerName,
       total,
@@ -255,9 +262,8 @@ export const getByOrderNumber = adminQuery({
 });
 
 /**
- * List all orders for admin.
+ * List all orders for admin with pagination.
  * Supports status filtering.
- * Admin-only query.
  */
 export const listAll = adminQuery({
   args: { 
@@ -267,16 +273,24 @@ export const listAll = adminQuery({
       v.literal("completed"),
       v.literal("cancelled"),
       v.literal("shipped")
-    ))
+    )),
+    limit: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    let q = ctx.db.query("orders");
+    const limit = args.limit ?? 20;
     
+    let results;
     if (args.status) {
-      q = q.withIndex("by_status", (qi) => qi.eq("status", args.status!));
+      results = await ctx.db
+        .query("orders")
+        .withIndex("by_status", (qi) => qi.eq("status", args.status!))
+        .order("desc")
+        .take(limit);
+    } else {
+      results = await ctx.db.query("orders").order("desc").take(limit);
     }
     
-    return await q.order("desc").collect();
+    return results;
   },
 });
 
@@ -351,6 +365,8 @@ export const updateStatus = adminMutation({
     };
 
     // Create activity entry for status change
+    const status: "pending" | "processing" | "completed" | "cancelled" | "shipped" = args.status;
+    
     const statusLabels: Record<string, { title: string; color: string }> = {
       pending: { title: `הזמנה #${order.orderNumber} נוצרה`, color: "blue.500" },
       processing: { title: `הזמנה #${order.orderNumber} בעיבוד`, color: "orange.500" },
@@ -359,27 +375,28 @@ export const updateStatus = adminMutation({
       cancelled: { title: `הזמנה #${order.orderNumber} בוטלה`, color: "red.500" },
     };
 
-    const statusInfo = statusLabels[args.status];
+    const statusInfo = statusLabels[status];
     if (statusInfo) {
       // Create activity entry
       await ctx.db.insert("activities", {
         title: statusInfo.title,
         subtitle: `${order.customerName} - ₪${order.total.toLocaleString("he-IL")}`,
         type: "order",
-        color: statusInfo.color,
-        relatedId: args.orderId,
+        color: statusInfo.color || "blue.500",
+        relatedId: String(args.orderId),
         createdAt: now,
       });
 
       // Create notification for the customer if they have a userId
       if (order.customerId) {
-        // @ts-expect-error Type instantiation depth issue with Convex API types
-        await ctx.runMutation(api.notifications.createOrderNotification, {
+        const orderStatus = statusMap[status] || "placed";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await ctx.runMutation(api.notifications.createOrderNotification as any, {
           userId: order.customerId,
           orderNumber: order.orderNumber || 0,
           customerName: order.customerName,
           total: order.total,
-          status: statusMap[args.status] || "placed",
+          status: orderStatus,
         });
       }
     }
