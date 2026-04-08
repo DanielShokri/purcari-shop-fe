@@ -76,8 +76,12 @@ export function useUsers(): UseUsersReturn {
   // Computed: filtered users
   const filteredUsers = useMemo(() => {
     if (!users) return [];
+    
+    // Handle both array and object return types from Convex queries
+    const userArray = Array.isArray(users) ? users : users?.users;
+    if (!userArray || !Array.isArray(userArray)) return [];
 
-    return users.filter((user: User) => {
+    return userArray.filter((user: User) => {
       const matchesSearch =
         user.name?.includes(searchTerm) ||
         user.email?.includes(searchTerm) ||

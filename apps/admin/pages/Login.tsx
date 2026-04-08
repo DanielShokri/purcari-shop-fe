@@ -12,8 +12,11 @@ import {
   Card,
   Alert,
   Field,
+  Image,
 } from '@chakra-ui/react';
 import { ColorModeButton } from '../components/ui/color-mode';
+
+const PURCARI_LOGO_URL = 'https://cdn.8wines.com/media/amasty/shopby/option_images/purcari-winery-logo.png';
 
 interface LoginFormData {
   email: string;
@@ -56,7 +59,14 @@ export default function Login() {
         <Card.Body p="8">
           <VStack gap="8" align="stretch">
             {/* Header */}
-            <VStack gap="2" textAlign="center">
+            <VStack gap="4" textAlign="center">
+              <Image 
+                src={PURCARI_LOGO_URL} 
+                alt="Purcari" 
+                h="16" 
+                objectFit="contain"
+                mb="2"
+              />
               <Heading size="2xl" color="fg">
                 כניסה למערכת
               </Heading>
