@@ -139,6 +139,36 @@ interface Product {
   images?: string[];
   status?: 'draft' | 'active' | 'hidden' | 'discontinued';
   updatedAt?: string;
+  wineType?: 'Red' | 'White' | 'Rosé' | 'Sparkling';
+  region?: string;
+  vintage?: number;
+  volume?: string;
+  grapeVariety?: string;
+  alcoholContent?: number;
+  servingTemperature?: string;
+  tastingNotes?: string;
+  isFeatured?: boolean;
+  relatedProducts?: string[];
+}
+
+const WINE_TYPE_HE: Record<string, string> = {
+  Red: 'יין אדום',
+  White: 'יין לבן',
+  'Rosé': 'יין רוזה',
+  Sparkling: 'יין מבעבע',
+};
+
+const nameOf = (p: Product) => p.productNameHe || p.productName;
+const priceOf = (p: Product) => (p.onSale && p.salePrice ? p.salePrice : p.price);
+const fmtPrice = (n: number) => `₪${Number.isInteger(n) ? n : n.toFixed(2)}`;
+const imageOf = (p: Product) => {
+  const img = p.featuredImage || p.images?.[0];
+  return img ? abs(img) : undefined;
+};
+
+function productItem(p: Product): string {
+  const img = imageOf(p);
+  return `<li><a href="/product/${esc(p._id)}">${img ? `<img src="${esc(img)}" alt="${esc(nameOf(p))}" width="200" height="200" loading="lazy" />` : ''}<span>${esc(nameOf(p))}</span></a> <span>${fmtPrice(priceOf(p))}</span></li>`;
 }
 
 async function loadEnvFile(file: string) {
@@ -163,7 +193,7 @@ async function fetchProducts(): Promise<Product[]> {
   return all.filter((p) => !p.status || p.status === 'active');
 }
 
-function productRoute(p: Product): RouteMeta {
+function productRoute(p: Product, byId: Map<string, Product>): RouteMeta {
   const name = p.productNameHe || p.productName;
   const url = `${SITE_URL}/product/${p._id}`;
   const image = p.featuredImage || p.images?.[0];
@@ -208,14 +238,45 @@ function productRoute(p: Product): RouteMeta {
         ],
       },
     ],
-    body: `<main><h1>${esc(name)}</h1>${desc ? `<p>${esc(trimDesc(desc, 400))}</p>` : ''}<p><a href="/products">חנות היינות</a></p></main>`,
+    body: productBody(p, byId),
   };
 }
 
+function productBody(p: Product, byId: Map<string, Product>): string {
+  const name = nameOf(p);
+  const desc = p.descriptionHe || p.description || p.shortDescriptionHe;
+  const img = imageOf(p);
+  const inStock = Number(p.quantityInStock) > 0;
+  const facts = [
+    p.wineType ? ['סוג', WINE_TYPE_HE[p.wineType] || p.wineType] : null,
+    p.grapeVariety ? ['זן ענבים', p.grapeVariety] : null,
+    p.region ? ['אזור', p.region] : null,
+    p.vintage ? ['בציר', String(p.vintage)] : null,
+    p.volume ? ['נפח', p.volume] : null,
+    p.alcoholContent ? ['אחוז אלכוהול', `${p.alcoholContent}%`] : null,
+    p.servingTemperature ? ['טמפרטורת הגשה', p.servingTemperature] : null,
+  ].filter((x): x is string[] => x !== null);
+  const related = (p.relatedProducts || [])
+    .map((id) => byId.get(id))
+    .filter((r): r is Product => !!r)
+    .slice(0, 4);
+  return [
+    '<main>',
+    '<nav aria-label="breadcrumb"><a href="/">דף הבית</a> / <a href="/products">חנות</a></nav>',
+    `<h1>${esc(name)}</h1>`,
+    img ? `<img src="${esc(img)}" alt="${esc(name)}" width="400" height="400" />` : '',
+    `<p>${fmtPrice(priceOf(p))} · ${inStock ? 'במלאי' : 'אזל מהמלאי'}</p>`,
+    desc ? `<p>${esc(trimDesc(desc, 600))}</p>` : '',
+    facts.length ? `<ul>${facts.map(([k, v]) => `<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>` : '',
+    p.tastingNotes ? `<h2>הערות טעימה</h2><p>${esc(trimDesc(p.tastingNotes, 600))}</p>` : '',
+    related.length ? `<h2>יינות נוספים</h2><ul>${related.map(productItem).join('')}</ul>` : '',
+    '<p><a href="/products">חנות היינות</a></p>',
+    '</main>',
+  ].join('');
+}
+
 function shopRoute(products: Product[]): RouteMeta {
-  const links = products
-    .map((p) => `<li><a href="/product/${esc(p._id)}">${esc(p.productNameHe || p.productName)}</a></li>`)
-    .join('');
+  const links = products.map(productItem).join('');
   return {
     path: '/products',
     title: 'חנות - הכל',
@@ -231,8 +292,31 @@ function shopRoute(products: Product[]): RouteMeta {
           { '@type': 'ListItem', position: 2, name: 'חנות', item: `${SITE_URL}/products` },
         ],
       },
+      {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        itemListElement: products.map((p, i) => ({
+          '@type': 'ListItem',
+          position: i + 1,
+          url: `${SITE_URL}/product/${p._id}`,
+          name: nameOf(p),
+        })),
+      },
     ],
-    body: `<main><h1>היינות שלנו</h1><ul>${links}</ul></main>`,
+    body: `<main><nav aria-label="breadcrumb"><a href="/">דף הבית</a></nav><h1>היינות שלנו</h1><p>קטלוג היינות המלא של פורקארי ישראל: יינות אדומים, לבנים, רוזה ומבעבעים ממולדובה.</p><ul>${links}</ul></main>`,
+  };
+}
+
+function homeRoute(products: Product[]): RouteMeta {
+  const base = STATIC_ROUTES.find((r) => r.path === '/')!;
+  const featured = [...products].sort((a, b) => Number(!!b.isFeatured) - Number(!!a.isFeatured)).slice(0, 12);
+  return {
+    ...base,
+    schema: [
+      ...(base.schema || []),
+      { '@context': 'https://schema.org', '@type': 'WebSite', name: SITE_NAME, url: SITE_URL, inLanguage: 'he-IL' },
+    ],
+    body: `<main><h1>פורקארי ישראל – יינות פרימיום ממולדובה</h1><p>${esc(base.description || DEFAULT_DESCRIPTION)}</p><h2>היינות שלנו</h2><ul>${featured.map(productItem).join('')}</ul><p><a href="/products">לכל היינות בחנות</a></p><nav><a href="/about">אודות</a> · <a href="/shipping">משלוחים</a> · <a href="/contact">צור קשר</a></nav></main>`,
   };
 }
 
@@ -302,8 +386,9 @@ async function main() {
   const template = await readFile(path.join(DIST, 'index.html'), 'utf8');
   const products = await fetchProducts();
 
-  const routes = [...STATIC_ROUTES.filter((r) => r.path === '/'), shopRoute(products),
-    ...STATIC_ROUTES.filter((r) => r.path !== '/'), ...products.map(productRoute)];
+  const byId = new Map(products.map((p) => [p._id, p]));
+  const routes = [homeRoute(products), shopRoute(products),
+    ...STATIC_ROUTES.filter((r) => r.path !== '/'), ...products.map((p) => productRoute(p, byId))];
 
   for (const r of routes) await writeRoute(template, r);
 
