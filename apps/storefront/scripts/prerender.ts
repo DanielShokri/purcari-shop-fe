@@ -33,6 +33,7 @@ interface RouteMeta {
   description?: string;
   indexable: boolean;
   inSitemap: boolean;
+  lastmod?: string; // ISO date; set by hand on static pages when their copy changes
   schema?: object[];
   ogType?: 'website' | 'product';
   ogImage?: string;
@@ -81,6 +82,7 @@ const STATIC_ROUTES: RouteMeta[] = [
   },
   {
     path: '/about',
+    lastmod: '2026-01-31',
     title: 'אודותינו',
     description:
       'גלו את הסיפור המרתק של יקב פורקרי - מסורת של ייצור יין מאז 1827. המסע שלנו ממולדובה לישראל והמחויבות שלנו לאיכות ללא פשרות.',
@@ -89,6 +91,7 @@ const STATIC_ROUTES: RouteMeta[] = [
   },
   {
     path: '/contact',
+    lastmod: '2026-01-31',
     title: 'צור קשר',
     description:
       'צריכים עזרה בבחירת היין המושלם? רוצים לדעת עוד על המשלוחים שלנו? אנחנו כאן לכל שאלה. צרו קשר עם צוות פורקארי ישראל.',
@@ -97,6 +100,7 @@ const STATIC_ROUTES: RouteMeta[] = [
   },
   {
     path: '/shipping',
+    lastmod: '2026-02-22',
     title: 'מדיניות משלוחים',
     description: 'מידע על משלוחים וזמני אספקה בפורקארי ישראל. משלוח חינם בהזמנה מעל ₪300.',
     indexable: true,
@@ -104,6 +108,7 @@ const STATIC_ROUTES: RouteMeta[] = [
   },
   {
     path: '/terms',
+    lastmod: '2026-01-31',
     title: 'תנאי שימוש',
     description: 'תנאי השימוש באתר פורקארי ישראל. קראו בעיון את התנאים לפני הרכישה.',
     indexable: true,
@@ -111,6 +116,7 @@ const STATIC_ROUTES: RouteMeta[] = [
   },
   {
     path: '/privacy',
+    lastmod: '2026-01-31',
     title: 'מדיניות פרטיות',
     description: 'מדיניות הפרטיות של פורקארי ישראל. כיצד אנו אוספים, משתמשים ומגנים על המידע שלכם.',
     indexable: true,
@@ -366,13 +372,18 @@ async function writeRoute(template: string, r: RouteMeta) {
 }
 
 function sitemapXml(routes: RouteMeta[], products: Product[]): string {
-  const lastmod = new Map(products.map((p) => [`/product/${p._id}`, p.updatedAt]));
+  const toIso = (d?: string) => (d && !Number.isNaN(Date.parse(d)) ? new Date(d).toISOString() : undefined);
+  const productTimes = products.map((p) => Date.parse(p.updatedAt ?? '')).filter((t) => !Number.isNaN(t));
+  // Catalogue pages change whenever any product does.
+  const newestProduct = productTimes.length ? new Date(Math.max(...productTimes)).toISOString() : undefined;
+  const lastmod = new Map<string, string | undefined>(products.map((p) => [`/product/${p._id}`, toIso(p.updatedAt)]));
+  lastmod.set('/', newestProduct);
+  lastmod.set('/products', newestProduct);
   const urls = routes
     .filter((r) => r.inSitemap)
     .map((r) => {
       const loc = r.path === '/' ? `${SITE_URL}/` : `${SITE_URL}${r.path}`;
-      const lm = lastmod.get(r.path);
-      const iso = lm && !Number.isNaN(Date.parse(lm)) ? new Date(lm).toISOString() : undefined;
+      const iso = lastmod.get(r.path) ?? toIso(r.lastmod);
       return `  <url>\n    <loc>${esc(loc)}</loc>${iso ? `\n    <lastmod>${iso}</lastmod>` : ''}\n  </url>`;
     })
     .join('\n');
