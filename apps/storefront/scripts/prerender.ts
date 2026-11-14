@@ -7,7 +7,7 @@
  * the <head>, plus a small crawlable body. React replaces the body on load, and react-helmet-async
  * replaces the head tags (they carry data-rh="true"), so the client behaviour is unchanged.
  *
- * It also generates sitemap.xml, robots.txt, a real 404.html and Cloudflare Pages `_redirects`.
+ * It also generates sitemap.xml, robots.txt and a real 404.html.
  * With a root 404.html present, Pages stops serving index.html (200) for unknown paths.
  *
  * Static page copy below mirrors the <SEO> props in pages/*Page.tsx. Keep them in sync.
@@ -121,10 +121,6 @@ const STATIC_ROUTES: RouteMeta[] = [
   { path: '/login', title: 'התחברות', indexable: false, inSitemap: false },
   { path: '/dashboard', title: 'האזור האישי', indexable: false, inSitemap: false },
   { path: '/order-confirmation', title: 'אישור הזמנה', indexable: false, inSitemap: false },
-  // Shells served by the _redirects rewrites below for ids that cannot be prerendered:
-  // order ids, and products added after this build.
-  { path: '/order-confirmation/*', file: 'shell-order.html', title: 'אישור הזמנה', indexable: false, inSitemap: false },
-  { path: '/product/*', file: 'shell-product.html', title: 'מוצר', indexable: false, inSitemap: false },
 ];
 
 interface Product {
@@ -329,18 +325,17 @@ async function main() {
   await writeFile(
     path.join(DIST, 'robots.txt'),
     ['User-agent: *', 'Allow: /', 'Disallow: /checkout', 'Disallow: /login', 'Disallow: /dashboard',
-      'Disallow: /order-confirmation', 'Disallow: /shell-', '', `Sitemap: ${SITE_URL}/sitemap.xml`, ''].join('\n')
+      'Disallow: /order-confirmation', '', `Sitemap: ${SITE_URL}/sitemap.xml`, ''].join('\n')
   );
 
-  // Dynamic ids that cannot be prerendered. Pages serves a real static file first, so
-  // prerendered products win and only products added after this build hit the noindex shell.
-  await writeFile(
-    path.join(DIST, '_redirects'),
-    ['/order-confirmation/*  /shell-order.html  200', '/product/*  /shell-product.html  200', ''].join('\n')
-  );
+  // Deliberately no _redirects: Cloudflare Pages applies 200 rewrites before static files
+  // and turns them into 308s, which broke prerendered product pages and dropped
+  // /order-confirmation/:id. Paths with no file (new products, order ids, junk URLs) fall
+  // through to 404.html. That is the full app shell, so the client router still renders the
+  // right page; only the HTTP status is 404 for those paths.
 
   const indexable = routes.filter((r) => r.inSitemap).length;
-  console.log(`prerender: ${routes.length} pages written (${products.length} products), ${indexable} URLs in sitemap.xml, 404.html, robots.txt, _redirects`);
+  console.log(`prerender: ${routes.length} pages written (${products.length} products), ${indexable} URLs in sitemap.xml, 404.html, robots.txt`);
 }
 
 main().catch((err) => {
