@@ -6,6 +6,7 @@ import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
 import { isConvexId } from '../utils/convexId';
 import { Product } from '@shared/types';
+import { buildProductSchema } from '../utils/productSchema';
 import SEO from '../components/SEO';
 import { useCart } from '../hooks/useCart';
 import { useTrackProductView, useTrackAddToCart } from '../hooks/useAnalytics';
@@ -90,26 +91,23 @@ const ProductPage: React.FC = () => {
   const discountPercent = getDiscountPercent(product.price, product.salePrice);
   const currentPrice = product.onSale && product.salePrice ? product.salePrice : product.price;
 
-  const productSchema = {
-    "@context": "https://schema.org/",
-    "@type": "Product",
-    "name": product.productNameHe || product.productName,
-    "image": [product.featuredImage || product.images?.[0] || ''],
-    "description": product.descriptionHe || product.description,
-    "sku": product.sku,
-    "brand": {
-      "@type": "Brand",
-      "name": "Purcari"
-    },
-    "offers": {
-      "@type": "Offer",
-      "url": `https://purcari.co.il/product/${product._id}`,
-      "priceCurrency": "ILS",
-      "price": currentPrice,
-      "availability": Number(product.quantityInStock) > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      "itemCondition": "https://schema.org/NewCondition"
-    }
-  };
+  const productImage = product.featuredImage || product.images?.[0];
+  const productSchema = buildProductSchema({
+    siteUrl: 'https://purcari.co.il',
+    id: product._id,
+    name: product.productNameHe || product.productName,
+    image: productImage,
+    description: product.descriptionHe || product.description,
+    sku: product.sku,
+    price: currentPrice,
+    inStock: Number(product.quantityInStock) > 0,
+    wineType: product.wineType,
+    region: product.region,
+    vintage: product.vintage,
+    volume: product.volume,
+    grapeVariety: product.grapeVariety,
+    alcoholContent: product.alcoholContent,
+  });
 
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -154,7 +152,7 @@ const ProductPage: React.FC = () => {
       <SEO 
         title={product.productNameHe || product.productName}
         description={product.descriptionHe || product.description}
-        ogImage={product.featuredImage || product.images?.[0] || ''}
+        ogImage={productImage}
         ogType="product"
         canonical={`/product/${product._id}`}
         schemaData={[productSchema, breadcrumbSchema]}

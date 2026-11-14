@@ -16,6 +16,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ConvexHttpClient } from 'convex/browser';
+import { buildProductSchema } from '../utils/productSchema';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = path.join(ROOT, 'dist');
@@ -214,26 +215,22 @@ function productRoute(p: Product, byId: Map<string, Product>): RouteMeta {
     ogType: 'product',
     ogImage: image ? abs(image) : undefined,
     schema: [
-      {
-        '@context': 'https://schema.org/',
-        '@type': 'Product',
+      buildProductSchema({
+        siteUrl: SITE_URL,
+        id: p._id,
         name,
-        ...(image ? { image: [abs(image)] } : {}),
-        ...(desc ? { description: desc } : {}),
+        image: image ? abs(image) : undefined,
+        description: desc,
         sku: p.sku,
-        brand: { '@type': 'Brand', name: 'Purcari' },
-        offers: {
-          '@type': 'Offer',
-          url,
-          priceCurrency: 'ILS',
-          price,
-          availability:
-            Number(p.quantityInStock) > 0
-              ? 'https://schema.org/InStock'
-              : 'https://schema.org/OutOfStock',
-          itemCondition: 'https://schema.org/NewCondition',
-        },
-      },
+        price,
+        inStock: Number(p.quantityInStock) > 0,
+        wineType: p.wineType,
+        region: p.region,
+        vintage: p.vintage,
+        volume: p.volume,
+        grapeVariety: p.grapeVariety,
+        alcoholContent: p.alcoholContent,
+      }),
       {
         '@context': 'https://schema.org',
         '@type': 'BreadcrumbList',
