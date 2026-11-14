@@ -324,8 +324,9 @@ async function main() {
 
   await writeFile(
     path.join(DIST, 'robots.txt'),
-    ['User-agent: *', 'Allow: /', 'Disallow: /checkout', 'Disallow: /login', 'Disallow: /dashboard',
-      'Disallow: /order-confirmation', '', `Sitemap: ${SITE_URL}/sitemap.xml`, ''].join('\n')
+    // No Disallow for private routes: crawlers must be able to fetch them to see the noindex
+    // (meta tag in the shell and the X-Robots-Tag header in public/_headers).
+    ['User-agent: *', 'Allow: /', '', `Sitemap: ${SITE_URL}/sitemap.xml`, ''].join('\n')
   );
 
   // Deliberately no _redirects: Cloudflare Pages applies 200 rewrites before static files

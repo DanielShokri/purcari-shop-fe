@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ToastContainer from './components/toast/ToastContainer';
 import ErrorBoundary from './components/ErrorBoundary';
+import SEO from './components/SEO';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
 const ShopPage = lazy(() => import('./pages/ShopPage'));
@@ -25,6 +26,14 @@ const pageLoading = (
   </div>
 );
 
+// Private, per-user pages: keep them out of the index even after React replaces the shell's head.
+const privateRoute = (title: string, page: React.ReactElement) => (
+  <>
+    <SEO title={title} noindex />
+    {page}
+  </>
+);
+
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
@@ -37,10 +46,10 @@ const App: React.FC = () => {
               <Route path="/" element={<HomePage />} />
               <Route path="/products" element={<ShopPage />} />
               <Route path="/product/:id" element={<ProductPage />} />
-              <Route path="/checkout" element={<CheckoutPage />} />
-              <Route path="/order-confirmation/:id" element={<OrderConfirmationPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/checkout" element={privateRoute('תשלום', <CheckoutPage />)} />
+              <Route path="/order-confirmation/:id" element={privateRoute('אישור הזמנה', <OrderConfirmationPage />)} />
+              <Route path="/login" element={privateRoute('התחברות', <LoginPage />)} />
+              <Route path="/dashboard" element={privateRoute('האזור האישי', <DashboardPage />)} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/shipping" element={<ShippingPage />} />

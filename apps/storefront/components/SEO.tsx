@@ -8,6 +8,7 @@ interface SEOProps {
   ogImage?: string;
   ogType?: 'website' | 'article' | 'product';
   schemaData?: object;
+  noindex?: boolean;
 }
 
 const SEO: React.FC<SEOProps> = ({
@@ -17,6 +18,7 @@ const SEO: React.FC<SEOProps> = ({
   ogImage,
   ogType = 'website',
   schemaData,
+  noindex = false,
 }) => {
   const siteName = 'Purcari Israel';
   const fullTitle = title ? `${title} | ${siteName}` : siteName;
@@ -31,7 +33,11 @@ const SEO: React.FC<SEOProps> = ({
       {/* Basic Meta Tags */}
       <title>{fullTitle}</title>
       <meta name="description" content={metaDescription} />
-      <link rel="canonical" href={fullCanonical} />
+      {noindex ? (
+        <meta name="robots" content="noindex, nofollow" />
+      ) : (
+        <link rel="canonical" href={fullCanonical} />
+      )}
 
       {/* Open Graph / Facebook */}
       <meta property="og:type" content={ogType} />
