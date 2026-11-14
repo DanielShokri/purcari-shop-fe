@@ -28,6 +28,7 @@ const DEFAULT_OG_IMAGE = `${SITE_URL}/images/og-default.jpg`;
 
 interface RouteMeta {
   path: string; // URL path, '/' for home
+  file?: string; // output file under dist/, defaults to `<path>.html` (`index.html` for '/')
   title?: string;
   description?: string;
   indexable: boolean;
@@ -67,6 +68,14 @@ const STATIC_ROUTES: RouteMeta[] = [
         name: SITE_NAME,
         url: SITE_URL,
         logo: `${SITE_URL}/logo.png`,
+        contactPoint: {
+          '@type': 'ContactPoint',
+          telephone: '+972-50-948-0040',
+          contactType: 'customer service',
+          areaServed: 'IL',
+          availableLanguage: ['Hebrew', 'English'],
+        },
+        sameAs: ['https://www.facebook.com/purcariisrael', 'https://www.instagram.com/purcariisrael'],
       },
     ],
   },
@@ -112,8 +121,10 @@ const STATIC_ROUTES: RouteMeta[] = [
   { path: '/login', title: 'התחברות', indexable: false, inSitemap: false },
   { path: '/dashboard', title: 'האזור האישי', indexable: false, inSitemap: false },
   { path: '/order-confirmation', title: 'אישור הזמנה', indexable: false, inSitemap: false },
-  // Generic shell for /product/* ids that were added after this build (see _redirects).
-  { path: '/product', title: 'מוצר', indexable: false, inSitemap: false },
+  // Shells served by the _redirects rewrites below for ids that cannot be prerendered:
+  // order ids, and products added after this build.
+  { path: '/order-confirmation/*', file: 'shell-order.html', title: 'אישור הזמנה', indexable: false, inSitemap: false },
+  { path: '/product/*', file: 'shell-product.html', title: 'מוצר', indexable: false, inSitemap: false },
 ];
 
 interface Product {
@@ -266,7 +277,10 @@ function render(template: string, r: RouteMeta, notFound = false): string {
 }
 
 async function writeRoute(template: string, r: RouteMeta) {
-  const file = r.path === '/' ? path.join(DIST, 'index.html') : path.join(DIST, r.path, 'index.html');
+  // `about.html`, not `about/index.html`: Pages serves the former at `/about` (matching our
+  // canonicals and sitemap) while the latter 308-redirects `/about` to `/about/`.
+  const rel = r.file ?? (r.path === '/' ? 'index.html' : `${r.path.replace(/^\//, '')}.html`);
+  const file = path.join(DIST, rel);
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, render(template, r));
 }
@@ -315,14 +329,14 @@ async function main() {
   await writeFile(
     path.join(DIST, 'robots.txt'),
     ['User-agent: *', 'Allow: /', 'Disallow: /checkout', 'Disallow: /login', 'Disallow: /dashboard',
-      'Disallow: /order-confirmation', '', `Sitemap: ${SITE_URL}/sitemap.xml`, ''].join('\n')
+      'Disallow: /order-confirmation', 'Disallow: /shell-', '', `Sitemap: ${SITE_URL}/sitemap.xml`, ''].join('\n')
   );
 
   // Dynamic ids that cannot be prerendered. Pages serves a real static file first, so
   // prerendered products win and only products added after this build hit the noindex shell.
   await writeFile(
     path.join(DIST, '_redirects'),
-    ['/order-confirmation/*  /order-confirmation/index.html  200', '/product/*  /product/index.html  200', ''].join('\n')
+    ['/order-confirmation/*  /shell-order.html  200', '/product/*  /shell-product.html  200', ''].join('\n')
   );
 
   const indexable = routes.filter((r) => r.inSitemap).length;
