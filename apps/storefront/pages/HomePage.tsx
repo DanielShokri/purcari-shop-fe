@@ -19,7 +19,7 @@ const HomePage: React.FC = () => {
     "logo": "https://purcari.co.il/logo.png",
     "contactPoint": {
       "@type": "ContactPoint",
-      "telephone": "+972-XXX-XXXXXX",
+      "telephone": "+972-50-948-0040",
       "contactType": "customer service",
       "areaServed": "IL",
       "availableLanguage": ["Hebrew", "English"]

@@ -7,6 +7,7 @@ import { useCart } from '../hooks/useCart';
 import { CheckCircle, Package, Truck, ArrowLeft, AlertCircle, Clock, XCircle, FileText, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Id } from '../../../convex/_generated/dataModel';
+import { isConvexId } from '../utils/convexId';
 
 // Payment status labels in Hebrew
 const PAYMENT_STATUS_LABELS = {
@@ -54,12 +55,13 @@ const OrderConfirmationPage: React.FC = () => {
   const navigate = useNavigate();
   const { clearCart, items: cartItems } = useCart();
   const accessToken = id ? searchParams.get('token') ?? sessionStorage.getItem(`order-access-${id}`) ?? undefined : undefined;
-  const orderData = useQuery(api.orders.getPublic, id ? { orderId: id as Id<"orders">, accessToken } : "skip");
+  const validId = isConvexId(id);
+  const orderData = useQuery(api.orders.getPublic, validId ? { orderId: id as Id<"orders">, accessToken } : "skip");
   
   // Get payment transaction for this order (reactive - will auto-update when IPN arrives)
   const payment = useQuery(
     api.icreditHelpers.getPaymentByOrderId, 
-    id ? { orderId: id as Id<"orders">, accessToken } : "skip"
+    validId ? { orderId: id as Id<"orders">, accessToken } : "skip"
   );
   
   const { trackPurchase } = useTrackPurchase();
@@ -133,14 +135,14 @@ const OrderConfirmationPage: React.FC = () => {
     }
   }, [orderData, payment?.status, trackPurchase]);
 
-  if (orderData === undefined) return (
+  if (validId && orderData === undefined) return (
     <div className="min-h-screen flex items-center justify-center">
       <Loader2 className="animate-spin text-secondary mr-2" size={24} />
       <span>טוען פרטי הזמנה...</span>
     </div>
   );
   
-  if (orderData === null) return (
+  if (!validId || orderData === null) return (
     <div className="min-h-screen flex items-center justify-center flex-col gap-4">
       <AlertCircle size={48} className="text-red-500" />
       <p className="text-xl">הזמנה לא נמצאה</p>

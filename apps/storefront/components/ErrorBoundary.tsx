@@ -1,6 +1,5 @@
 import React, { Component, ReactNode } from 'react';
 import { AlertTriangle, Home, RefreshCw } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 interface Props {
   children: ReactNode;
@@ -63,13 +62,14 @@ class ErrorBoundary extends Component<Props, State> {
                 נסה שוב
               </button>
               
-              <Link
-                to="/"
+              {/* Plain anchor: this boundary renders outside <Router>, where <Link> would throw. */}
+              <a
+                href="/"
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 <Home className="w-4 h-4" />
                 לדף הבית
-              </Link>
+              </a>
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useQuery } from 'convex/react';
 import useToast from '../store/hooks/useToast';
 import { api } from '../../../convex/_generated/api';
 import { Id } from '../../../convex/_generated/dataModel';
+import { isConvexId } from '../utils/convexId';
 import { Product } from '@shared/types';
 import SEO from '../components/SEO';
 import { useCart } from '../hooks/useCart';
@@ -16,9 +17,11 @@ import { getWineTypeLabel } from '../utils/wineHelpers';
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
 
-  const product = useQuery(api.products.getById, {
-    productId: id as Id<"products">
-  });
+  const validId = isConvexId(id);
+  const product = useQuery(
+    api.products.getById,
+    validId ? { productId: id as Id<"products"> } : "skip"
+  );
 
   const allProducts = useQuery(api.products.list, {});
 
@@ -38,7 +41,7 @@ const ProductPage: React.FC = () => {
   // Track add to cart events
   const { trackAddToCart } = useTrackAddToCart();
 
-  const isLoading = product === undefined;
+  const isLoading = validId && product === undefined;
 
   // Reset quantity when product changes
   useEffect(() => {
