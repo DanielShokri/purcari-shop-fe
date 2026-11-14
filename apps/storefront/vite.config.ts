@@ -19,6 +19,20 @@ export default defineConfig(({ mode }) => {
         tailwindcss(),
         tsconfigPaths()
       ],
+      build: {
+        rollupOptions: {
+          output: {
+            // Vendor chunks change far less often than app code, so returning visitors keep
+            // them cached across deploys.
+            manualChunks: {
+              react: ['react', 'react-dom', 'react-router-dom'],
+              convex: ['convex/react', 'convex/browser', '@convex-dev/auth/react'],
+              motion: ['framer-motion'],
+              state: ['@reduxjs/toolkit', 'react-redux'],
+            },
+          },
+        },
+      },
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)

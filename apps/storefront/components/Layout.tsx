@@ -1,17 +1,28 @@
-import React from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import Header from './Header';
 import Footer from './Footer';
-import CartModal from './CartModal';
-import SearchModal from './SearchModal';
 import AgeVerificationModal from './AgeVerificationModal';
 import SystemAnnouncementBanner from './SystemAnnouncementBanner';
 import { ToastContainer } from './toast';
 import { useCartUI } from '../hooks/useCartUI';
 import { AnimatePresence } from 'framer-motion';
 import { useTrackPageView } from '../hooks/useAnalytics';
+import { useAppSelector } from '../store/hooks';
+import { selectIsSearchModalOpen } from '../store/slices/uiSlice';
+
+// Only needed after the user opens them, so keep them out of the first-paint bundle.
+const CartModal = lazy(() => import('./CartModal'));
+const SearchModal = lazy(() => import('./SearchModal'));
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isCartOpen } = useCartUI();
+
+  // Mount SearchModal on first open and keep it mounted so its exit animation still plays.
+  const isSearchOpen = useAppSelector(selectIsSearchModalOpen);
+  const [searchLoaded, setSearchLoaded] = useState(false);
+  useEffect(() => {
+    if (isSearchOpen) setSearchLoaded(true);
+  }, [isSearchOpen]);
 
   // Enable automatic page view tracking (must be inside Router context)
   useTrackPageView();
@@ -28,9 +39,17 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </div>
       <Footer />
       <AnimatePresence>
-        {isCartOpen && <CartModal />}
+        {isCartOpen && (
+          <Suspense fallback={null}>
+            <CartModal />
+          </Suspense>
+        )}
       </AnimatePresence>
-      <SearchModal />
+      {searchLoaded && (
+        <Suspense fallback={null}>
+          <SearchModal />
+        </Suspense>
+      )}
       <AgeVerificationModal />
       <ToastContainer />
     </div>
